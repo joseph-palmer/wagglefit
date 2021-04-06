@@ -2,5 +2,6 @@
 
 export(calc_dist)
 export(model_loglike)
+importFrom(nloptr,nloptr)
 importFrom(pracma,erf)
 importFrom(pracma,erfc)

@@ -27,9 +27,14 @@ linter
 linters
 lintr
 linux
+loglike
 macOS
 md
+nloptr
 noreply
+numical
+optimisation
+optmization
 os
 packagemanager
 palmer
@@ -60,4 +65,5 @@ testthat
 ubuntu
 uk
 wagglefit
+wrapps
 writeLines

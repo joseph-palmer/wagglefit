@@ -11,6 +11,7 @@ Description: Gets hive metrics from waggle dance distributions. This model
     will fit to distributios of waggle dance duurations of honeybees.
 License: MIT + file LICENSE
 Imports:
+    nloptr (>= 1.2.2.2),
     pracma (>= 2.3.3)
 Suggests: 
     testthat (>= 3.0.0)
