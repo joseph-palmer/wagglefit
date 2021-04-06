@@ -3,6 +3,7 @@ aut
 cmd
 CMD
 codecov
+commandArgs
 config
 covr
 cran
@@ -27,6 +28,8 @@ linters
 lintr
 linux
 macOS
+md
+noreply
 os
 packagemanager
 palmer
@@ -35,7 +38,14 @@ pkgdown
 pracma
 rcmdcheck
 Rds
+renv
+Renv
+repo
 rhul
+rmarkdown
+Rmarkdown
+Rmd
+RMD
 RoxygenNote
 Rscript
 rspm
@@ -43,6 +53,7 @@ RSPM
 rstudio
 RStudio
 saveRDS
+sha
 sprintf
 sudo
 testthat
