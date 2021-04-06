@@ -6,7 +6,6 @@
 #' @param qn double quality
 #' @param a double alpha value
 #' @return The scout distribution
-#' @export
 #'
 scout_dist <- function(x, p, ls, qn, a) {
   m <- min(x)
@@ -27,7 +26,6 @@ scout_dist <- function(x, p, ls, qn, a) {
 #' @param ln double the recruit rate
 #' @importFrom pracma erf erfc
 #' @return The scout distribution
-#' @export
 #'
 recruit_dist <- function(x, p, ln, qn, a) {
   m <- min(x)
@@ -47,7 +45,6 @@ recruit_dist <- function(x, p, ln, qn, a) {
 #' foraging distances
 #' @inheritParams model_loglike
 #' @return The scout and recruit model distribution
-#' @export
 #'
 model_all <- function(x, ...) {
   args <- list(...)
@@ -66,7 +63,6 @@ model_all <- function(x, ...) {
 #' the model
 #' @inheritParams model_loglike
 #' @return The scout model distribution
-#' @export
 #'
 model_scout <- function(x, ...) {
   args <- list(...)
@@ -81,7 +77,6 @@ model_scout <- function(x, ...) {
 #' the model
 #' @inheritParams model_loglike
 #' @return The recruit model distribution
-#' @export
 #'
 model_recruit <- function(x, ...) {
   args <- list(...)
@@ -95,7 +90,6 @@ model_recruit <- function(x, ...) {
 #' @description Calls the requested distribution model (all, scout or recruit)
 #' @inheritParams model_loglike
 #' @return The requested distribution
-#' @export
 #'
 model <- function(x, mtype, ...) {
   whichmodel <- list(
