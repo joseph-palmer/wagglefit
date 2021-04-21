@@ -5,19 +5,103 @@
 
 using namespace Rcpp;
 
+// scout_dist
+double scout_dist(double x, double m, double p, double ls, double qn, double a);
+RcppExport SEXP _wagglefit_scout_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(scout_dist(x, m, p, ls, qn, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// recruit_dist
+double recruit_dist(double x, double m, double p, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_recruit_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(recruit_dist(x, m, p, ln, qn, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loglike_model_all
+double loglike_model_all(NumericVector x, int x_size, double p, double ls, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_loglike_model_all(SEXP xSEXP, SEXP x_sizeSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type x_size(x_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike_model_all(x, x_size, p, ls, ln, qn, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loglike_model_scout
+double loglike_model_scout(NumericVector x, int x_size, double ls, double qn, double a);
+RcppExport SEXP _wagglefit_loglike_model_scout(SEXP xSEXP, SEXP x_sizeSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type x_size(x_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike_model_scout(x, x_size, ls, qn, a));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loglike_model_recruit
+double loglike_model_recruit(NumericVector x, int x_size, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_loglike_model_recruit(SEXP xSEXP, SEXP x_sizeSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type x_size(x_sizeSEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike_model_recruit(x, x_size, ln, qn, a));
+    return rcpp_result_gen;
+END_RCPP
+}
 // times_two
-int times_two(int x);
+NumericVector times_two(NumericVector x);
 RcppExport SEXP _wagglefit_times_two(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     rcpp_result_gen = Rcpp::wrap(times_two(x));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 6},
+    {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 6},
+    {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 7},
+    {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 5},
+    {"_wagglefit_loglike_model_recruit", (DL_FUNC) &_wagglefit_loglike_model_recruit, 5},
     {"_wagglefit_times_two", (DL_FUNC) &_wagglefit_times_two, 1},
     {NULL, NULL, 0}
 };

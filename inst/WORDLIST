@@ -1,4 +1,5 @@
 args
+aSEXP
 aut
 CallEntries
 CallMethodDef
@@ -31,6 +32,7 @@ getRversion
 github
 hashFiles
 https
+inheritParams
 init
 iostream
 joe
@@ -42,11 +44,15 @@ linters
 lintr
 linux
 ln
+lnSEXP
 loglike
+lsSEXP
 macOS
 maxpart
 md
+mSEXP
 noreply
+NumericVector
 os
 packagemanager
 palmer
@@ -54,7 +60,9 @@ pandoc
 param
 pkgdown
 pracma
+pSEXP
 qn
+qnSEXP
 rcmdcheck
 rcpp
 Rcpp
@@ -82,6 +90,7 @@ RStudio
 saveRDS
 SEXP
 sha
+sizeSEXP
 sprintf
 stdc
 sudo
