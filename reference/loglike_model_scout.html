@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Model function for recruits — recruit_dist • wagglefit</title>
+<title>Log-likelihood function for scouts — loglike_model_scout • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Model function for recruits — recruit_dist" />
-<meta property="og:description" content="Model function for recruits" />
+<meta property="og:title" content="Log-likelihood function for scouts — loglike_model_scout" />
+<meta property="og:description" content="Log-likelihood function for scouts" />
 
 
 
@@ -103,35 +103,31 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Model function for recruits</h1>
+    <h1>Log-likelihood function for scouts</h1>
     
-    <div class="hidden name"><code>recruit_dist.Rd</code></div>
+    <div class="hidden name"><code>loglike_model_scout.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Model function for recruits</p>
+    <p>Log-likelihood function for scouts</p>
     </div>
 
-    <pre class="usage"><span class='fu'>recruit_dist</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>m</span>, <span class='va'>p</span>, <span class='va'>ln</span>, <span class='va'>qn</span>, <span class='va'>a</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>loglike_model_scout</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>x_size</span>, <span class='va'>ls</span>, <span class='va'>qn</span>, <span class='va'>a</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>double Foraging distance</p></td>
+      <td><p>double* Pointer to array of foraging distances</p></td>
     </tr>
     <tr>
-      <th>m</th>
-      <td><p>double Minimum foraging distance</p></td>
+      <th>x_size</th>
+      <td><p>int Number of foraging distances</p></td>
     </tr>
     <tr>
-      <th>p</th>
-      <td><p>double Proportion of scouts (0&lt;=p&lt;=1)</p></td>
-    </tr>
-    <tr>
-      <th>ln</th>
-      <td><p>double Recruit rate</p></td>
+      <th>ls</th>
+      <td><p>double Scout rate</p></td>
     </tr>
     <tr>
       <th>qn</th>
