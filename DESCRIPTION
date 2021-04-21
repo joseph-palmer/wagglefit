@@ -11,9 +11,12 @@ Description: Gets hive metrics from waggle dance distributions. This model
     will fit to distributios of waggle dance duurations of honeybees.
 License: MIT + file LICENSE
 Imports:
-    pracma (>= 2.3.3)
+    pracma (>= 2.3.3),
+    Rcpp
 Suggests: 
     testthat (>= 3.0.0)
+LinkingTo: 
+    Rcpp
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-gb
