@@ -60,20 +60,20 @@ double recruit_dist(double x, double m,
 //' Log-likelihood function for scout and recruit superposition
 //'
 //' @param x double* Pointer to array of foraging distances
-//' @param x_size int Number of foraging distances
 //' @inheritParams scout_dist
 //' @inheritParams recruit_dist
 //' @export
 // [[Rcpp::export]]
-double loglike_model_all(NumericVector x, int x_size,
+double loglike_model_all(NumericVector x,
                          double p, double ls,
                          double ln, double qn, double a)
 {
-    double m = min(x);
+    const int x_size = x.size();
+    const double m = min(x);
     double ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        ll += log(scout_dist(x[i], m, p, ls, qn, a) * +
+        ll += log(scout_dist(x[i], m, p, ls, qn, a) +
             recruit_dist(x[i], m, p, ln, qn, a));
     }
     return ll;
@@ -84,10 +84,11 @@ double loglike_model_all(NumericVector x, int x_size,
 //' @inheritParams loglike_model_all
 //' @export
 // [[Rcpp::export]]
-double loglike_model_scout(NumericVector x, int x_size,
+double loglike_model_scout(NumericVector x,
                            double ls, double qn, double a)
 {
-    double m = min(x);
+    const int x_size = x.size();
+    const double m = min(x);
     double ll = 0;
     for (int i = 0; i < x_size; i++)
     {
@@ -101,14 +102,15 @@ double loglike_model_scout(NumericVector x, int x_size,
 //' @inheritParams loglike_model_all
 //' @export
 // [[Rcpp::export]]
-double loglike_model_recruit(NumericVector x, int x_size,
+double loglike_model_recruit(NumericVector x,
                              double ln, double qn, double a)
 {
-    double m = min(x);
+    const int x_size = x.size();
+    const double m = min(x);
     double ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        ll += log(recruit_dist(x[i], m, 0, ln, qn, a));
+        ll += log(recruit_dist(x[i], m, 0.0, ln, qn, a));
     }
     return ll;
 }

@@ -26,28 +26,27 @@ recruit_dist <- function(x, m, p, ln, qn, a) {
 #' Log-likelihood function for scout and recruit superposition
 #'
 #' @param x double* Pointer to array of foraging distances
-#' @param x_size int Number of foraging distances
 #' @inheritParams scout_dist
 #' @inheritParams recruit_dist
 #' @export
-loglike_model_all <- function(x, x_size, p, ls, ln, qn, a) {
-  .Call("_wagglefit_loglike_model_all", PACKAGE = "wagglefit", x, x_size, p, ls, ln, qn, a)
+loglike_model_all <- function(x, p, ls, ln, qn, a) {
+  .Call("_wagglefit_loglike_model_all", PACKAGE = "wagglefit", x, p, ls, ln, qn, a)
 }
 
 #' Log-likelihood function for scouts
 #'
 #' @inheritParams loglike_model_all
 #' @export
-loglike_model_scout <- function(x, x_size, ls, qn, a) {
-  .Call("_wagglefit_loglike_model_scout", PACKAGE = "wagglefit", x, x_size, ls, qn, a)
+loglike_model_scout <- function(x, ls, qn, a) {
+  .Call("_wagglefit_loglike_model_scout", PACKAGE = "wagglefit", x, ls, qn, a)
 }
 
 #' Log-likelihood function for recruits
 #'
 #' @inheritParams loglike_model_all
 #' @export
-loglike_model_recruit <- function(x, x_size, ln, qn, a) {
-  .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, x_size, ln, qn, a)
+loglike_model_recruit <- function(x, ln, qn, a) {
+  .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, ln, qn, a)
 }
 
 #' Multiply a number by two

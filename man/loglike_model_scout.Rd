@@ -4,12 +4,10 @@
 \alias{loglike_model_scout}
 \title{Log-likelihood function for scouts}
 \usage{
-loglike_model_scout(x, x_size, ls, qn, a)
+loglike_model_scout(x, ls, qn, a)
 }
 \arguments{
 \item{x}{double* Pointer to array of foraging distances}
-
-\item{x_size}{int Number of foraging distances}
 
 \item{ls}{double Scout rate}
 

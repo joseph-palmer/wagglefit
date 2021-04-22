@@ -4,12 +4,10 @@
 \alias{loglike_model_recruit}
 \title{Log-likelihood function for recruits}
 \usage{
-loglike_model_recruit(x, x_size, ln, qn, a)
+loglike_model_recruit(x, ln, qn, a)
 }
 \arguments{
 \item{x}{double* Pointer to array of foraging distances}
-
-\item{x_size}{int Number of foraging distances}
 
 \item{ln}{double Recruit rate}
 

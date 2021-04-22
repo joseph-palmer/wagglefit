@@ -4,12 +4,10 @@
 \alias{loglike_model_all}
 \title{Log-likelihood function for scout and recruit superposition}
 \usage{
-loglike_model_all(x, x_size, p, ls, ln, qn, a)
+loglike_model_all(x, p, ls, ln, qn, a)
 }
 \arguments{
 \item{x}{double* Pointer to array of foraging distances}
-
-\item{x_size}{int Number of foraging distances}
 
 \item{p}{double Proportion of scouts (0<=p<=1)}
 
