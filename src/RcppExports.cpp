@@ -5,6 +5,16 @@
 
 using namespace Rcpp;
 
+// alter_in_place
+void alter_in_place(NumericVector x);
+RcppExport SEXP _wagglefit_alter_in_place(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    alter_in_place(x);
+    return R_NilValue;
+END_RCPP
+}
 // scout_dist
 double scout_dist(double x, double m, double p, double ls, double qn, double a);
 RcppExport SEXP _wagglefit_scout_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
@@ -81,25 +91,14 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// times_two
-NumericVector times_two(NumericVector x);
-RcppExport SEXP _wagglefit_times_two(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(times_two(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_wagglefit_alter_in_place", (DL_FUNC) &_wagglefit_alter_in_place, 1},
     {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 6},
     {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 6},
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},
     {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 4},
     {"_wagglefit_loglike_model_recruit", (DL_FUNC) &_wagglefit_loglike_model_recruit, 4},
-    {"_wagglefit_times_two", (DL_FUNC) &_wagglefit_times_two, 1},
     {NULL, NULL, 0}
 };
 

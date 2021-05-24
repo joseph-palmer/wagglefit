@@ -22,6 +22,7 @@ DL
 dll
 DllInfo
 duurations
+endl
 env
 erf
 erfc
@@ -34,6 +35,7 @@ hashFiles
 https
 inheritParams
 init
+inplace
 iostream
 joe
 LazyData
@@ -51,7 +53,9 @@ macOS
 maxpart
 md
 mSEXP
+NilValue
 noreply
+NumericArray
 NumericVector
 os
 packagemanager
@@ -64,6 +68,7 @@ pSEXP
 qn
 qnSEXP
 rcmdcheck
+Rcout
 rcpp
 Rcpp
 RCPP

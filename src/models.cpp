@@ -114,12 +114,3 @@ double loglike_model_recruit(NumericVector x,
     }
     return ll;
 }
-
-//' Multiply a number by two
-//'
-//' @param x A single integer.
-//' @export
-// [[Rcpp::export]]
-NumericVector times_two(NumericVector x) {
-    return x * 2;
-}
