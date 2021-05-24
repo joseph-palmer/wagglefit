@@ -9,14 +9,6 @@ alter_in_place <- function(x) {
   invisible(.Call("_wagglefit_alter_in_place", PACKAGE = "wagglefit", x))
 }
 
-#' Optimize function for scout and recruit superposition
-#'
-#' @param n unsigned, record parameter required for nlopt
-#' @param NumericVector, array or parameter estimates to run the model with
-#' @param grad double*, gradient value (unused but required as positional)
-#' @param x NumericVector, The data to load fit to
-NULL
-
 #' Model function for scouts
 #'
 #' @param x double Foraging distance
@@ -65,12 +57,13 @@ loglike_model_recruit <- function(x, ln, qn, a) {
   .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, ln, qn, a)
 }
 
-#' Optimize function for scout and recruit superposition
+#' Optimise function for scout and recruit superposition
 #'
-#' @inheritParams objective_model_all
+#' @param x NumericVector Foraging distance
+#' @param params NumericVector parameter estimates to run the model with
 #' @param lb NumericVector, array of lower bounds for each paramater
 #' @param ub NumericVector, array of upper bounds for each parameter
 #' @export
-optimize_all <- function(x, params, lb, ub) {
-  .Call("_wagglefit_optimize_all", PACKAGE = "wagglefit", x, params, lb, ub)
+optimise_all <- function(x, params, lb, ub) {
+  .Call("_wagglefit_optimise_all", PACKAGE = "wagglefit", x, params, lb, ub)
 }

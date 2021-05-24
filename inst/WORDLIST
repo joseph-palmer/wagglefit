@@ -22,6 +22,7 @@ distributios
 DL
 dll
 DllInfo
+doubleArray
 ds
 duurations
 endl
@@ -67,6 +68,9 @@ nloptrAPI
 noreply
 NumericArray
 NumericVector
+optimisation
+optimise
+Optimise
 os
 packagemanager
 palmer

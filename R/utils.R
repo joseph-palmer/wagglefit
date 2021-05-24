@@ -14,3 +14,62 @@ calc_dist <- function(duration) {
   slope <- 1.38
   return(intercept + (slope * duration))
 }
+
+#' Generates bounds for all parameters
+#' @description Generates upper and lower bounds for all parameters
+#' @return bounds named list of upper and lower bounds
+#' @export
+#' @examples
+#' \dontrun{
+#' generate_bounds()
+#' }
+#'
+generate_bounds <- function() {
+  # ...
+  bounds <- list(
+    "lb" = c(),
+    "ub" = c()
+  )
+  return(bounds)
+}
+
+#' Generates starting estimates for all numerical optimisation of all parameters
+#' @description Generates starting estimates for all parameters by taking a
+#' random value between it's upper and lower bound.
+#' @param bounds named list of upper and lower bounds for each parameter
+#' @return starting_estimates doubleArray of starting parameter estimates
+#' @export
+#' @examples
+#' \dontrun{
+#' generate_starting_estimates(generate_bounds())
+#' }
+#'
+generate_starting_estimates <- function(bounds) {
+  return(0)
+}
+
+#' fit model to data
+#' @description Fits specified model to the data given using MLE.
+#' @param distance doubleArray The distance decoded from the waggle dance in
+#' meters.
+#' @return Not sure yet
+#' @export
+#' @examples
+#' \dontrun{
+#' fit(distance)
+#' }
+#'
+fit <- function(distance) {
+  bounds <- generate_bounds()
+  startest <- generate_starting_estimates(bounds)
+  result <- optimise_all(
+    distance,
+    startest,
+    bounds$lower,
+    bounds$lower
+  )
+  return_list <- list(
+    "fmax" = result[[1]],
+    "est" = result[2:length(result)]
+  )
+}

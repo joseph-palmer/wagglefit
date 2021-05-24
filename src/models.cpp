@@ -124,12 +124,11 @@ typedef struct {
     NumericVector x;
 } data_struct;
 
-//' Optimize function for scout and recruit superposition
-//'
-//' @param n unsigned, record parameter required for nlopt
-//' @param NumericVector, array or parameter estimates to run the model with
-//' @param grad double*, gradient value (unused but required as positional)
-//' @param x NumericVector, The data to load fit to
+// Optimize function for scout and recruit superposition
+// param: n unsigned, record parameter required for nlopt
+// param: NumericVector, array of parameter estimates to run the model with
+// param: grad double*, gradient value (unused but required as positional)
+// param: x NumericVector, The data to load fit to
 double objective_model_all(
     unsigned n, const double* params, double* grad, void* f_data
     )
@@ -145,14 +144,15 @@ double objective_model_all(
     );
 }
 
-//' Optimize function for scout and recruit superposition
+//' Optimise function for scout and recruit superposition
 //'
-//' @inheritParams objective_model_all
+//' @param x NumericVector Foraging distance
+//' @param params NumericVector parameter estimates to run the model with
 //' @param lb NumericVector, array of lower bounds for each paramater
 //' @param ub NumericVector, array of upper bounds for each parameter
 //' @export
 // [[Rcpp::export]]
-NumericVector optimize_all(
+NumericVector optimise_all(
     NumericVector x, NumericVector params, NumericVector lb, NumericVector ub
 )
 {
