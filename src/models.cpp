@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <Rcpp.h>
+#include <nloptrAPI.h>
 using namespace Rcpp;
 
 //' Model function for scouts
@@ -113,4 +114,65 @@ double loglike_model_recruit(NumericVector x,
         ll += log(recruit_dist(x[i], m, 0.0, ln, qn, a));
     }
     return ll;
+}
+
+/*
+------------------------------- optimizing functions ---------------------------
+*/
+
+typedef struct {
+    NumericVector x;
+} data_struct;
+
+//' Optimize function for scout and recruit superposition
+//'
+//' @param n unsigned, record parameter required for nlopt
+//' @param NumericVector, array or parameter estimates to run the model with
+//' @param grad double*, gradient value (unused but required as positional)
+//' @param x NumericVector, The data to load fit to
+double objective_model_all(
+    unsigned n, const double* params, double* grad, void* f_data
+    )
+{
+    data_struct data = *(data_struct *) (f_data);
+    return loglike_model_all(
+        data.x,
+        params[0],
+        params[1],
+        params[2],
+        params[3],
+        params[4]
+    );
+}
+
+//' Optimize function for scout and recruit superposition
+//'
+//' @inheritParams objective_model_all
+//' @param lb NumericVector, array of lower bounds for each paramater
+//' @param ub NumericVector, array of upper bounds for each parameter
+//' @export
+// [[Rcpp::export]]
+NumericVector optimize_all(
+    NumericVector x, NumericVector params, NumericVector lb, NumericVector ub
+)
+{
+    double maxf = 0;
+    nlopt_opt opt;
+    NumericVector results(params.size() + 1);
+    data_struct ds;
+    ds.x = x;
+
+    opt = nlopt_create(NLOPT_LD_SLSQP, 5);
+    nlopt_set_max_objective(opt, objective_model_all, &ds);
+    nlopt_set_lower_bounds(opt, &lb[0]);
+    nlopt_set_upper_bounds(opt, &ub[0]);
+    if (nlopt_optimize(opt, &params[0], &maxf)) {
+        Rcout << "nlopt fail" << std::endl;
+    }
+
+    results[1] = maxf;
+    for (int i = 1; i < results.size()-1; i++) {
+        results[i] = params[i];
+    }
+    return results;
 }

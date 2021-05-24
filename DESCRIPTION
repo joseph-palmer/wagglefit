@@ -2,7 +2,7 @@ Type: Package
 Package: wagglefit
 Title: What the Package Does (Title Case)
 Version: 0.1.0
-Authors@R: 
+Authors@R:
     person(given = "Joe",
            family = "Palmer",
            role = c("aut", "cre"),
@@ -11,11 +11,13 @@ Description: Gets hive metrics from waggle dance distributions. This model
     will fit to distributios of waggle dance duurations of honeybees.
 License: MIT + file LICENSE
 Imports:
+    nloptr (>= 1.2.2),
     pracma (>= 2.3.3),
     Rcpp
-Suggests: 
+Suggests:
     testthat (>= 3.0.0)
-LinkingTo: 
+LinkingTo:
+    nloptr (>= 1.2.2),
     Rcpp
 Config/testthat/edition: 3
 Encoding: UTF-8
