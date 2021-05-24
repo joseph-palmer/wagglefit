@@ -12,5 +12,5 @@
 calc_dist <- function(duration) {
   intercept <- 0.17
   slope <- 1.38
-  return(intercept+(slope*duration))
+  return(intercept + (slope * duration))
 }
