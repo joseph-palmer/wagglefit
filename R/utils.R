@@ -76,13 +76,13 @@ generate_starting_estimates <- function(bounds) {
 #' }
 #'
 fit <- function(distance, upper = 5) {
-  bounds <- generate_bounds()
+  bounds <- generate_bounds(upper)
   startest <- generate_starting_estimates(bounds)
   result <- optimise_all(
     distance,
     startest,
-    bounds$lower,
-    bounds$lower
+    bounds[, 1],
+    bounds[, 2]
   )
   return_list <- list(
     "fmax" = result[[1]],
