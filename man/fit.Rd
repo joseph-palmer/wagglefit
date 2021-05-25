@@ -4,11 +4,13 @@
 \alias{fit}
 \title{fit model to data}
 \usage{
-fit(distance)
+fit(distance, upper = 5)
 }
 \arguments{
 \item{distance}{doubleArray The distance decoded from the waggle dance in
 meters.}
+
+\item{upper}{double The upper parameter bound. Defaults to 5.}
 }
 \value{
 Not sure yet

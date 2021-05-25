@@ -81,6 +81,7 @@ paramsSEXP
 pkgdown
 pracma
 pSEXP
+purrr
 qn
 qnSEXP
 rcmdcheck

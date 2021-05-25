@@ -7,7 +7,7 @@
 generate_starting_estimates(bounds)
 }
 \arguments{
-\item{bounds}{named list of upper and lower bounds for each parameter}
+\item{bounds}{matrix of lower ([,1]) and upper ([,2]) bounds}
 }
 \value{
 starting_estimates doubleArray of starting parameter estimates

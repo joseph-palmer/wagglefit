@@ -4,10 +4,13 @@
 \alias{generate_bounds}
 \title{Generates bounds for all parameters}
 \usage{
-generate_bounds()
+generate_bounds(upper)
+}
+\arguments{
+\item{upper}{double The upper bound for the params}
 }
 \value{
-bounds named list of upper and lower bounds
+bounds matrix of lower ([,1]) and upper ([,2]) bounds
 }
 \description{
 Generates upper and lower bounds for all parameters

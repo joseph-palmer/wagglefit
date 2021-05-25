@@ -13,6 +13,7 @@ License: MIT + file LICENSE
 Imports:
     nloptr (>= 1.2.2),
     pracma (>= 2.3.3),
+    purrr,
     Rcpp
 Suggests:
     testthat (>= 3.0.0)

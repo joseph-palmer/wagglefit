@@ -17,18 +17,25 @@ calc_dist <- function(duration) {
 
 #' Generates bounds for all parameters
 #' @description Generates upper and lower bounds for all parameters
-#' @return bounds named list of upper and lower bounds
+#' @param upper double The upper bound for the params
+#' @return bounds matrix of lower ([,1]) and upper ([,2]) bounds
 #' @export
 #' @examples
 #' \dontrun{
 #' generate_bounds()
 #' }
 #'
-generate_bounds <- function() {
-  # ...
-  bounds <- list(
-    "lb" = c(),
-    "ub" = c()
+generate_bounds <- function(upper) {
+  upper <- as.double(upper)
+  p_bnds <- c(0, 1.0)
+  ls_bnds <- c(1.0e-6, upper)
+  ln_bnds <- c(0, upper)
+  q_bnds <- c(1, upper)
+  a_bnds <- c(0, upper)
+  bounds <- rbind(
+    p_bnds, ls_bnds,
+    ln_bnds, q_bnds,
+    a_bnds
   )
   return(bounds)
 }
@@ -36,7 +43,8 @@ generate_bounds <- function() {
 #' Generates starting estimates for all numerical optimisation of all parameters
 #' @description Generates starting estimates for all parameters by taking a
 #' random value between it's upper and lower bound.
-#' @param bounds named list of upper and lower bounds for each parameter
+#' @param bounds matrix of lower ([,1]) and upper ([,2]) bounds
+#' @importFrom purrr map2_dbl
 #' @return starting_estimates doubleArray of starting parameter estimates
 #' @export
 #' @examples
@@ -45,13 +53,21 @@ generate_bounds <- function() {
 #' }
 #'
 generate_starting_estimates <- function(bounds) {
-  return(0)
+  startest <- map2_dbl(
+    as.vector(bounds[, 1]),
+    as.vector(bounds[, 2]),
+    ~ {
+      runif(n = 1, min = .x, max = .y)
+    }
+  )
+  return(startest)
 }
 
 #' fit model to data
 #' @description Fits specified model to the data given using MLE.
 #' @param distance doubleArray The distance decoded from the waggle dance in
 #' meters.
+#' @param upper double The upper parameter bound. Defaults to 5.
 #' @return Not sure yet
 #' @export
 #' @examples
@@ -59,7 +75,7 @@ generate_starting_estimates <- function(bounds) {
 #' fit(distance)
 #' }
 #'
-fit <- function(distance) {
+fit <- function(distance, upper = 5) {
   bounds <- generate_bounds()
   startest <- generate_starting_estimates(bounds)
   result <- optimise_all(
