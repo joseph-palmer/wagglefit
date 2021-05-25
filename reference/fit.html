@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • wagglefit</title>
+<title>fit model to data — fit • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,8 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="fit model to data — fit" />
+<meta property="og:description" content="Fits specified model to the data given using MLE." />
 
 
 
@@ -58,7 +59,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -100,102 +101,44 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>fit model to data</h1>
+    
+    <div class="hidden name"><code>fit.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>Fits specified model to the data given using MLE.</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='fu'>fit</span><span class='op'>(</span><span class='va'>distance</span>, upper <span class='op'>=</span> <span class='fl'>5</span><span class='op'>)</span></pre>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="alter_in_place.html">alter_in_place()</a></code> </p>
-        </td>
-        <td><p>Alter a NumericVector inplace</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="calc_dist.html">calc_dist()</a></code> </p>
-        </td>
-        <td><p>Calculate distance from waggle run duration</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="fit.html">fit()</a></code> </p>
-        </td>
-        <td><p>fit model to data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_bounds.html">generate_bounds()</a></code> </p>
-        </td>
-        <td><p>Generates bounds for all parameters</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_starting_estimates.html">generate_starting_estimates()</a></code> </p>
-        </td>
-        <td><p>Generates starting estimates for all numerical optimisation of all parameters</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_all.html">loglike_model_all()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for scout and recruit superposition</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_recruit.html">loglike_model_recruit()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for recruits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_scout.html">loglike_model_scout()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for scouts</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="optimise_all.html">optimise_all()</a></code> </p>
-        </td>
-        <td><p>Optimise function for scout and recruit superposition</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="recruit_dist.html">recruit_dist()</a></code> </p>
-        </td>
-        <td><p>Model function for recruits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="scout_dist.html">scout_dist()</a></code> </p>
-        </td>
-        <td><p>Model function for scouts</p></td>
-      </tr>
-    </tbody>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>distance</th>
+      <td><p>doubleArray The distance decoded from the waggle dance in
+meters.</p></td>
+    </tr>
+    <tr>
+      <th>upper</th>
+      <td><p>double The upper parameter bound. Defaults to 5.</p></td>
+    </tr>
     </table>
-  </div>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>Not sure yet</p>
+
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='fu'>fit</span><span class='op'>(</span><span class='va'>distance</span><span class='op'>)</span>
+<span class='op'>}</span>
+
+</div></pre>
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
