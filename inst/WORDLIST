@@ -4,6 +4,7 @@ aSEXP
 aut
 az
 BEL
+bestres
 BFI
 BLO
 CallEntries
@@ -11,6 +12,7 @@ CallMethodDef
 cmath
 cmd
 CMD
+COBYLA
 codecov
 commandArgs
 compileAttributes
@@ -19,6 +21,7 @@ const
 covr
 cran
 cre
+CRS
 deps
 dev
 dir
@@ -38,11 +41,13 @@ erfc
 et
 eval
 EW
+fcount
 ForagingDistance
 FUNC
 gb
 getRversion
 github
+GN
 hashFiles
 HH
 HOR
@@ -158,5 +163,6 @@ WH
 writeLines
 ws
 xSEXP
+xtol
 YAL
 ZSL

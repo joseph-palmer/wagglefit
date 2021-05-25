@@ -43,6 +43,7 @@ generate_bounds <- function(upper) {
 #' Generates starting estimates for all numerical optimisation of all parameters
 #' @description Generates starting estimates for all parameters by taking a
 #' random value between it's upper and lower bound.
+#' @param distance doubleArray foraging distance to fit.
 #' @param bounds matrix of lower ([,1]) and upper ([,2]) bounds
 #' @importFrom purrr map2_dbl
 #' @return starting_estimates doubleArray of starting parameter estimates
@@ -52,14 +53,27 @@ generate_bounds <- function(upper) {
 #' generate_starting_estimates(generate_bounds())
 #' }
 #'
-generate_starting_estimates <- function(bounds) {
-  startest <- map2_dbl(
-    as.vector(bounds[, 1]),
-    as.vector(bounds[, 2]),
-    ~ {
-      runif(n = 1, min = .x, max = .y)
-    }
-  )
+generate_starting_estimates <- function(distance, bounds) {
+  res <- Inf
+  while (is.infinite(res)) {
+    startest <- map2_dbl(
+      as.vector(bounds[, 1]),
+      as.vector(bounds[, 2]),
+      ~ {
+        runif(n = 1, min = .x, max = .y)
+      }
+    )
+    res <- loglike_model_all(
+      distance,
+      startest[1],
+      startest[2],
+      startest[3],
+      startest[4],
+      startest[5]
+    )
+  }
+  print(paste("starting: ", startest))
+  print(paste("res = ", res))
   return(startest)
 }
 
@@ -77,7 +91,7 @@ generate_starting_estimates <- function(bounds) {
 #'
 fit <- function(distance, upper = 5) {
   bounds <- generate_bounds(upper)
-  startest <- generate_starting_estimates(bounds)
+  startest <- generate_starting_estimates(distance, bounds)
   result <- optimise_all(
     distance,
     startest,

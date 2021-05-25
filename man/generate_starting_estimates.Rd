@@ -4,9 +4,11 @@
 \alias{generate_starting_estimates}
 \title{Generates starting estimates for all numerical optimisation of all parameters}
 \usage{
-generate_starting_estimates(bounds)
+generate_starting_estimates(distance, bounds)
 }
 \arguments{
+\item{distance}{doubleArray foraging distance to fit.}
+
 \item{bounds}{matrix of lower ([,1]) and upper ([,2]) bounds}
 }
 \value{

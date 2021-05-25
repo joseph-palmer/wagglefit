@@ -120,6 +120,9 @@ double loglike_model_recruit(NumericVector x,
 ------------------------------- optimizing functions ---------------------------
 */
 
+static int fcount = 0;
+static double bestres = -99999999;
+
 typedef struct {
     NumericVector x;
 } data_struct;
@@ -133,8 +136,9 @@ double objective_model_all(
     unsigned n, const double* params, double* grad, void* f_data
     )
 {
+    fcount++;
     data_struct data = *(data_struct *) (f_data);
-    return loglike_model_all(
+    double result = loglike_model_all(
         data.x,
         params[0],
         params[1],
@@ -142,6 +146,11 @@ double objective_model_all(
         params[3],
         params[4]
     );
+    if (result > bestres) {bestres = result;}
+    Rcout << "count: " << fcount << ", result: " << result <<  " Best res: " << bestres<< std::endl;
+    Rcout << "p " << params[0] << ", ls " << params[1] << ", ln " << params[2] << ", qn " << params[3] << ", a " << params[4] << std::endl;
+    Rcout << "-----" << std::endl;
+    return result;
 }
 
 //' Optimise function for scout and recruit superposition
@@ -156,20 +165,24 @@ NumericVector optimise_all(
     NumericVector x, NumericVector params, NumericVector lb, NumericVector ub
 )
 {
+    fcount = 0;
+    bestres = -99999999;
     double maxf = 0;
     nlopt_opt opt;
     NumericVector results(params.size() + 1);
     data_struct ds;
     ds.x = x;
 
-    opt = nlopt_create(NLOPT_LD_SLSQP, 5);
+    opt = nlopt_create(NLOPT_LN_COBYLA, 5); //NLOPT_GN_CRS2_LM
     nlopt_set_max_objective(opt, objective_model_all, &ds);
-    nlopt_set_lower_bounds(opt, &lb[0]);
-    nlopt_set_upper_bounds(opt, &ub[0]);
-    if (nlopt_optimize(opt, &params[0], &maxf)) {
+    nlopt_set_lower_bounds(opt, lb.begin());
+    nlopt_set_upper_bounds(opt, ub.begin());
+    nlopt_set_xtol_rel(opt, 1e-06);
+    if (nlopt_optimize(opt, params.begin(), &maxf) < 0) {
         Rcout << "nlopt fail" << std::endl;
     }
 
+    nlopt_destroy(opt);
     results[1] = maxf;
     for (int i = 1; i < results.size()-1; i++) {
         results[i] = params[i];
