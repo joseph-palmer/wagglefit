@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Function reference • wagglefit</title>
+<title>Runs the model fitting on data multiple times — run_mutliple • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,10 @@
 
 
 
-<meta property="og:title" content="Function reference" />
+<meta property="og:title" content="Runs the model fitting on data multiple times — run_mutliple" />
+<meta property="og:description" content="Run the full model on data multiple times (n) and returns the
+model with the largest likelihood. This allows for a more comprehensive
+search of the model sample space." />
 
 
 
@@ -58,7 +61,7 @@
   </head>
 
   <body data-spy="scroll" data-target="#toc">
-    <div class="container template-reference-index">
+    <div class="container template-reference-topic">
       <header>
       <div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -100,127 +103,60 @@
       </header>
 
 <div class="row">
-  <div class="contents col-md-9">
+  <div class="col-md-9 contents">
     <div class="page-header">
-      <h1>Reference</h1>
+    <h1>Runs the model fitting on data multiple times</h1>
+    
+    <div class="hidden name"><code>run_mutliple.Rd</code></div>
     </div>
 
-    <table class="ref-index">
+    <div class="ref-description">
+    <p>Run the full model on data multiple times (n) and returns the
+model with the largest likelihood. This allows for a more comprehensive
+search of the model sample space.</p>
+    </div>
 
-    <colgroup>
-      
-      <col class="alias" />
-      <col class="title" />
-    </colgroup>
+    <pre class="usage"><span class='fu'>run_mutliple</span><span class='op'>(</span>
+  <span class='va'>distance</span>,
+  n <span class='op'>=</span> <span class='fl'>5</span>,
+  upper <span class='op'>=</span> <span class='fl'>5</span>,
+  verbose_r <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  verbose_cpp <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  xtol <span class='op'>=</span> <span class='fl'>0</span>
+<span class='op'>)</span></pre>
 
-    <tbody>
-      <tr>
-        <th colspan="2">
-          <h2 id="section-all-functions" class="hasAnchor"><a href="#section-all-functions" class="anchor"></a>All functions</h2>
-          <p class="section-desc"></p>
-        </th>
-      </tr>
-      
-      
-    </tbody><tbody>
-      
-      
-      <tr>
-        
-        <td>
-          <p><code><a href="alter_in_place.html">alter_in_place()</a></code> </p>
-        </td>
-        <td><p>Alter a NumericVector inplace</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="calc_dist.html">calc_dist()</a></code> </p>
-        </td>
-        <td><p>Caluclates distance from waggle dance</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="fit_all.html">fit_all()</a></code> </p>
-        </td>
-        <td><p>fit the scout and recruit superposition model to data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_bounds_all.html">generate_bounds_all()</a></code> </p>
-        </td>
-        <td><p>Generates bounds for all parameters of the scout recruit superposition model</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="generate_starting_ests_all.html">generate_starting_ests_all()</a></code> </p>
-        </td>
-        <td><p>Generates starting estimates for all numerical optimisation of all parameters
-of the scout recruit superposition model</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_all.html">loglike_model_all()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for scout and recruit superposition</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_recruit.html">loglike_model_recruit()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for recruits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="loglike_model_scout.html">loglike_model_scout()</a></code> </p>
-        </td>
-        <td><p>Log-likelihood function for scouts</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="message_verbose.html">message_verbose()</a></code> </p>
-        </td>
-        <td><p>Wrapper for message</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="optimise_all.html">optimise_all()</a></code> </p>
-        </td>
-        <td><p>Optimise function for scout and recruit superposition</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="recruit_dist.html">recruit_dist()</a></code> </p>
-        </td>
-        <td><p>Model function for recruits</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="run.html">run()</a></code> </p>
-        </td>
-        <td><p>Run the full model on data</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="run_mutliple.html">run_mutliple()</a></code> </p>
-        </td>
-        <td><p>Runs the model fitting on data multiple times</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="scout_dist.html">scout_dist()</a></code> </p>
-        </td>
-        <td><p>Model function for scouts</p></td>
-      </tr><tr>
-        
-        <td>
-          <p><code><a href="trunc_normal.html">trunc_normal()</a></code> </p>
-        </td>
-        <td><p>Draws samples from a normal distribtion trucated between upr and lwr bounds.</p></td>
-      </tr>
-    </tbody>
+    <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
+    <table class="ref-arguments">
+    <colgroup><col class="name" /><col class="desc" /></colgroup>
+    <tr>
+      <th>distance</th>
+      <td><p>doubleArray The distance decoded from the waggle dance.</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>integer The number of models to run</p></td>
+    </tr>
+    <tr>
+      <th>upper</th>
+      <td><p>double The upper parameter bound. Defaults to 5.</p></td>
+    </tr>
+    <tr>
+      <th>verbose_r</th>
+      <td><p>Bool, to display R function evaluations, defaults to FALSE</p></td>
+    </tr>
+    <tr>
+      <th>verbose_cpp</th>
+      <td><p>Bool, to display C function evaluations, defaults to FALSE</p></td>
+    </tr>
+    <tr>
+      <th>xtol</th>
+      <td><p>double, The absolute tolerance on function value. If 0 (default)
+then default to nlopt default value.</p></td>
+    </tr>
     </table>
-  </div>
 
+
+  </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">
       <h2 data-toc-skip>Contents</h2>
