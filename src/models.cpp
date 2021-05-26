@@ -4,6 +4,15 @@
 #include <nloptrAPI.h>
 using namespace Rcpp;
 
+// Check if user has requested abort every 1000 iterations
+//
+// @param fcount double The current number of iterations of the objective fun
+void check_user_input(int fcount) {
+    if (fcount % 1000 == 0) {
+        checkUserInterrupt();
+    }
+}
+
 //' Model function for scouts
 //'
 //' @param x double Foraging distance
@@ -120,14 +129,21 @@ double loglike_model_recruit(NumericVector x,
 ------------------------------- optimizing functions ---------------------------
 */
 
-static int fcount = 0;
-static double bestres = -99999999;
-
+// struct to hold additional data for optimisation
+//
+// x: The distance data to fit to
+// verbose: To display messages to console
+// fcount: number of times the objective function has been called
+// best_est: the best estimate up to that point
 typedef struct {
     NumericVector x;
+    bool verbose;
+    int fcount;
+    double best_est;
 } data_struct;
 
 // Optimize function for scout and recruit superposition
+//
 // param: n unsigned, record parameter required for nlopt
 // param: NumericVector, array of parameter estimates to run the model with
 // param: grad double*, gradient value (unused but required as positional)
@@ -136,20 +152,41 @@ double objective_model_all(
     unsigned n, const double* params, double* grad, void* f_data
     )
 {
-    fcount++;
-    data_struct data = *(data_struct *) (f_data);
+    data_struct* data = (data_struct*) (f_data);
+    check_user_input(data->fcount);
+    data->fcount++;
     double result = loglike_model_all(
-        data.x,
+        data->x,
         params[0],
         params[1],
         params[2],
         params[3],
         params[4]
     );
-    if (result > bestres) {bestres = result;}
-    Rcout << "count: " << fcount << ", result: " << result <<  " Best res: " << bestres<< std::endl;
-    Rcout << "p " << params[0] << ", ls " << params[1] << ", ln " << params[2] << ", qn " << params[3] << ", a " << params[4] << std::endl;
-    Rcout << "-----" << std::endl;
+    if (result > data->best_est) {
+        data->best_est = result;
+    }
+    if (data->verbose) {
+        Rcout << "Iteration: "
+            << data->fcount
+            << ", Result: "
+            << result
+            << ", Best estimate: "
+            << data->best_est
+            << std::endl;
+        Rcout << "p = "
+            << params[0]
+            << ", ls = "
+            << params[1]
+            << ", ln = "
+            << params[2]
+            << ", qn = "
+            << params[3]
+            << ", a = "
+            << params[4]
+            << std::endl;
+        Rcout << "-----" << std::endl;
+    }
     return result;
 }
 
@@ -159,33 +196,46 @@ double objective_model_all(
 //' @param params NumericVector parameter estimates to run the model with
 //' @param lb NumericVector, array of lower bounds for each paramater
 //' @param ub NumericVector, array of upper bounds for each parameter
+//' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
+//' @param xtol double, The absolute tolerance on function value. If 0 (default)
+//' then default to nlopt default value.
 //' @export
 // [[Rcpp::export]]
 NumericVector optimise_all(
-    NumericVector x, NumericVector params, NumericVector lb, NumericVector ub
+    NumericVector x, NumericVector params, NumericVector lb, NumericVector ub,
+    bool verbose = false, double xtol = 0
 )
 {
-    fcount = 0;
-    bestres = -99999999;
-    double maxf = 0;
     nlopt_opt opt;
     NumericVector results(params.size() + 1);
+    double opt_f;
     data_struct ds;
     ds.x = x;
+    ds.fcount = 0;
+    ds.best_est = -9999999;
+    ds.verbose = verbose;
 
     opt = nlopt_create(NLOPT_LN_COBYLA, 5); //NLOPT_GN_CRS2_LM
     nlopt_set_max_objective(opt, objective_model_all, &ds);
     nlopt_set_lower_bounds(opt, lb.begin());
     nlopt_set_upper_bounds(opt, ub.begin());
-    nlopt_set_xtol_rel(opt, 1e-06);
-    if (nlopt_optimize(opt, params.begin(), &maxf) < 0) {
-        Rcout << "nlopt fail" << std::endl;
+
+    if (xtol != 0) {
+        nlopt_set_xtol_rel(opt, xtol);
     }
 
-    nlopt_destroy(opt);
-    results[1] = maxf;
-    for (int i = 1; i < results.size()-1; i++) {
-        results[i] = params[i];
+    nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &opt_f);
+    if (optimise_result < 0) {
+        Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
+        if (optimise_result == -4) {
+            Rcout << "Fail is due to round off errors"
+                "- result may still be usefull" << std::endl;
+        }
     }
+    results[0] = opt_f;
+    for (int i = 0; i < results.size()-1; i++) {
+        results[i + 1] = params[i];
+    }
+    nlopt_destroy(opt);
     return results;
 }

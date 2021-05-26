@@ -62,5 +62,9 @@ model_tests <- function() {
 }
 
 
+# test optimise_all function
+
+# test optimise_scout function
+
 # run tests
 model_tests()

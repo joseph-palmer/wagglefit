@@ -7,8 +7,12 @@ BEL
 bestres
 BFI
 BLO
+bool
+Bool
 CallEntries
 CallMethodDef
+Caluclates
+checkUserInterrupt
 cmath
 cmd
 CMD
@@ -25,6 +29,7 @@ CRS
 deps
 dev
 dir
+distribtion
 distributios
 DL
 dll
@@ -55,6 +60,7 @@ https
 inheritParams
 init
 inplace
+integerArray
 iostream
 JH
 joe
@@ -62,6 +68,7 @@ LazyData
 lbSEXP
 LD
 LIBS
+limmit
 LinkingTo
 linter
 linters
@@ -74,6 +81,7 @@ lnSEXP
 loglike
 lon
 lsSEXP
+lwr
 macOS
 MAK
 maxf
@@ -150,12 +158,16 @@ sudo
 SWP
 testthat
 timesTwo
+trucated
 typedef
 ub
 ubSEXP
 ubuntu
 uk
+upr
 useDynamicSymbols
+usefull
+verboseSEXP
 vid
 VZ
 wagglefit
@@ -164,5 +176,6 @@ writeLines
 ws
 xSEXP
 xtol
+xtolSEXP
 YAL
 ZSL

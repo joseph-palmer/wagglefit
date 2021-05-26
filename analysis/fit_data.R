@@ -26,17 +26,14 @@ get_data <- function() {
   return(data)
 }
 
-#' Run the full model on some data
-#' @description Runs the model fitting on given data
-#' @param duration double The duration of the waggle run in seconds.
-#' @export
-#'
-run <- function(data) {
+#' Run my analysis
+run_analysis <- function(n = 5, xtol = 0) {
   data <- get_data()
-  head(data)
-  results <- fit(data$foraging_distance, upper = 5)
-  return(results)
+  best_result <- run_mutliple(
+    data$foraging_distance,
+    n = n,
+    verbose_r = TRUE,
+    xtol = xtol
+  )
+  return(best_result)
 }
-
-### run process
-run()

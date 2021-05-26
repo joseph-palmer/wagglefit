@@ -4,7 +4,7 @@
 \alias{optimise_all}
 \title{Optimise function for scout and recruit superposition}
 \usage{
-optimise_all(x, params, lb, ub)
+optimise_all(x, params, lb, ub, verbose = FALSE, xtol = 0)
 }
 \arguments{
 \item{x}{NumericVector Foraging distance}
@@ -14,6 +14,11 @@ optimise_all(x, params, lb, ub)
 \item{lb}{NumericVector, array of lower bounds for each paramater}
 
 \item{ub}{NumericVector, array of upper bounds for each parameter}
+
+\item{verbose}{Bool, to display optimisation as it runs, defaults to FALSE}
+
+\item{xtol}{double, The absolute tolerance on function value. If 0 (default)
+then default to nlopt default value.}
 }
 \description{
 Optimise function for scout and recruit superposition

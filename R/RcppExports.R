@@ -63,7 +63,10 @@ loglike_model_recruit <- function(x, ln, qn, a) {
 #' @param params NumericVector parameter estimates to run the model with
 #' @param lb NumericVector, array of lower bounds for each paramater
 #' @param ub NumericVector, array of upper bounds for each parameter
+#' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
+#' @param xtol double, The absolute tolerance on function value. If 0 (default)
+#' then default to nlopt default value.
 #' @export
-optimise_all <- function(x, params, lb, ub) {
-  .Call("_wagglefit_optimise_all", PACKAGE = "wagglefit", x, params, lb, ub)
+optimise_all <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
+  .Call("_wagglefit_optimise_all", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
 }

@@ -7,3 +7,12 @@ test_that("cacl_dist gives correct answer with data frame to 3dp", {
   distance <- calc_dist(duration)
   expect_identical(round(truth, 3), round(distance, 3))
 })
+
+# test message verbose
+# trunc normal
+# generate_bounds
+# test generate_starting_estimates
+# test fit (use mock data, i.e. something that will optimise V. fast, e.g.
+# known best parameters)
+# test run (use mocks as above)
+# test run_multiple
