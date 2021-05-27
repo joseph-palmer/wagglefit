@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Caluclates distance from waggle dance — calc_dist • wagglefit</title>
+<title>Generates starting estimates for all numerical optimisation of all parameters
+of the scout model — generate_starting_ests_scout • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,9 +40,12 @@
 
 
 
-<meta property="og:title" content="Caluclates distance from waggle dance — calc_dist" />
-<meta property="og:description" content="Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)" />
+<meta property="og:title" content="Generates starting estimates for all numerical optimisation of all parameters
+of the scout model — generate_starting_ests_scout" />
+<meta property="og:description" content="Generates starting estimates for all parameters by taking a
+random value sampled from a normal distribution truncated at the upper and
+lower bounds. Mean is given as the mid point between the upper and lower
+bounds and the sd is set as 1.0" />
 
 
 
@@ -107,37 +111,45 @@ relationship. Taken from Schürch et al (2019)" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Caluclates distance from waggle dance</h1>
+    <h1>Generates starting estimates for all numerical optimisation of all parameters
+of the scout model</h1>
     
-    <div class="hidden name"><code>calc_dist.Rd</code></div>
+    <div class="hidden name"><code>generate_starting_ests_scout.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)</p>
+    <p>Generates starting estimates for all parameters by taking a
+random value sampled from a normal distribution truncated at the upper and
+lower bounds. Mean is given as the mid point between the upper and lower
+bounds and the sd is set as 1.0</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_dist</span><span class='op'>(</span><span class='va'>duration</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>generate_starting_ests_scout</span><span class='op'>(</span><span class='va'>distance</span>, <span class='va'>bounds</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>duration</th>
-      <td><p>double The duration of the waggle run in seconds.</p></td>
+      <th>distance</th>
+      <td><p>doubleArray foraging distance to fit.</p></td>
+    </tr>
+    <tr>
+      <th>bounds</th>
+      <td><p>matrix of lower ([,1]) and upper ([,2]) bounds</p></td>
+    </tr>
+    <tr>
+      <th>verbose</th>
+      <td><p>Bool, to display function evaluations, defaults to FALSE</p></td>
     </tr>
     </table>
 
     <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>The distance indicated by the dance</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Calculate distance from waggle run duration</p>
+    <p>starting_estimates doubleArray of starting parameter estimates</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'>calc_dist</span><span class='op'>(</span><span class='fl'>1.8</span><span class='op'>)</span>
+<span class='fu'>generate_starting_estimates_all</span><span class='op'>(</span><span class='va'>distance</span>, <span class='fu'>generate_bounds</span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span>
 <span class='op'>}</span>
 
 </div></pre>

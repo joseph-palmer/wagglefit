@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Draws samples from a normal distribtion trucated between upr and lwr bounds. — trunc_normal • wagglefit</title>
+<title>Draws sample from a normal distribtion trucated between upr and lwr bounds. — trunc_normal • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,7 +39,7 @@
 
 
 
-<meta property="og:title" content="Draws samples from a normal distribtion trucated between upr and lwr bounds. — trunc_normal" />
+<meta property="og:title" content="Draws sample from a normal distribtion trucated between upr and lwr bounds. — trunc_normal" />
 <meta property="og:description" content="Samples from a normal distribution and then checks it falls
 within given bounds." />
 
@@ -73,7 +73,7 @@ within given bounds." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">wagglefit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
       </span>
     </div>
 
@@ -87,6 +87,9 @@ within given bounds." />
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -104,7 +107,7 @@ within given bounds." />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Draws samples from a normal distribtion trucated between upr and lwr bounds.</h1>
+    <h1>Draws sample from a normal distribtion trucated between upr and lwr bounds.</h1>
     
     <div class="hidden name"><code>trunc_normal.Rd</code></div>
     </div>
@@ -114,15 +117,11 @@ within given bounds." />
 within given bounds.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>trunc_normal</span><span class='op'>(</span><span class='va'>n</span>, <span class='va'>mean</span>, <span class='va'>sd</span>, <span class='va'>lwr</span>, <span class='va'>upr</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>trunc_normal</span><span class='op'>(</span><span class='va'>mean</span>, <span class='va'>sd</span>, <span class='va'>lwr</span>, <span class='va'>upr</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
-    <tr>
-      <th>n</th>
-      <td><p>integer Number of samples to draw</p></td>
-    </tr>
     <tr>
       <th>mean</th>
       <td><p>double Mean for the normal distribution to sample</p></td>
@@ -147,7 +146,7 @@ within given bounds.</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'>trunc_normal</span><span class='op'>(</span><span class='fl'>1</span>, <span class='fl'>0</span>, <span class='fl'>0.5</span>, <span class='op'>-</span><span class='fl'>1</span>, <span class='fl'>1</span><span class='op'>)</span>
+<span class='fu'>trunc_normal</span><span class='op'>(</span><span class='fl'>0</span>, <span class='fl'>0.5</span>, <span class='op'>-</span><span class='fl'>1</span>, <span class='fl'>1</span><span class='op'>)</span>
 <span class='op'>}</span>
 
 </div></pre>

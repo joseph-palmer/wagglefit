@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Caluclates distance from waggle dance — calc_dist • wagglefit</title>
+<title>Runs the model fitting (fit) on data multiple times and returns the
+paramaters with the highest loglikelihood — fit_mutliple • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,9 +40,11 @@
 
 
 
-<meta property="og:title" content="Caluclates distance from waggle dance — calc_dist" />
-<meta property="og:description" content="Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)" />
+<meta property="og:title" content="Runs the model fitting (fit) on data multiple times and returns the
+paramaters with the highest loglikelihood — fit_mutliple" />
+<meta property="og:description" content="Run the model on data multiple times (n) and returns the
+model with the largest likelihood. This allows for a more comprehensive
+search of the model sample space." />
 
 
 
@@ -107,40 +110,63 @@ relationship. Taken from Schürch et al (2019)" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Caluclates distance from waggle dance</h1>
+    <h1>Runs the model fitting (fit) on data multiple times and returns the
+paramaters with the highest loglikelihood</h1>
     
-    <div class="hidden name"><code>calc_dist.Rd</code></div>
+    <div class="hidden name"><code>fit_mutliple.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)</p>
+    <p>Run the model on data multiple times (n) and returns the
+model with the largest likelihood. This allows for a more comprehensive
+search of the model sample space.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_dist</span><span class='op'>(</span><span class='va'>duration</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>fit_mutliple</span><span class='op'>(</span>
+  <span class='va'>distance</span>,
+  model <span class='op'>=</span> <span class='st'>"all"</span>,
+  n <span class='op'>=</span> <span class='fl'>5</span>,
+  upper <span class='op'>=</span> <span class='fl'>5</span>,
+  verbose_r <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  verbose_cpp <span class='op'>=</span> <span class='cn'>FALSE</span>,
+  xtol <span class='op'>=</span> <span class='fl'>0</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>duration</th>
-      <td><p>double The duration of the waggle run in seconds.</p></td>
+      <th>distance</th>
+      <td><p>doubleArray The distance decoded from the waggle dance.</p></td>
+    </tr>
+    <tr>
+      <th>model</th>
+      <td><p>characterArray The model to run (scout or all)</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>integer The number of models to run</p></td>
+    </tr>
+    <tr>
+      <th>upper</th>
+      <td><p>double The upper parameter bound. Defaults to 5.</p></td>
+    </tr>
+    <tr>
+      <th>verbose_r</th>
+      <td><p>Bool, to display R function evaluations, defaults to FALSE</p></td>
+    </tr>
+    <tr>
+      <th>verbose_cpp</th>
+      <td><p>Bool, to display C function evaluations, defaults to FALSE</p></td>
+    </tr>
+    <tr>
+      <th>xtol</th>
+      <td><p>double, The absolute tolerance on function value. If 0 (default)
+then default to nlopt default value.</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
-    <p>The distance indicated by the dance</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Calculate distance from waggle run duration</p>
-
-    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
-    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'>calc_dist</span><span class='op'>(</span><span class='fl'>1.8</span><span class='op'>)</span>
-<span class='op'>}</span>
-
-</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

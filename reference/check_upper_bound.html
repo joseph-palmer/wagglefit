@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Caluclates distance from waggle dance — calc_dist • wagglefit</title>
+<title>Check the upper value to be used meets criteria — check_upper_bound • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,9 +39,8 @@
 
 
 
-<meta property="og:title" content="Caluclates distance from waggle dance — calc_dist" />
-<meta property="og:description" content="Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)" />
+<meta property="og:title" content="Check the upper value to be used meets criteria — check_upper_bound" />
+<meta property="og:description" content="Generates upper and lower bounds for all parameters" />
 
 
 
@@ -107,37 +106,30 @@ relationship. Taken from Schürch et al (2019)" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Caluclates distance from waggle dance</h1>
+    <h1>Check the upper value to be used meets criteria</h1>
     
-    <div class="hidden name"><code>calc_dist.Rd</code></div>
+    <div class="hidden name"><code>check_upper_bound.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Calculates distance in Km from dance duration, using a linear
-relationship. Taken from Schürch et al (2019)</p>
+    <p>Generates upper and lower bounds for all parameters</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_dist</span><span class='op'>(</span><span class='va'>duration</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>check_upper_bound</span><span class='op'>(</span><span class='va'>upper</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>duration</th>
-      <td><p>double The duration of the waggle run in seconds.</p></td>
+      <th>upper</th>
+      <td><p>double The upper bound for the params</p></td>
     </tr>
     </table>
 
-    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
-
-    <p>The distance indicated by the dance</p>
-    <h2 class="hasAnchor" id="details"><a class="anchor" href="#details"></a>Details</h2>
-
-    <p>Calculate distance from waggle run duration</p>
 
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
-<span class='fu'>calc_dist</span><span class='op'>(</span><span class='fl'>1.8</span><span class='op'>)</span>
+<span class='fu'>check_upper_bound</span><span class='op'>(</span>upper <span class='op'>=</span> <span class='fl'>10</span><span class='op'>)</span>
 <span class='op'>}</span>
 
 </div></pre>

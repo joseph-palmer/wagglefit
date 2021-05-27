@@ -71,7 +71,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">wagglefit</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.1.0</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="Released version">0.2.0</span>
       </span>
     </div>
 
@@ -85,6 +85,9 @@
 </li>
 <li>
   <a href="../reference/index.html">Reference</a>
+</li>
+<li>
+  <a href="../news/index.html">Changelog</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -128,51 +131,109 @@
       <tr>
         
         <td>
+          <p><code><a href="alter_in_place.html">alter_in_place()</a></code> </p>
+        </td>
+        <td><p>Alter a NumericVector inplace</p></td>
+      </tr><tr>
+        
+        <td>
           <p><code><a href="calc_dist.html">calc_dist()</a></code> </p>
         </td>
-        <td><p>Calculate distance from waggle run duration</p></td>
+        <td><p>Caluclates distance from waggle dance</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="model.html">model()</a></code> </p>
+          <p><code><a href="check_upper_bound.html">check_upper_bound()</a></code> </p>
         </td>
-        <td><p>Call desired model</p></td>
+        <td><p>Check the upper value to be used meets criteria</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="model_all.html">model_all()</a></code> </p>
+          <p><code><a href="fit.html">fit()</a></code> </p>
         </td>
-        <td><p>Calculate distribution of recruit and scout dances combined</p></td>
+        <td><p>fit either the scout and recruit superposition model or the scout model to
+data</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="model_loglike.html">model_loglike()</a></code> </p>
+          <p><code><a href="fit_mutliple.html">fit_mutliple()</a></code> </p>
         </td>
-        <td><p>Get log-likelihood of requested model</p></td>
+        <td><p>Runs the model fitting (fit) on data multiple times and returns the
+paramaters with the highest loglikelihood</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="model_recruit.html">model_recruit()</a></code> </p>
+          <p><code><a href="generate_bounds_all.html">generate_bounds_all()</a></code> </p>
         </td>
-        <td><p>Calculate distribution of recruit model dances</p></td>
+        <td><p>Generates bounds for all parameters of the scout recruit superposition model</p></td>
       </tr><tr>
         
         <td>
-          <p><code><a href="model_scout.html">model_scout()</a></code> </p>
+          <p><code><a href="generate_bounds_scout.html">generate_bounds_scout()</a></code> </p>
         </td>
-        <td><p>Calculate distribution of scout model dances</p></td>
+        <td><p>Generates bounds for all parameters of the scout model</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="generate_starting_ests_all.html">generate_starting_ests_all()</a></code> </p>
+        </td>
+        <td><p>Generates starting estimates for all numerical optimisation of all parameters
+of the scout recruit superposition model</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="generate_starting_ests_scout.html">generate_starting_ests_scout()</a></code> </p>
+        </td>
+        <td><p>Generates starting estimates for all numerical optimisation of all parameters
+of the scout model</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="loglike_model_all.html">loglike_model_all()</a></code> </p>
+        </td>
+        <td><p>Log-likelihood function for scout and recruit superposition</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="loglike_model_recruit.html">loglike_model_recruit()</a></code> </p>
+        </td>
+        <td><p>Log-likelihood function for recruits</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="loglike_model_scout.html">loglike_model_scout()</a></code> </p>
+        </td>
+        <td><p>Log-likelihood function for scouts</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="message_verbose.html">message_verbose()</a></code> </p>
+        </td>
+        <td><p>Wrapper for message</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="optimise_model.html">optimise_model()</a></code> </p>
+        </td>
+        <td><p>Optimise function for fitting a model using NLOPT</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="recruit_dist.html">recruit_dist()</a></code> </p>
         </td>
-        <td><p>Calculate distribution of recruit dances</p></td>
+        <td><p>Model function for recruits</p></td>
       </tr><tr>
         
         <td>
           <p><code><a href="scout_dist.html">scout_dist()</a></code> </p>
         </td>
-        <td><p>Calculate distribution of scout dances</p></td>
+        <td><p>Model function for scouts</p></td>
+      </tr><tr>
+        
+        <td>
+          <p><code><a href="trunc_normal.html">trunc_normal()</a></code> </p>
+        </td>
+        <td><p>Draws sample from a normal distribtion trucated between upr and lwr bounds.</p></td>
       </tr>
     </tbody>
     </table>
