@@ -1,3 +1,25 @@
+#' Check the upper value to be used meets criteria
+#'
+#' @description Generates upper and lower bounds for all parameters
+#' @param upper double The upper bound for the params
+#' @export
+#' @examples
+#' \dontrun{
+#' check_upper_bound(upper = 10)
+#' }
+#'
+check_upper_bound <- function(upper) {
+  if (length(upper) > 1) {
+    stop("only pass one value as upper")
+  }
+  if (!is.double(upper)) {
+    stop("upper must be of type 'double'")
+  }
+  if (upper < 0) {
+    stop("upper cannot be < 0")
+  }
+}
+
 #' Generates bounds for all parameters of the scout recruit superposition model
 #'
 #' @description Generates upper and lower bounds for all parameters
@@ -10,7 +32,6 @@
 #' }
 #'
 generate_bounds_all <- function(upper) {
-  upper <- as.double(upper)
   p_bnds <- c(0, 1.0)
   ls_bnds <- c(1.0e-6, upper)
   ln_bnds <- c(0, upper)
@@ -75,14 +96,14 @@ generate_starting_ests_all <- function(distance, bounds, verbose = FALSE) {
   while (is.infinite(res) | is.nan(res)) {
     non_p_bounds <- bounds[2:nrow(bounds), ]
     p_startest <- trunc_normal(
-      n = 1, mean = 0.15, sd = 0.05,
+      mean = 0.15, sd = 0.05,
       lwr = as.double(bounds[1, 1]), upr = as.double(bounds[1, 2])
     )
     rest_startest <- map2_dbl(
       as.vector(non_p_bounds[, 1]),
       as.vector(non_p_bounds[, 2]),
       ~ {
-        trunc_normal(n = 1, mean = (.x + .y) / 2, sd = 1, lwr = .x, upr = .y)
+        trunc_normal(mean = (.x + .y) / 2, sd = 1, lwr = .x, upr = .y)
       }
     )
     startest <- c(p_startest, rest_startest)
@@ -136,7 +157,7 @@ generate_starting_ests_scout <- function(distance, bounds, verbose = FALSE) {
       as.vector(bounds[, 1]),
       as.vector(bounds[, 2]),
       ~ {
-        trunc_normal(n = 1, mean = (.x + .y) / 2, sd = 1, lwr = .x, upr = .y)
+        trunc_normal(mean = (.x + .y) / 2, sd = 1, lwr = .x, upr = .y)
       }
     )
     res <- loglike_model_scout(
@@ -194,6 +215,7 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
       )
     )
   }
+  check_upper_bound(upper)
   message_verbose(
     verbose_r,
     paste0(
@@ -206,7 +228,7 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
     verbose_r,
     "  -Optimising"
   )
-  result <- optimise(
+  result <- optimise_model(
     distance,
     startest,
     bounds[, 1],
@@ -235,42 +257,22 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
   ))
 }
 
-#' Run the full model on data
+#' Runs the model fitting (fit) on data multiple times and returns the
+#' paramaters with the highest loglikelihood
 #'
-#' @description Run the full model on given data once.
-#' @param upper the upper limmit of the parameter bounds
-#' @inheritParams fit
-#' @export
-#'
-run <- function(distance, model = "all", upper = 5, verbose_r = FALSE,
-                verbose_cpp = FALSE, xtol = 0, iteration = c(1, 1)) {
-  results <- fit(
-    distance,
-    model = model,
-    upper = upper,
-    verbose_r = verbose_r,
-    verbose_cpp = verbose_cpp,
-    xtol = xtol,
-    iteration = iteration
-  )
-  return(results)
-}
-
-#' Runs the model fitting on data multiple times
-#'
-#' @description Run the full model on data multiple times (n) and returns the
+#' @description Run the model on data multiple times (n) and returns the
 #' model with the largest likelihood. This allows for a more comprehensive
 #' search of the model sample space.
 #' @param n integer The number of models to run
 #' @inheritParams fit
 #' @export
 #'
-run_mutliple <- function(distance, model = "all", n = 5, upper = 5,
+fit_mutliple <- function(distance, model = "all", n = 5, upper = 5,
                          verbose_r = FALSE, verbose_cpp = FALSE, xtol = 0) {
   results <- purrr::map(
     seq_len(n),
     ~ {
-      run(
+      fit(
         distance,
         model = model,
         upper = upper, verbose_r = verbose_r,
@@ -286,5 +288,5 @@ run_mutliple <- function(distance, model = "all", n = 5, upper = 5,
     )
   )
   max_idx <- which(results_fmax == max(results_fmax))
-  return(results[max_idx])
+  return(results[[max_idx]])
 }

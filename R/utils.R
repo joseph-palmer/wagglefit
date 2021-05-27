@@ -32,11 +32,10 @@ calc_dist <- function(duration) {
   return(intercept + (slope * duration))
 }
 
-#' Draws samples from a normal distribtion trucated between upr and lwr bounds.
+#' Draws sample from a normal distribtion trucated between upr and lwr bounds.
 #'
 #' @description Samples from a normal distribution and then checks it falls
 #' within given bounds.
-#' @param n integer Number of samples to draw
 #' @param mean double Mean for the normal distribution to sample
 #' @param sd double Standard deviation for the normal distribution to sample
 #' @param lwr double Lower bound samples must be >= to
@@ -46,13 +45,13 @@ calc_dist <- function(duration) {
 #' @export
 #' @examples
 #' \dontrun{
-#' trunc_normal(1, 0, 0.5, -1, 1)
+#' trunc_normal(0, 0.5, -1, 1)
 #' }
 #'
-trunc_normal <- function(n, mean, sd, lwr, upr) {
+trunc_normal <- function(mean, sd, lwr, upr) {
   continue <- TRUE
   while (continue) {
-    x <- rnorm(n = n, mean = mean, sd = sd)
+    x <- rnorm(n = 1, mean = mean, sd = sd)
     if (x >= lwr & x <= upr) {
       continue <- FALSE
     }

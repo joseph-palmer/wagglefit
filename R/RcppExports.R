@@ -67,6 +67,6 @@ loglike_model_recruit <- function(x, ln, qn, a) {
 #' @param xtol double, The absolute tolerance on function value. If 0 (default)
 #' then default to nlopt default value.
 #' @export
-optimise <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
-  .Call("_wagglefit_optimise", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
+optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
+  .Call("_wagglefit_optimise_model", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
 }

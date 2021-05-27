@@ -26,7 +26,7 @@ typedef struct {
 ------------------------------- helper functions -------------------------------
 */
 
-// Check if user has requested abort every 1000 iterations
+// Check if user has requested abort every 1000 iterations & if so exit
 //
 // @param fcount double The current number of iterations of the objective fun
 void check_user_input(int fcount) {
@@ -35,6 +35,9 @@ void check_user_input(int fcount) {
     }
 }
 
+// check optimise exit status and display important info about them to user
+//
+// @param optimise_result Integer The exit code from the nlopt optimisation
 void check_optimise_result(int optimise_result) {
     if (optimise_result < 0) {
         Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
@@ -274,7 +277,7 @@ double objective_model_scout(
 //' then default to nlopt default value.
 //' @export
 // [[Rcpp::export]]
-NumericVector optimise(
+NumericVector optimise_model(
     NumericVector x, NumericVector params, NumericVector lb, NumericVector ub,
     bool verbose = false, double xtol = 0
 )

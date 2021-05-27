@@ -2,13 +2,11 @@
 % Please edit documentation in R/utils.R
 \name{trunc_normal}
 \alias{trunc_normal}
-\title{Draws samples from a normal distribtion trucated between upr and lwr bounds.}
+\title{Draws sample from a normal distribtion trucated between upr and lwr bounds.}
 \usage{
-trunc_normal(n, mean, sd, lwr, upr)
+trunc_normal(mean, sd, lwr, upr)
 }
 \arguments{
-\item{n}{integer Number of samples to draw}
-
 \item{mean}{double Mean for the normal distribution to sample}
 
 \item{sd}{double Standard deviation for the normal distribution to sample}
@@ -26,7 +24,7 @@ within given bounds.
 }
 \examples{
 \dontrun{
-trunc_normal(1, 0, 0.5, -1, 1)
+trunc_normal(0, 0.5, -1, 1)
 }
 
 }
