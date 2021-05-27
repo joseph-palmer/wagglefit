@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{calc_dist}
 \alias{calc_dist}
-\title{Calculate distance from waggle run duration}
+\title{Caluclates distance from waggle dance}
 \usage{
 calc_dist(duration)
 }
@@ -15,6 +15,9 @@ The distance indicated by the dance
 \description{
 Calculates distance in Km from dance duration, using a linear
 relationship. Taken from Schürch et al (2019)
+}
+\details{
+Calculate distance from waggle run duration
 }
 \examples{
 \dontrun{
