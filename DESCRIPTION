@@ -1,7 +1,7 @@
 Type: Package
 Package: wagglefit
 Title: What the Package Does (Title Case)
-Version: 0.1.0
+Version: 0.2.0
 Authors@R:
     person(given = "Joe",
            family = "Palmer",

@@ -72,6 +72,7 @@ lbSEXP
 LD
 LIBS
 limmit
+linkers
 LinkingTo
 linter
 linters
@@ -105,6 +106,7 @@ NumericVector
 optimisation
 optimise
 Optimise
+optimised
 optimising
 os
 packagemanager
