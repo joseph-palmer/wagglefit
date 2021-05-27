@@ -4,6 +4,28 @@
 #include <nloptrAPI.h>
 using namespace Rcpp;
 
+/*
+------------------------------- structs and data -- ----------------------------
+*/
+
+
+// struct to hold additional data for optimisation
+//
+// x: The distance data to fit to
+// verbose: To display messages to console
+// fcount: number of times the objective function has been called
+// best_est: the best estimate up to that point
+typedef struct {
+    NumericVector x;
+    bool verbose;
+    int fcount;
+    double best_est;
+} data_struct;
+
+/*
+------------------------------- helper functions -------------------------------
+*/
+
 // Check if user has requested abort every 1000 iterations
 //
 // @param fcount double The current number of iterations of the objective fun
@@ -12,6 +34,20 @@ void check_user_input(int fcount) {
         checkUserInterrupt();
     }
 }
+
+void check_optimise_result(int optimise_result) {
+    if (optimise_result < 0) {
+        Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
+        if (optimise_result == -4) {
+            Rcout << "Fail is due to round off errors"
+                "- result may still be usefull" << std::endl;
+        }
+    }
+}
+
+/*
+------------------------------ distribution functions --------------------------
+*/
 
 //' Model function for scouts
 //'
@@ -66,6 +102,10 @@ double recruit_dist(double x, double m,
     );
     return result;
 }
+
+/*
+------------------------------- likelihood functions ---------------------------
+*/
 
 //' Log-likelihood function for scout and recruit superposition
 //'
@@ -126,23 +166,10 @@ double loglike_model_recruit(NumericVector x,
 }
 
 /*
-------------------------------- optimizing functions ---------------------------
+------------------------------- objective functions ----------------------------
 */
 
-// struct to hold additional data for optimisation
-//
-// x: The distance data to fit to
-// verbose: To display messages to console
-// fcount: number of times the objective function has been called
-// best_est: the best estimate up to that point
-typedef struct {
-    NumericVector x;
-    bool verbose;
-    int fcount;
-    double best_est;
-} data_struct;
-
-// Optimize function for scout and recruit superposition
+// Objective function for scout model
 //
 // param: n unsigned, record parameter required for nlopt
 // param: NumericVector, array of parameter estimates to run the model with
@@ -174,6 +201,48 @@ double objective_model_all(
             << ", Best estimate: "
             << data->best_est
             << std::endl;
+        Rcout << "ls = "
+            << params[0]
+            << ", qn = "
+            << params[1]
+            << ", a = "
+            << params[2]
+            << std::endl;
+        Rcout << "-----" << std::endl;
+    }
+    return result;
+}
+
+// Objective function for scout and recruit superposition
+//
+// param: n unsigned, record parameter required for nlopt
+// param: NumericVector, array of parameter estimates to run the model with
+// param: grad double*, gradient value (unused but required as positional)
+// param: x NumericVector, The data to load fit to
+double objective_model_scout(
+    unsigned n, const double* params, double* grad, void* f_data
+    )
+{
+    data_struct* data = (data_struct*) (f_data);
+    check_user_input(data->fcount);
+    data->fcount++;
+    double result = loglike_model_scout(
+        data->x,
+        params[0],
+        params[1],
+        params[2]
+    );
+    if (result > data->best_est) {
+        data->best_est = result;
+    }
+    if (data->verbose) {
+        Rcout << "Iteration: "
+            << data->fcount
+            << ", Result: "
+            << result
+            << ", Best estimate: "
+            << data->best_est
+            << std::endl;
         Rcout << "p = "
             << params[0]
             << ", ls = "
@@ -190,7 +259,11 @@ double objective_model_all(
     return result;
 }
 
-//' Optimise function for scout and recruit superposition
+/*
+------------------------------- optimising functions ---------------------------
+*/
+
+//' Optimise function for fitting a model using NLOPT
 //'
 //' @param x NumericVector Foraging distance
 //' @param params NumericVector parameter estimates to run the model with
@@ -201,38 +274,50 @@ double objective_model_all(
 //' then default to nlopt default value.
 //' @export
 // [[Rcpp::export]]
-NumericVector optimise_all(
+NumericVector optimise(
     NumericVector x, NumericVector params, NumericVector lb, NumericVector ub,
     bool verbose = false, double xtol = 0
 )
 {
-    nlopt_opt opt;
-    NumericVector results(params.size() + 1);
-    double opt_f;
+    // put constant data into data_struct and initialise other data
     data_struct ds;
     ds.x = x;
     ds.fcount = 0;
     ds.best_est = -9999999;
     ds.verbose = verbose;
 
-    opt = nlopt_create(NLOPT_LN_COBYLA, 5); //NLOPT_GN_CRS2_LM
-    nlopt_set_max_objective(opt, objective_model_all, &ds);
+    // set up the model function to run
+    double (*objective_fun)(unsigned, const double*, double*, void*);
+    if (params.size() == 3) {
+        objective_fun = &objective_model_scout;
+    } else if (params.size() == 5) {
+        objective_fun = &objective_model_all;
+    } else {
+        stop(
+            "Number of parameters is inconsistent with avaliable models.\n" \
+            "Only 3 and 5 parameters are permited, you provided %i",
+            params.size()
+        );
+    }
+
+    // set up NLOPT
+    nlopt_opt opt;
+    double maxf;
+    opt = nlopt_create(NLOPT_LN_COBYLA, params.size());
+    nlopt_set_max_objective(opt, objective_fun, &ds);
     nlopt_set_lower_bounds(opt, lb.begin());
     nlopt_set_upper_bounds(opt, ub.begin());
-
     if (xtol != 0) {
         nlopt_set_xtol_rel(opt, xtol);
     }
 
-    nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &opt_f);
-    if (optimise_result < 0) {
-        Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
-        if (optimise_result == -4) {
-            Rcout << "Fail is due to round off errors"
-                "- result may still be usefull" << std::endl;
-        }
-    }
-    results[0] = opt_f;
+    // run optimisation
+    nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &maxf);
+    check_optimise_result(optimise_result);
+
+    // store results
+    NumericVector results(params.size() + 1);
+    results[0] = maxf;
     for (int i = 0; i < results.size()-1; i++) {
         results[i + 1] = params[i];
     }

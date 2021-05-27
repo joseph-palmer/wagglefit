@@ -6,6 +6,7 @@
 \usage{
 run_mutliple(
   distance,
+  model = "all",
   n = 5,
   upper = 5,
   verbose_r = FALSE,
@@ -15,6 +16,8 @@ run_mutliple(
 }
 \arguments{
 \item{distance}{doubleArray The distance decoded from the waggle dance.}
+
+\item{model}{characterArray The model to run (scout or all)}
 
 \item{n}{integer The number of models to run}
 

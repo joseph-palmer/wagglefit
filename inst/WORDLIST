@@ -2,6 +2,7 @@ al
 args
 aSEXP
 aut
+avaliable
 az
 BEL
 bestres
@@ -12,6 +13,7 @@ Bool
 CallEntries
 CallMethodDef
 Caluclates
+characterArray
 checkUserInterrupt
 cmath
 cmd
@@ -59,6 +61,7 @@ HOR
 https
 inheritParams
 init
+initialise
 inplace
 integerArray
 iostream
@@ -102,6 +105,7 @@ NumericVector
 optimisation
 optimise
 Optimise
+optimising
 os
 packagemanager
 palmer
@@ -109,6 +113,7 @@ pandoc
 param
 paramater
 paramsSEXP
+permited
 pkgdown
 pracma
 pSEXP

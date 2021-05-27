@@ -6,6 +6,7 @@
 \usage{
 run(
   distance,
+  model = "all",
   upper = 5,
   verbose_r = FALSE,
   verbose_cpp = FALSE,
@@ -15,6 +16,8 @@ run(
 }
 \arguments{
 \item{distance}{doubleArray The distance decoded from the waggle dance.}
+
+\item{model}{characterArray The model to run (scout or all)}
 
 \item{upper}{the upper limmit of the parameter bounds}
 

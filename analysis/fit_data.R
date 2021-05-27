@@ -27,10 +27,11 @@ get_data <- function() {
 }
 
 #' Run my analysis
-run_analysis <- function(n = 5, xtol = 0) {
+run_analysis <- function(model = "all", n = 5, xtol = 0) {
   data <- get_data()
   best_result <- run_mutliple(
     data$foraging_distance,
+    model = model,
     n = n,
     verbose_r = TRUE,
     xtol = xtol

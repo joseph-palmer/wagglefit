@@ -91,9 +91,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// optimise_all
-NumericVector optimise_all(NumericVector x, NumericVector params, NumericVector lb, NumericVector ub, bool verbose, double xtol);
-RcppExport SEXP _wagglefit_optimise_all(SEXP xSEXP, SEXP paramsSEXP, SEXP lbSEXP, SEXP ubSEXP, SEXP verboseSEXP, SEXP xtolSEXP) {
+// optimise
+NumericVector optimise(NumericVector x, NumericVector params, NumericVector lb, NumericVector ub, bool verbose, double xtol);
+RcppExport SEXP _wagglefit_optimise(SEXP xSEXP, SEXP paramsSEXP, SEXP lbSEXP, SEXP ubSEXP, SEXP verboseSEXP, SEXP xtolSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -103,7 +103,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type ub(ubSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< double >::type xtol(xtolSEXP);
-    rcpp_result_gen = Rcpp::wrap(optimise_all(x, params, lb, ub, verbose, xtol));
+    rcpp_result_gen = Rcpp::wrap(optimise(x, params, lb, ub, verbose, xtol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -115,7 +115,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},
     {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 4},
     {"_wagglefit_loglike_model_recruit", (DL_FUNC) &_wagglefit_loglike_model_recruit, 4},
-    {"_wagglefit_optimise_all", (DL_FUNC) &_wagglefit_optimise_all, 6},
+    {"_wagglefit_optimise", (DL_FUNC) &_wagglefit_optimise, 6},
     {NULL, NULL, 0}
 };
 

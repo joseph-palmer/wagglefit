@@ -57,7 +57,7 @@ loglike_model_recruit <- function(x, ln, qn, a) {
   .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, ln, qn, a)
 }
 
-#' Optimise function for scout and recruit superposition
+#' Optimise function for fitting a model using NLOPT
 #'
 #' @param x NumericVector Foraging distance
 #' @param params NumericVector parameter estimates to run the model with
@@ -67,6 +67,6 @@ loglike_model_recruit <- function(x, ln, qn, a) {
 #' @param xtol double, The absolute tolerance on function value. If 0 (default)
 #' then default to nlopt default value.
 #' @export
-optimise_all <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
-  .Call("_wagglefit_optimise_all", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
+optimise <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
+  .Call("_wagglefit_optimise", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
 }
