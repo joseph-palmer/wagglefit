@@ -15,6 +15,105 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// heaviside
+double heaviside(double x);
+RcppExport SEXP _wagglefit_heaviside(SEXP xSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    rcpp_result_gen = Rcpp::wrap(heaviside(x));
+    return rcpp_result_gen;
+END_RCPP
+}
+// scout_ccdf
+double scout_ccdf(double x, double p, double ls, double qn, double a, double m);
+RcppExport SEXP _wagglefit_scout_ccdf(SEXP xSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(scout_ccdf(x, p, ls, qn, a, m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// recruit_ccdf
+double recruit_ccdf(double x, double p, double ln, double qn, double a, double m);
+RcppExport SEXP _wagglefit_recruit_ccdf(SEXP xSEXP, SEXP pSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(recruit_ccdf(x, p, ln, qn, a, m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// ccdf_model_all
+void ccdf_model_all(NumericVector x, NumericVector y, double p, double ls, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_ccdf_model_all(SEXP xSEXP, SEXP ySEXP, SEXP pSEXP, SEXP lsSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    ccdf_model_all(x, y, p, ls, ln, qn, a);
+    return R_NilValue;
+END_RCPP
+}
+// ccdf_model_scout
+void ccdf_model_scout(NumericVector x, NumericVector y, double ls, double qn, double a);
+RcppExport SEXP _wagglefit_ccdf_model_scout(SEXP xSEXP, SEXP ySEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    ccdf_model_scout(x, y, ls, qn, a);
+    return R_NilValue;
+END_RCPP
+}
+// ccdf_model_recruit
+void ccdf_model_recruit(NumericVector x, NumericVector y, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_ccdf_model_recruit(SEXP xSEXP, SEXP ySEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
+    Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    ccdf_model_recruit(x, y, ln, qn, a);
+    return R_NilValue;
+END_RCPP
+}
+// model_ccdf
+NumericVector model_ccdf(NumericVector x, NumericVector params);
+RcppExport SEXP _wagglefit_model_ccdf(SEXP xSEXP, SEXP paramsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type params(paramsSEXP);
+    rcpp_result_gen = Rcpp::wrap(model_ccdf(x, params));
+    return rcpp_result_gen;
+END_RCPP
+}
 // scout_dist
 double scout_dist(double x, double m, double p, double ls, double qn, double a);
 RcppExport SEXP _wagglefit_scout_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
@@ -110,6 +209,13 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_alter_in_place", (DL_FUNC) &_wagglefit_alter_in_place, 1},
+    {"_wagglefit_heaviside", (DL_FUNC) &_wagglefit_heaviside, 1},
+    {"_wagglefit_scout_ccdf", (DL_FUNC) &_wagglefit_scout_ccdf, 6},
+    {"_wagglefit_recruit_ccdf", (DL_FUNC) &_wagglefit_recruit_ccdf, 6},
+    {"_wagglefit_ccdf_model_all", (DL_FUNC) &_wagglefit_ccdf_model_all, 7},
+    {"_wagglefit_ccdf_model_scout", (DL_FUNC) &_wagglefit_ccdf_model_scout, 5},
+    {"_wagglefit_ccdf_model_recruit", (DL_FUNC) &_wagglefit_ccdf_model_recruit, 5},
+    {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 2},
     {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 6},
     {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 6},
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},

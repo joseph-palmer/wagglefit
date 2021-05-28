@@ -9,6 +9,87 @@ alter_in_place <- function(x) {
   invisible(.Call("_wagglefit_alter_in_place", PACKAGE = "wagglefit", x))
 }
 
+#' Heaviside equation. Replace negatives with 0 and positives with 1.
+#'
+#' @param x double the parameter to convert with heaviside
+#' @export
+heaviside <- function(x) {
+  .Call("_wagglefit_heaviside", PACKAGE = "wagglefit", x)
+}
+
+#' Model CCDF function for scouts
+#'
+#' @param x double Foraging distance
+#' @param p double Proportion of scouts (0<=p<=1)
+#' @param ls double Scout rate
+#' @param qn double Quality
+#' @param a double alpha value
+#' @param m double Minimum foraging distance
+#' @return result double the ccdf for that foraging distance (x)
+#' @export
+scout_ccdf <- function(x, p, ls, qn, a, m) {
+  .Call("_wagglefit_scout_ccdf", PACKAGE = "wagglefit", x, p, ls, qn, a, m)
+}
+
+#' Model CCDF function for recruits
+#'
+#' @param x double Foraging distance
+#' @param m double Minimum foraging distance
+#' @param p double Proportion of scouts (0<=p<=1)
+#' @param ln double Recruit rate
+#' @param qn double Quality
+#' @param a double alpha value
+#' @param m double Minimum foraging distance
+#' @return result double the ccdf for that foraging distance (x)
+#' @export
+recruit_ccdf <- function(x, p, ln, qn, a, m) {
+  .Call("_wagglefit_recruit_ccdf", PACKAGE = "wagglefit", x, p, ln, qn, a, m)
+}
+
+#' Model ccdf function for scout and recruit superposition. Stores results in
+#' given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @inheritParams scout_ccdf
+#' @inheritParams recruit_ccdf
+#' @export
+ccdf_model_all <- function(x, y, p, ls, ln, qn, a) {
+  invisible(.Call("_wagglefit_ccdf_model_all", PACKAGE = "wagglefit", x, y, p, ls, ln, qn, a))
+}
+
+#' Model ccdf function for scout model. Stores results in given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @inheritParams scout_ccdf
+#' @export
+ccdf_model_scout <- function(x, y, ls, qn, a) {
+  invisible(.Call("_wagglefit_ccdf_model_scout", PACKAGE = "wagglefit", x, y, ls, qn, a))
+}
+
+#' Model ccdf function for recruit model. Stores results in given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @inheritParams recruit_ccdf
+#' @export
+ccdf_model_recruit <- function(x, y, ln, qn, a) {
+  invisible(.Call("_wagglefit_ccdf_model_recruit", PACKAGE = "wagglefit", x, y, ln, qn, a))
+}
+
+#' Get model ccdf for a given model
+#'
+#' @param x NumericVector foraging distances
+#' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
+#' the scout model their will only be three (ls, qn, a) but if all their will
+#' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
+#' @return y NumericVector the ccdf
+#' @export
+model_ccdf <- function(x, params) {
+  .Call("_wagglefit_model_ccdf", PACKAGE = "wagglefit", x, params)
+}
+
 #' Model function for scouts
 #'
 #' @param x double Foraging distance

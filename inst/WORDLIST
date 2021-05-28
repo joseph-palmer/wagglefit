@@ -13,6 +13,9 @@ Bool
 CallEntries
 CallMethodDef
 Caluclates
+ccdf
+CCDF
+ccdfs
 characterArray
 checkUserInterrupt
 cmath
@@ -56,6 +59,7 @@ getRversion
 github
 GN
 hashFiles
+heaviside
 HH
 HOR
 https
@@ -185,4 +189,5 @@ xSEXP
 xtol
 xtolSEXP
 YAL
+ySEXP
 ZSL
