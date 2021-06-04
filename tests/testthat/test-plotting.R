@@ -42,7 +42,30 @@ test_make_base_plot <- function(x) {
 
 test_make_full_plot <- function(x, model_result_list) {
   plt <- make_full_plot(x, model_result_list)
-  print(plot)
+  expected_xlab <- "Foraging distance (Km)"
+  expected_ylab <- "Ln cumulative probability"
+  test_that("make_full_plot returns a ggplot object with the correct labels", {
+    expect_true(ggplot2::is.ggplot(plt))
+    expect_equal(expected_xlab, plt$labels$x)
+    expect_equal(expected_ylab, plt$labels$y)
+  })
+}
+
+test_make_results_tibble <- function(result) {
+  expected <- tibble::tibble(
+    fmax = c(-256, -256, -256),
+    data_name = c("all", "scout", "recruit"),
+    p = c(0.5, 1, 0),
+    ls = c(1.3, 1.3, NA),
+    ln = c(1.3, NA, 1.3),
+    qn = c(2.2, 2.2, 2.2),
+    a = c(0.5, 0.5, 0.5),
+    AIC = c(522, 518, 518)
+  )
+  actual <- make_results_tibble(result)
+  test_that("make_results_tibble returns the expected result", {
+    expect_identical(expected, actual)
+  })
 }
 
 plotting_tests <- function() {
@@ -60,14 +83,28 @@ plotting_tests <- function() {
   a <- 0.5
   param_est <- c(p, ls, ln, qn, a)
   example_result <- list(
-    est = param_est,
-    data_name = "all"
+    "all" = list(
+      est = param_est,
+      fmax = -256,
+      data_name = "all"
+    ),
+    "scout" = list(
+      est = c(ls, qn, a),
+      fmax = -256,
+      data_name = "scout"
+    ),
+    "recruit" = list(
+      est = c(ln, qn, a),
+      fmax = -256,
+      data_name = "recruit"
+    )
   )
 
   test_inverse_cdf(x)
   test_make_ccdf_plot_data(x, param_est, "all", 10)
   test_make_base_plot(x)
   test_make_full_plot(x, example_result)
+  test_make_results_tibble(example_result)
 }
 
 # run tests

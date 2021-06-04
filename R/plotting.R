@@ -125,6 +125,7 @@ make_full_plot <- function(x, model_result_list) {
 #' @export
 #'
 make_results_tibble <- function(result) {
+  . <- NULL
   all_tibble <- as_tibble(result$all)
   all_tibble$parameter <- c("p", "ls", "ln", "qn", "a")
   scout_tibble <- as_tibble(result$scout)
@@ -139,7 +140,7 @@ make_results_tibble <- function(result) {
   result_tibble <- result_tibble %>%
     pivot_wider(names_from = .data$parameter, values_from = .data$est) %>%
     mutate(
-      AIC = calc_aic(rowSums(!(is.na(.data$.))) - 2, .data$fmax)
+      AIC = calc_aic(rowSums(!(is.na(.))) - 2, .data$fmax)
     ) %>%
     mutate(
       p = ifelse(
