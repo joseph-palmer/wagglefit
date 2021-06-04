@@ -15,6 +15,7 @@ ccdfs
 characterArray
 checkUserInterrupt
 cmath
+CMD
 COBYLA
 compileAttributes
 Config
@@ -80,6 +81,7 @@ paramaters
 params
 paramsSEXP
 permited
+pkgdown
 pracma
 pSEXP
 purrr

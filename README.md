@@ -8,6 +8,9 @@
 
 The goal of wagglefit is to allow for easy waggle dance analysis.
 
+Note: This branch contains code for running models of recruit only
+foraging distances.
+
 ## Installation
 
 You can install the released version of wagglefit from
