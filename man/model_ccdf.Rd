@@ -13,8 +13,8 @@ model_ccdf(x, params, model = 0L)
 the scout model their will only be three (ls, qn, a) but if all their will
 be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make}
 
-\item{model}{int The model to run. Must be 0, 1 or 2 which means 'all',
-'scout' or 'recruit' respectively,  defaults to 0 ('all')}
+\item{model}{int The model to run. Must be 0 or 1 which means 'all',
+or 'scout' respectively,  defaults to 0 ('all')}
 }
 \value{
 y NumericVector the ccdf

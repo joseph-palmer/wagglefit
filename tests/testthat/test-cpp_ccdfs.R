@@ -78,21 +78,6 @@ test_ccdf_model_scout <- function(x, ls, qn, a) {
   })
 }
 
-test_ccdf_model_recruit <- function(x, ln, qn, a) {
-  expected <- c(
-    0.83068156, 0.23941329,
-    0.61562751, 0.12375507,
-    0.0201912, 0.23941329,
-    0.00547545, 0.12375507,
-    1., 0.26888477
-  )
-  result <- rep(0.0, length(x))
-  ccdf_model_recruit(x, result, ln, qn, a)
-  test_that("ccdf_model_recruit returns the expected result", {
-    expect_identical(round(expected, 5), round(result, 5))
-  })
-}
-
 ccdf_tests <- function() {
   x <- c(
     0.2, 0.5,
@@ -113,7 +98,6 @@ ccdf_tests <- function() {
   test_recruit_ccdf(x, p, ln, qn, a)
   test_ccdf_model_all(x, p, ls, ln, qn, a)
   test_ccdf_model_scout(x, ls, qn, a)
-  test_ccdf_model_recruit(x, ln, qn, a)
 }
 
 # run tests

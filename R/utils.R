@@ -7,8 +7,7 @@
 model_number_from_model <- function(model) {
   model_list <- list(
     "all" = 0,
-    "scout" = 1,
-    "recruit" = 2
+    "scout" = 1
   )
   if (!(model %in% names(model_list))) {
     stop("Model name not found")

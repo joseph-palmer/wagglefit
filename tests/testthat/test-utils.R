@@ -36,9 +36,9 @@ test_that("message_verbose does not return a message when asked", {
 })
 
 test_that("model_number_from_model returns correct models", {
-  expected <- c(0, 1, 2)
+  expected <- c(0, 1)
   results <- purrr::map_dbl(
-    c("all", "scout", "recruit"),
+    c("all", "scout"),
     model_number_from_model
   )
   expect_identical(expected, results)

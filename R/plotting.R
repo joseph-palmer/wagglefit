@@ -130,12 +130,9 @@ make_results_tibble <- function(result) {
   all_tibble$parameter <- c("p", "ls", "ln", "qn", "a")
   scout_tibble <- as_tibble(result$scout)
   scout_tibble$parameter <- c("ls", "qn", "a")
-  recruit_tibble <- as_tibble(result$recruit)
-  recruit_tibble$parameter <- c("ln", "qn", "a")
   result_tibble <- bind_rows(
     all_tibble,
-    scout_tibble,
-    recruit_tibble
+    scout_tibble
   )
   result_tibble <- result_tibble %>%
     pivot_wider(names_from = .data$parameter, values_from = .data$est) %>%
@@ -146,11 +143,7 @@ make_results_tibble <- function(result) {
       p = ifelse(
         .data$data_name == "scout",
         1,
-        ifelse(
-          .data$data_name == "recruit",
-          0,
-          .data$p
-        )
+        .data$p
       )
     )
   return(result_tibble)

@@ -30,14 +30,6 @@ test_loglike_model_scout <- function(x, ls, qn, a) {
   })
 }
 
-test_loglike_model_recruit <- function(x, ln, qn, a) {
-  truth <- -1.3118270596288413
-  ans <- loglike_model_recruit(x, ln, qn, a)
-  test_that("loglike_model_recruit gives expected results", {
-    expect_equal(truth, ans)
-  })
-}
-
 test_optimise_model <- function(x, p, ls, ln, qn, a) {
   actual_all <- c(
     1.093483, 4.246401e-01, 1.540067, 1.754589e-06, 1.819189, 4.494388e-01
@@ -80,7 +72,6 @@ model_tests <- function() {
   test_recruit_dist(x[1], min(x), p, ln, qn, a)
   test_loglike_model_all(x, p, ls, ln, qn, a)
   test_loglike_model_scout(x, ls, qn, a)
-  test_loglike_model_recruit(x, ln, qn, a)
   # test_optimise_model (x, p, ls, ln, qn, a)
   # test_optimise_model fails on check as 'nlopt_create' not provided by
   # package 'nloptr'. Despite the fact it works locally. Keep off unless you

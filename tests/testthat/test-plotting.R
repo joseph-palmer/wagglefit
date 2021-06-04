@@ -53,14 +53,14 @@ test_make_full_plot <- function(x, model_result_list) {
 
 test_make_results_tibble <- function(result) {
   expected <- tibble::tibble(
-    fmax = c(-256, -256, -256),
-    data_name = c("all", "scout", "recruit"),
-    p = c(0.5, 1, 0),
-    ls = c(1.3, 1.3, NA),
-    ln = c(1.3, NA, 1.3),
-    qn = c(2.2, 2.2, 2.2),
-    a = c(0.5, 0.5, 0.5),
-    AIC = c(522, 518, 518)
+    fmax = c(-256, -256),
+    data_name = c("all", "scout"),
+    p = c(0.5, 1),
+    ls = c(1.3, 1.3),
+    ln = c(1.3, NA),
+    qn = c(2.2, 2.2),
+    a = c(0.5, 0.5),
+    AIC = c(522, 518)
   )
   actual <- make_results_tibble(result)
   test_that("make_results_tibble returns the expected result", {
@@ -92,11 +92,6 @@ plotting_tests <- function() {
       est = c(ls, qn, a),
       fmax = -256,
       data_name = "scout"
-    ),
-    "recruit" = list(
-      est = c(ln, qn, a),
-      fmax = -256,
-      data_name = "recruit"
     )
   )
 

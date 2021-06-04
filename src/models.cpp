@@ -153,24 +153,6 @@ double loglike_model_scout(NumericVector x,
     return ll;
 }
 
-//' Log-likelihood function for recruits
-//'
-//' @inheritParams loglike_model_all
-//' @export
-// [[Rcpp::export]]
-double loglike_model_recruit(NumericVector x,
-                             double ln, double qn, double a)
-{
-    const int x_size = x.size();
-    const double m = min(x);
-    double ll = 0;
-    for (int i = 0; i < x_size; i++)
-    {
-        ll += log(recruit_dist(x[i], m, 0.0, ln, qn, a));
-    }
-    return ll;
-}
-
 /*
 ------------------------------- objective functions ----------------------------
 */
@@ -265,52 +247,6 @@ double objective_model_scout(
     return result;
 }
 
-// Objective function for recruit model
-//
-// param: n unsigned, record parameter required for nlopt
-// param: NumericVector, array of parameter estimates to run the model with
-// param: grad double*, gradient value (unused but required as positional)
-// param: x NumericVector, The data to load fit to
-double objective_model_recruit(
-    unsigned n, const double* params, double* grad, void* f_data
-    )
-{
-    data_struct* data = (data_struct*) (f_data);
-    check_user_input(data->fcount);
-    data->fcount++;
-    double result = loglike_model_recruit(
-        data->x,
-        params[0],
-        params[1],
-        params[2]
-    );
-    if (result > data->best_est) {
-        data->best_est = result;
-    }
-    if (data->verbose) {
-        Rcout << "Iteration: "
-            << data->fcount
-            << ", Result: "
-            << result
-            << ", Best estimate: "
-            << data->best_est
-            << std::endl;
-        Rcout << "p = "
-            << params[0]
-            << ", ls = "
-            << params[1]
-            << ", ln = "
-            << params[2]
-            << ", qn = "
-            << params[3]
-            << ", a = "
-            << params[4]
-            << std::endl;
-        Rcout << "-----" << std::endl;
-    }
-    return result;
-}
-
 /*
 ------------------------------- optimising functions ---------------------------
 */
@@ -324,8 +260,8 @@ double objective_model_recruit(
 //' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
 //' @param xtol double, The absolute tolerance on function value. If 0 (default)
 //' then default to nlopt default value.
-//' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
-//' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
+//' @param model int The model to run. Must be 0 or 1 which means 'all' or
+//' 'scout' respectively,  defaults to 0 ('all')
 //' @export
 // [[Rcpp::export]]
 NumericVector optimise_model(
@@ -342,16 +278,14 @@ NumericVector optimise_model(
 
     // set up the model function to run
     double (*objective_fun)(unsigned, const double*, double*, void*);
-    if (model == 1) {
-        objective_fun = &objective_model_scout;
-    } else if (model == 2) {
-        objective_fun = &objective_model_recruit;
-    } else if (model == 0) {
+    if (model == 0) {
         objective_fun = &objective_model_all;
+    } else if (model == 1) {
+        objective_fun = &objective_model_scout;
     } else {
         stop(
             "Model given is inconsistent with avaliable models.\n" \
-            "Only 0, 1 or 2 (meaning scout, recruit and all) is permited"
+            "Only 0 or 1 (meaning all or scout) is permited"
         );
     }
 

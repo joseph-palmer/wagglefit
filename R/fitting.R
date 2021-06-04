@@ -132,7 +132,7 @@ generate_starting_ests_all <- function(distance, bounds, verbose = FALSE) {
 }
 
 #' Generates starting estimates for all numerical optimisation of all parameters
-#' of the scout model (can also be used for the recruit model)
+#' of the scout model
 #'
 #' @description Generates starting estimates for all parameters by taking a
 #' random value sampled from a normal distribution truncated at the upper and
@@ -183,7 +183,7 @@ generate_starting_ests_scout <- function(distance, bounds, verbose = FALSE) {
 }
 
 #' fit either the scout and recruit superposition model or the scout model to
-#' data (can also be used for the recruit model)
+#' data
 #'
 #' @description Fits specified model to the data given using MLE.
 #' @param distance doubleArray The distance decoded from the waggle dance.
@@ -207,8 +207,7 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
   model <- tolower(model)
   model_function_list <- list(
     "all" = c(generate_bounds_all, generate_starting_ests_all),
-    "scout" = c(generate_bounds_scout, generate_starting_ests_scout),
-    "recruit" = c(generate_bounds_scout, generate_starting_ests_scout)
+    "scout" = c(generate_bounds_scout, generate_starting_ests_scout)
   )
   model_numval <- model_number_from_model(model)
   if (!(model %in% names(model_function_list))) {
@@ -216,7 +215,7 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
       paste(
         "Model",
         model,
-        "is not known. Must be 'all', 'scout' or 'recruit'"
+        "is not known. Must be 'all' or 'scout'"
       )
     )
   }

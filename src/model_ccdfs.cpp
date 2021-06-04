@@ -112,31 +112,14 @@ void ccdf_model_scout(NumericVector x, NumericVector y,
   }
 }
 
-//' Model ccdf function for recruit model. Stores results in given array (y)
-//'
-//' @param x NumericVector foraging distances
-//' @param y NumericVector storage array for the results
-//' @inheritParams recruit_ccdf
-//' @export
-// [[Rcpp::export]]
-void ccdf_model_recruit(NumericVector x, NumericVector y,
-                      double ln, double qn, double a)
-{
-  const int x_size = x.size();
-  const double m = min(x);
-  for (int i = 0; i < x_size; i++) {
-    y[i] = recruit_ccdf(x[i], 0, ln, qn, a, m);
-  }
-}
-
 //' Get model ccdf for a given model
 //'
 //' @param x NumericVector foraging distances
 //' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
 //' the scout model their will only be three (ls, qn, a) but if all their will
 //' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
-//' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
-//' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
+//' @param model int The model to run. Must be 0 or 1 which means 'all',
+//' or 'scout' respectively,  defaults to 0 ('all')
 //' @return y NumericVector the ccdf
 //' @export
 // [[Rcpp::export]]
@@ -144,16 +127,14 @@ NumericVector model_ccdf(NumericVector x, NumericVector params,
                          int model = 0)
 {
   NumericVector y(x.size());
-  if (model == 1) {
-    ccdf_model_scout(x, y, params[0], params[1], params[2]);
-  } else if (model == 2) {
-    ccdf_model_recruit(x, y, params[0], params[1], params[2]);
-  } else if (model == 0) {
+  if (model == 0) {
     ccdf_model_all(x, y, params[0], params[1], params[2], params[3], params[4]);
+  } else if (model == 1) {
+    ccdf_model_scout(x, y, params[0], params[1], params[2]);
   } else {
         stop(
             "Model given is inconsistent with avaliable models.\n" \
-            "Only 0, 1 or 2 (meaning scout, recruit and all) is permited"
+            "Only 0 or 1 (meaning all or scout) is permited"
         );
     }
   return y;

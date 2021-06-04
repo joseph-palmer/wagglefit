@@ -68,24 +68,14 @@ ccdf_model_scout <- function(x, y, ls, qn, a) {
   invisible(.Call("_wagglefit_ccdf_model_scout", PACKAGE = "wagglefit", x, y, ls, qn, a))
 }
 
-#' Model ccdf function for recruit model. Stores results in given array (y)
-#'
-#' @param x NumericVector foraging distances
-#' @param y NumericVector storage array for the results
-#' @inheritParams recruit_ccdf
-#' @export
-ccdf_model_recruit <- function(x, y, ln, qn, a) {
-  invisible(.Call("_wagglefit_ccdf_model_recruit", PACKAGE = "wagglefit", x, y, ln, qn, a))
-}
-
 #' Get model ccdf for a given model
 #'
 #' @param x NumericVector foraging distances
 #' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
 #' the scout model their will only be three (ls, qn, a) but if all their will
 #' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
-#' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
-#' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
+#' @param model int The model to run. Must be 0 or 1 which means 'all',
+#' or 'scout' respectively,  defaults to 0 ('all')
 #' @return y NumericVector the ccdf
 #' @export
 model_ccdf <- function(x, params, model = 0L) {
@@ -132,14 +122,6 @@ loglike_model_scout <- function(x, ls, qn, a) {
   .Call("_wagglefit_loglike_model_scout", PACKAGE = "wagglefit", x, ls, qn, a)
 }
 
-#' Log-likelihood function for recruits
-#'
-#' @inheritParams loglike_model_all
-#' @export
-loglike_model_recruit <- function(x, ln, qn, a) {
-  .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, ln, qn, a)
-}
-
 #' Optimise function for fitting a model using NLOPT
 #'
 #' @param x NumericVector Foraging distance
@@ -149,8 +131,8 @@ loglike_model_recruit <- function(x, ln, qn, a) {
 #' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
 #' @param xtol double, The absolute tolerance on function value. If 0 (default)
 #' then default to nlopt default value.
-#' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
-#' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
+#' @param model int The model to run. Must be 0 or 1 which means 'all' or
+#' 'scout' respectively,  defaults to 0 ('all')
 #' @export
 optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L) {
   .Call("_wagglefit_optimise_model", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol, model)
