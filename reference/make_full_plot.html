@@ -115,7 +115,7 @@
     <p>Using the optimised paramater estimates, creates ccdf plots</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_full_plot</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>param_est</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_full_plot</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>model_result_list</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -125,8 +125,9 @@
       <td><p>The foraging distance to plot</p></td>
     </tr>
     <tr>
-      <th>param_est</th>
-      <td><p>The paramater estimates of the optimisation</p></td>
+      <th>model_result_list</th>
+      <td><p>namedlist The return of `fit`, a list of parameter
+estimates ($est) and the data name ($data_name).</p></td>
     </tr>
     </table>
 

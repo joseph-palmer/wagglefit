@@ -117,7 +117,7 @@ the ccdf plots" />
 the ccdf plots</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_ccdf_plot_data</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>param_est</span>, <span class='va'>model</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_ccdf_plot_data</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>param_est</span>, <span class='va'>model</span>, npoints <span class='op'>=</span> <span class='fl'>100</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -133,6 +133,11 @@ the ccdf plots</p>
     <tr>
       <th>model</th>
       <td><p>characterArray The name of the model used</p></td>
+    </tr>
+    <tr>
+      <th>npoints</th>
+      <td><p>integer The number of points to plot the predicted data for.
+Defaults to 100.</p></td>
     </tr>
     </table>
 
