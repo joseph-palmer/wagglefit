@@ -34,3 +34,30 @@ test_that("message_verbose does not return a message when asked", {
   )
   expect_equal(l, character(0))
 })
+
+test_that("model_number_from_model returns correct models", {
+  expected <- c(0, 1, 2)
+  results <- purrr::map_dbl(
+    c("all", "scout", "recruit"),
+    model_number_from_model
+  )
+  expect_identical(expected, results)
+})
+
+test_that("model_number_from_model returns error if model name is not known", {
+  expect_error(
+    model_number_from_model("amadeupmodel"),
+    "Model name not found"
+  )
+})
+
+test_that("calc_aic works as expected", {
+  expected <- 314
+  result <- calc_aic(2, -155)
+  expect_equal(result, expected)
+})
+
+test_that("calc_ks works as expected", {
+  # add code to test the calc_ks function. Write in once bootstrapped.
+  expect_equal(1, 1)
+})

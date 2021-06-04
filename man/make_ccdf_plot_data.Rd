@@ -4,7 +4,7 @@
 \alias{make_ccdf_plot_data}
 \title{Creates data for plots}
 \usage{
-make_ccdf_plot_data(x, param_est, model)
+make_ccdf_plot_data(x, param_est, model, npoints = 100)
 }
 \arguments{
 \item{x}{doubleArray The foraging distance to plot}
@@ -12,6 +12,9 @@ make_ccdf_plot_data(x, param_est, model)
 \item{param_est}{doubleArray The paramater estimates of the optimisation}
 
 \item{model}{characterArray The name of the model used}
+
+\item{npoints}{integer The number of points to plot the predicted data for.
+Defaults to 100.}
 }
 \value{
 tibble of model data and cumulative probability

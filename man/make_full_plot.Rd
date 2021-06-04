@@ -4,12 +4,13 @@
 \alias{make_full_plot}
 \title{Creates plots with model fits from optimised paramaters}
 \usage{
-make_full_plot(x, param_est)
+make_full_plot(x, model_result_list)
 }
 \arguments{
 \item{x}{The foraging distance to plot}
 
-\item{param_est}{The paramater estimates of the optimisation}
+\item{model_result_list}{namedlist The return of `fit`, a list of parameter
+estimates ($est) and the data name ($data_name).}
 }
 \value{
 ggplot plot of cumulative probability of foraging distances in Km

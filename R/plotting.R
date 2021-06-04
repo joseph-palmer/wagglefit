@@ -11,6 +11,9 @@
 #' @export
 #'
 inverse_ccdf <- function(x) {
+  if (!is.double(x) | length(x) < 2) {
+    stop("x must be a double array")
+  }
   sd <- -sort(-x)
   prob <- map_dbl(
     seq_len(length(x)),
@@ -28,13 +31,14 @@ inverse_ccdf <- function(x) {
 #' @param x doubleArray The foraging distance to plot
 #' @param param_est doubleArray The paramater estimates of the optimisation
 #' @param model characterArray The name of the model used
+#' @param npoints integer The number of points to plot the predicted data for.
+#' Defaults to 100.
 #' @return tibble of model data and cumulative probability
 #' @importFrom tibble tibble
 #' @export
 #'
-make_ccdf_plot_data <- function(x, param_est, model) {
+make_ccdf_plot_data <- function(x, param_est, model, npoints = 100) {
   model_n <- model_number_from_model(model)
-  npoints <- 100
   x_seq <- seq(min(x), max(x), length.out = npoints)
   cumul_ccdf <- model_ccdf(x_seq, param_est, model_n)
   cumul_ccdf[[1]] <- 1
@@ -62,7 +66,7 @@ make_base_plot <- function(x) {
       )
   )
   plt <- inverse_ccdf(x) %>%
-    ggplot(aes_string(x = .data$sd, y = .data$log_prob)) +
+    ggplot(aes(x = .data$sd, y = log(.data$prob))) +
     geom_point() +
     labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
   return(plt)
@@ -72,7 +76,8 @@ make_base_plot <- function(x) {
 #'
 #' @description Using the optimised paramater estimates, creates ccdf plots
 #' @param x The foraging distance to plot
-#' @param param_est The paramater estimates of the optimisation
+#' @param model_result_list namedlist The return of `fit`, a list of parameter
+#' estimates ($est) and the data name ($data_name).
 #' @return ggplot plot of cumulative probability of foraging distances in Km
 #' along with the model fits to this data.
 #' @importFrom ggplot2 ggplot aes geom_line geom_line theme_set theme
@@ -82,9 +87,9 @@ make_base_plot <- function(x) {
 #' @importFrom rlang .data
 #' @export
 #'
-make_full_plot <- function(x, param_est) {
+make_full_plot <- function(x, model_result_list) {
   cdf_data <- map(
-    param_est,
+    model_result_list,
     ~ {
       make_ccdf_plot_data(x, .x$est, model = .x$data_name)
     }

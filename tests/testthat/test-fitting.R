@@ -148,7 +148,7 @@ test_fit_multiple_logic <- function() {
   })
 }
 
-fitting_tests <- function(x, p, ls, ln, qn, a) {
+fitting_tests <- function() {
   x <- c(
     0.2, 0.5,
     0.3, 0.6,
