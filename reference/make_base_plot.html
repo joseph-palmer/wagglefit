@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Optimise function for fitting a model using NLOPT — optimise_model • wagglefit</title>
+<title>Creates ccdf plot of data — make_base_plot • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Optimise function for fitting a model using NLOPT — optimise_model" />
-<meta property="og:description" content="Optimise function for fitting a model using NLOPT" />
+<meta property="og:title" content="Creates ccdf plot of data — make_base_plot" />
+<meta property="og:description" content="Creates a ccdf plot for the data provided" />
 
 
 
@@ -106,52 +106,29 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Optimise function for fitting a model using NLOPT</h1>
+    <h1>Creates ccdf plot of data</h1>
     
-    <div class="hidden name"><code>optimise_model.Rd</code></div>
+    <div class="hidden name"><code>make_base_plot.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Optimise function for fitting a model using NLOPT</p>
+    <p>Creates a ccdf plot for the data provided</p>
     </div>
 
-    <pre class="usage"><span class='fu'>optimise_model</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>params</span>, <span class='va'>lb</span>, <span class='va'>ub</span>, verbose <span class='op'>=</span> <span class='cn'>FALSE</span>, xtol <span class='op'>=</span> <span class='fl'>0</span>, model <span class='op'>=</span> <span class='fl'>0L</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_base_plot</span><span class='op'>(</span><span class='va'>x</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>NumericVector Foraging distance</p></td>
-    </tr>
-    <tr>
-      <th>params</th>
-      <td><p>NumericVector parameter estimates to run the model with</p></td>
-    </tr>
-    <tr>
-      <th>lb</th>
-      <td><p>NumericVector, array of lower bounds for each paramater</p></td>
-    </tr>
-    <tr>
-      <th>ub</th>
-      <td><p>NumericVector, array of upper bounds for each parameter</p></td>
-    </tr>
-    <tr>
-      <th>verbose</th>
-      <td><p>Bool, to display optimisation as it runs, defaults to FALSE</p></td>
-    </tr>
-    <tr>
-      <th>xtol</th>
-      <td><p>double, The absolute tolerance on function value. If 0 (default)
-then default to nlopt default value.</p></td>
-    </tr>
-    <tr>
-      <th>model</th>
-      <td><p>int The model to run. Must be 0, 1 or 2 which means 'all',
-'scout' or 'recruit' respectively,  defaults to 0 ('all')</p></td>
+      <td><p>The foraging distance to plot</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>ggplot plot of cumulative probability for foraging distances in Km</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">

@@ -115,7 +115,7 @@
     <p>Get model ccdf for a given model</p>
     </div>
 
-    <pre class="usage"><span class='fu'>model_ccdf</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>params</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>model_ccdf</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>params</span>, model <span class='op'>=</span> <span class='fl'>0L</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -129,6 +129,11 @@
       <td><p>NumericVector parameters to calculate the ccdfs for. E.g. if
 the scout model their will only be three (ls, qn, a) but if all their will
 be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make</p></td>
+    </tr>
+    <tr>
+      <th>model</th>
+      <td><p>int The model to run. Must be 0, 1 or 2 which means 'all',
+'scout' or 'recruit' respectively,  defaults to 0 ('all')</p></td>
     </tr>
     </table>
 
