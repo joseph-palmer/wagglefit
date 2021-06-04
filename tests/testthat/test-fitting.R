@@ -143,7 +143,7 @@ test_fit_multiple_logic <- function() {
     )
   )
   max_idx <- which(results_fmax == max(results_fmax))
-  test_that("Method used to get the minimum fit from multiple fits works", {
+  test_that("Method used to get the max fit from multiple fits works", {
     expect_identical(result_example[[3]], result_example[[max_idx]])
   })
 }
@@ -168,8 +168,8 @@ fitting_tests <- function(x, p, ls, ln, qn, a) {
   test_generate_bounds_scout()
   test_generate_starting_est_all(x)
   test_generate_starting_est_scout(x)
+  test_fit_multiple_logic()
   # test_fit (x, p, ls, ln, qn, a)
-  # test_fit_multiple_logic ()
   # fails on check as 'nlopt_create' not provided by package 'nloptr'. Despite
   # the fact it works locally. Keep off unless you wish to run locally (raise
   # issue later for fix)

@@ -135,22 +135,26 @@ void ccdf_model_recruit(NumericVector x, NumericVector y,
 //' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
 //' the scout model their will only be three (ls, qn, a) but if all their will
 //' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
+//' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
+//' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
 //' @return y NumericVector the ccdf
 //' @export
 // [[Rcpp::export]]
-NumericVector model_ccdf(NumericVector x, NumericVector params)
+NumericVector model_ccdf(NumericVector x, NumericVector params,
+                         int model = 0)
 {
   NumericVector y(x.size());
-  if (params.size() == 3) {
+  if (model == 1) {
     ccdf_model_scout(x, y, params[0], params[1], params[2]);
-  } else if (params.size() == 5) {
+  } else if (model == 2) {
+    ccdf_model_recruit(x, y, params[0], params[1], params[2]);
+  } else if (model == 0) {
     ccdf_model_all(x, y, params[0], params[1], params[2], params[3], params[4]);
   } else {
-    stop(
-        "Number of parameters is inconsistent with avaliable models.\n" \
-        "Only 3 and 5 parameters are permited, you provided %i",
-        params.size()
-    );
-  }
+        stop(
+            "Model given is inconsistent with avaliable models.\n" \
+            "Only 0, 1 or 2 (meaning scout, recruit and all) is permited"
+        );
+    }
   return y;
 }

@@ -93,67 +93,6 @@ test_ccdf_model_recruit <- function(x, ln, qn, a) {
   })
 }
 
-test_model_ccdf_5_params <- function(x, params) {
-  expected <- c(
-    0.82791621, 0.34620235,
-    0.64703231, 0.24563321,
-    0.12895473, 0.34620235,
-    0.09734924, 0.24563321,
-    2.00000000, 0.37046744
-  )
-  result <- model_ccdf(x, params)
-  test_that("model_ccdf with 5 parameters returns the expected result", {
-    expect_identical(round(expected, 5), round(result, 5))
-  })
-}
-
-test_model_ccdf_3_params <- function(x, params) {
-  expected <- c(
-    0.82515086, 0.45299139,
-    0.67843709, 0.36751134,
-    0.23771827, 0.45299139,
-    0.18922304, 0.36751134,
-    2., 0.4720501
-  )
-  result <- model_ccdf(x, params)
-  test_that("model_ccdf with 3 parameters returns the expected result", {
-    expect_identical(round(expected, 5), round(result, 5))
-  })
-}
-
-test_model_ccdf_errors <- function(x) {
-  test_that("model_ccdf with not 3 or 5 parameters raises errors", {
-    expect_error(
-      model_ccdf(x, c(0.1)),
-      paste0(
-        "Number of parameters is inconsistent with avaliable models.\n",
-        "Only 3 and 5 parameters are permited, you provided 1"
-      )
-    )
-    expect_error(
-      model_ccdf(x, c(0.1, 0.2)),
-      paste0(
-        "Number of parameters is inconsistent with avaliable models.\n",
-        "Only 3 and 5 parameters are permited, you provided 2"
-      )
-    )
-    expect_error(
-      model_ccdf(x, c(0.1, 0.2, 0.3, 0.4)),
-      paste0(
-        "Number of parameters is inconsistent with avaliable models.\n",
-        "Only 3 and 5 parameters are permited, you provided 4"
-      )
-    )
-    expect_error(
-      model_ccdf(x, c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6)),
-      paste0(
-        "Number of parameters is inconsistent with avaliable models.\n",
-        "Only 3 and 5 parameters are permited, you provided 6"
-      )
-    )
-  })
-}
-
 ccdf_tests <- function() {
   x <- c(
     0.2, 0.5,
@@ -175,9 +114,6 @@ ccdf_tests <- function() {
   test_ccdf_model_all(x, p, ls, ln, qn, a)
   test_ccdf_model_scout(x, ls, qn, a)
   test_ccdf_model_recruit(x, ln, qn, a)
-  test_model_ccdf_5_params(x, c(p, ls, ln, qn, a))
-  test_model_ccdf_3_params(x, c(ln, qn, a))
-  test_model_ccdf_errors(x)
 }
 
 # run tests

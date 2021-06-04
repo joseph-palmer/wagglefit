@@ -3,7 +3,7 @@
 \name{generate_starting_ests_scout}
 \alias{generate_starting_ests_scout}
 \title{Generates starting estimates for all numerical optimisation of all parameters
-of the scout model}
+of the scout model (can also be used for the recruit model)}
 \usage{
 generate_starting_ests_scout(distance, bounds, verbose = FALSE)
 }

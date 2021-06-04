@@ -3,7 +3,7 @@
 \name{fit}
 \alias{fit}
 \title{fit either the scout and recruit superposition model or the scout model to
-data}
+data (can also be used for the recruit model)}
 \usage{
 fit(
   distance,

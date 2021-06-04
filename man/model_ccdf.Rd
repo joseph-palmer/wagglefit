@@ -4,7 +4,7 @@
 \alias{model_ccdf}
 \title{Get model ccdf for a given model}
 \usage{
-model_ccdf(x, params)
+model_ccdf(x, params, model = 0L)
 }
 \arguments{
 \item{x}{NumericVector foraging distances}
@@ -12,6 +12,9 @@ model_ccdf(x, params)
 \item{params}{NumericVector parameters to calculate the ccdfs for. E.g. if
 the scout model their will only be three (ls, qn, a) but if all their will
 be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make}
+
+\item{model}{int The model to run. Must be 0, 1 or 2 which means 'all',
+'scout' or 'recruit' respectively,  defaults to 0 ('all')}
 }
 \value{
 y NumericVector the ccdf

@@ -1,3 +1,21 @@
+#' Get model number from model name
+#'
+#' @description Converts the model name to its number for cpp. E.g. 'all' is 0
+#' @param model characterArray The model to get the number for
+#' @export
+#' @concept utility
+model_number_from_model <- function(model) {
+  model_list <- list(
+    "all" = 0,
+    "scout" = 1,
+    "recruit" = 2
+  )
+  if (!(model %in% names(model_list))) {
+    stop("Model name not found")
+  }
+  return(model_list[[model]])
+}
+
 #' Wrapper for message
 #'
 #' @description A wrapper for `message` that only prints output when
@@ -25,7 +43,7 @@ message_verbose <- function(verbose = TRUE, ...) {
 #' \dontrun{
 #' calc_dist(1.8)
 #' }
-#'
+#' @concept utility
 calc_dist <- function(duration) {
   intercept <- 0.17
   slope <- 1.38
@@ -47,7 +65,7 @@ calc_dist <- function(duration) {
 #' \dontrun{
 #' trunc_normal(0, 0.5, -1, 1)
 #' }
-#'
+#' @concept utility
 trunc_normal <- function(mean, sd, lwr, upr) {
   continue <- TRUE
   while (continue) {
@@ -57,4 +75,45 @@ trunc_normal <- function(mean, sd, lwr, upr) {
     }
   }
   return(x)
+}
+
+#' Calculate AIC values for a model
+#'
+#' @description Calulcates the AIC values for a given model
+#' @param k integer The number of parameters
+#' @param ll double The maximum log-likelihood (MLE) of the fitted model
+#' @export
+#' @concept utility
+calc_aic <- function(k, ll) {
+  return(2 * k - 2 * ll)
+}
+
+#' Run a KS test on the data
+#'
+#' @description Calulctate the ks test stat and p value for a given model
+#' @param x doubleArray Foraging distance data
+#' @param param_est doubleArray The parameter estimates for a model
+#' @param model_type characterArray the name of the model ran
+#' @param pvalue Bool To return the p value (TRUE) or D statistic (FALSE).
+#' Defaults to TRUE.
+#' @importFrom stats ks.test
+#' @importFrom rlang .data
+#' @concept utility
+calc_ks <- function(x, param_est, model_type, pvalue = TRUE) {
+  if (model_type != "all") {
+    param_est <- param_est[-1]
+  }
+  param_est <- param_est[!is.na(param_est)]
+  ccdf_data <- inverse_ccdf(x)
+  ccdf_model <- model_ccdf(x, param_est, model_number_from_model(model_type))
+  if (all(is.nan(ccdf_model))) {
+    print(paste(model_type, "has bad results"))
+    return(NA)
+  }
+  ks <- ks.test(ccdf_data$prob, ccdf_model)
+  if (pvalue) {
+    return(ks$p.value)
+  } else {
+    return(ks$statistic)
+  }
 }

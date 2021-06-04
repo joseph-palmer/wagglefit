@@ -26,5 +26,5 @@ within given bounds.
 \dontrun{
 trunc_normal(0, 0.5, -1, 1)
 }
-
 }
+\concept{utility}

@@ -23,5 +23,5 @@ Calculate distance from waggle run duration
 \dontrun{
 calc_dist(1.8)
 }
-
 }
+\concept{utility}

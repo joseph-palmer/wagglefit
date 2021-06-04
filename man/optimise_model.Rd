@@ -4,7 +4,7 @@
 \alias{optimise_model}
 \title{Optimise function for fitting a model using NLOPT}
 \usage{
-optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0)
+optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L)
 }
 \arguments{
 \item{x}{NumericVector Foraging distance}
@@ -19,6 +19,9 @@ optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0)
 
 \item{xtol}{double, The absolute tolerance on function value. If 0 (default)
 then default to nlopt default value.}
+
+\item{model}{int The model to run. Must be 0, 1 or 2 which means 'all',
+'scout' or 'recruit' respectively,  defaults to 0 ('all')}
 }
 \description{
 Optimise function for fitting a model using NLOPT

@@ -132,7 +132,7 @@ generate_starting_ests_all <- function(distance, bounds, verbose = FALSE) {
 }
 
 #' Generates starting estimates for all numerical optimisation of all parameters
-#' of the scout model
+#' of the scout model (can also be used for the recruit model)
 #'
 #' @description Generates starting estimates for all parameters by taking a
 #' random value sampled from a normal distribution truncated at the upper and
@@ -183,7 +183,7 @@ generate_starting_ests_scout <- function(distance, bounds, verbose = FALSE) {
 }
 
 #' fit either the scout and recruit superposition model or the scout model to
-#' data
+#' data (can also be used for the recruit model)
 #'
 #' @description Fits specified model to the data given using MLE.
 #' @param distance doubleArray The distance decoded from the waggle dance.
@@ -204,14 +204,19 @@ generate_starting_ests_scout <- function(distance, bounds, verbose = FALSE) {
 #'
 fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
                 verbose_r = FALSE, verbose_cpp = FALSE, xtol = 0) {
+  model <- tolower(model)
   model_function_list <- list(
     "all" = c(generate_bounds_all, generate_starting_ests_all),
-    "scout" = c(generate_bounds_scout, generate_starting_ests_scout)
+    "scout" = c(generate_bounds_scout, generate_starting_ests_scout),
+    "recruit" = c(generate_bounds_scout, generate_starting_ests_scout)
   )
-  if (!(tolower(model) %in% names(model_function_list))) {
+  model_numval <- model_number_from_model(model)
+  if (!(model %in% names(model_function_list))) {
     stop(
       paste(
-        "Model", model, "is not known. Must be either 'all' or 'scout'"
+        "Model",
+        model,
+        "is not known. Must be 'all', 'scout' or 'recruit'"
       )
     )
   }
@@ -234,8 +239,12 @@ fit <- function(distance, model = "all", upper = 5, iteration = c(1, 1),
     bounds[, 1],
     bounds[, 2],
     verbose_cpp,
-    xtol
+    xtol,
+    model_numval
   )
+  if (is.infinite(result[[1]]) || is.nan(result[[1]])) {
+    result[[1]] <- -999999
+  }
   message_verbose(
     verbose_r,
     paste0(
@@ -288,5 +297,8 @@ fit_mutliple <- function(distance, model = "all", n = 5, upper = 5,
     )
   )
   max_idx <- which(results_fmax == max(results_fmax))
+  if (length(max_idx) > 1) {
+    max_idx <- sample(max_idx, 1)
+  }
   return(results[[max_idx]])
 }

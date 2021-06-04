@@ -1,0 +1,151 @@
+
+#' Calculates the ccdf for given data
+#'
+#' @description Orders the data smallest to largest and calculates the
+#' probability of sampling a value greater than or equal to a given value.
+#' @param x The data, e.g. foraging distance
+#' @return tibble of the sorted foraging distances and their cumulative
+#' probability
+#' @importFrom purrr map_dbl
+#' @importFrom tibble tibble
+#' @export
+#'
+inverse_ccdf <- function(x) {
+  sd <- -sort(-x)
+  prob <- map_dbl(
+    seq_len(length(x)),
+    ~ {
+      .x / length(x)
+    }
+  )
+  return(tibble(sd, prob))
+}
+
+#' Creates data for plots
+#'
+#' @description Using the optimised paramater estimates, creates the data for
+#' the ccdf plots
+#' @param x doubleArray The foraging distance to plot
+#' @param param_est doubleArray The paramater estimates of the optimisation
+#' @param model characterArray The name of the model used
+#' @return tibble of model data and cumulative probability
+#' @importFrom tibble tibble
+#' @export
+#'
+make_ccdf_plot_data <- function(x, param_est, model) {
+  model_n <- model_number_from_model(model)
+  npoints <- 100
+  x_seq <- seq(min(x), max(x), length.out = npoints)
+  cumul_ccdf <- model_ccdf(x_seq, param_est, model_n)
+  cumul_ccdf[[1]] <- 1
+  cumul <- tibble(x_seq, cumul_ccdf)
+  return(cumul)
+}
+
+#' Creates ccdf plot of data
+#'
+#' @description Creates a ccdf plot for the data provided
+#' @param x The foraging distance to plot
+#' @return ggplot plot of cumulative probability for foraging distances in Km
+#' @importFrom ggplot2 ggplot aes_string geom_point geom_line theme_set theme
+#' theme_classic element_text labs
+#' @importFrom tibble tibble
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @export
+#'
+make_base_plot <- function(x) {
+  theme_set(
+    theme_classic() +
+      theme(
+        text = element_text(family = "URWHelvetica", size = 8)
+      )
+  )
+  plt <- inverse_ccdf(x) %>%
+    ggplot(aes_string(x = .data$sd, y = .data$log_prob)) +
+    geom_point() +
+    labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+  return(plt)
+}
+
+#' Creates plots with model fits from optimised paramaters
+#'
+#' @description Using the optimised paramater estimates, creates ccdf plots
+#' @param x The foraging distance to plot
+#' @param param_est The paramater estimates of the optimisation
+#' @return ggplot plot of cumulative probability of foraging distances in Km
+#' along with the model fits to this data.
+#' @importFrom ggplot2 ggplot aes geom_line geom_line theme_set theme
+#' theme_classic element_text
+#' @importFrom tibble tibble
+#' @importFrom purrr map map_df
+#' @importFrom rlang .data
+#' @export
+#'
+make_full_plot <- function(x, param_est) {
+  cdf_data <- map(
+    param_est,
+    ~ {
+      make_ccdf_plot_data(x, .x$est, model = .x$data_name)
+    }
+  )
+  df <- map_df(
+    cdf_data,
+    I,
+    .id = "Model"
+  )
+  plt <- make_base_plot(x) +
+    geom_line(
+      data = df,
+      aes(
+        x = .data$x_seq,
+        y = log(.data$cumul_ccdf),
+        colour = .data$Model
+      )
+    )
+  return(plt)
+}
+
+#' Converts results list to tibble
+#'
+#' @description Converts the results list from running the models into a wide
+#' format tibble for each model
+#' @param result namedList the results list
+#' @return tibble of model results
+#' @importFrom tibble tibble
+#' @importFrom dplyr bind_rows as_tibble mutate
+#' @importFrom tidyr pivot_wider
+#' @importFrom magrittr %>%
+#' @importFrom rlang .data
+#' @export
+#'
+make_results_tibble <- function(result) {
+  all_tibble <- as_tibble(result$all)
+  all_tibble$parameter <- c("p", "ls", "ln", "qn", "a")
+  scout_tibble <- as_tibble(result$scout)
+  scout_tibble$parameter <- c("ls", "qn", "a")
+  recruit_tibble <- as_tibble(result$recruit)
+  recruit_tibble$parameter <- c("ln", "qn", "a")
+  result_tibble <- bind_rows(
+    all_tibble,
+    scout_tibble,
+    recruit_tibble
+  )
+  result_tibble <- result_tibble %>%
+    pivot_wider(names_from = .data$parameter, values_from = .data$est) %>%
+    mutate(
+      AIC = calc_aic(rowSums(!(is.na(.data$.))) - 2, .data$fmax)
+    ) %>%
+    mutate(
+      p = ifelse(
+        .data$data_name == "scout",
+        1,
+        ifelse(
+          .data$data_name == "recruit",
+          0,
+          .data$p
+        )
+      )
+    )
+  return(result_tibble)
+}

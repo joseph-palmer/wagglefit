@@ -38,12 +38,15 @@ void check_user_input(int fcount) {
 // check optimise exit status and display important info about them to user
 //
 // @param optimise_result Integer The exit code from the nlopt optimisation
-void check_optimise_result(int optimise_result) {
-    if (optimise_result < 0) {
-        Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
-        if (optimise_result == -4) {
-            Rcout << "Fail is due to round off errors"
-                "- result may still be usefull" << std::endl;
+// @param verbose Bool To display messages or not (defaults to TRUE)
+void check_optimise_result(int optimise_result, bool verbose = true) {
+    if (verbose) {
+        if (optimise_result < 0) {
+            Rcout << "NLOPT FAIL! Error code: " << optimise_result << std::endl;
+            if (optimise_result == -4) {
+                Rcout << "Fail is due to round off errors"
+                    "- result may still be usefull" << std::endl;
+            }
         }
     }
 }
@@ -216,7 +219,7 @@ double objective_model_all(
     return result;
 }
 
-// Objective function for scout and recruit superposition
+// Objective function for scout model
 //
 // param: n unsigned, record parameter required for nlopt
 // param: NumericVector, array of parameter estimates to run the model with
@@ -262,6 +265,52 @@ double objective_model_scout(
     return result;
 }
 
+// Objective function for recruit model
+//
+// param: n unsigned, record parameter required for nlopt
+// param: NumericVector, array of parameter estimates to run the model with
+// param: grad double*, gradient value (unused but required as positional)
+// param: x NumericVector, The data to load fit to
+double objective_model_recruit(
+    unsigned n, const double* params, double* grad, void* f_data
+    )
+{
+    data_struct* data = (data_struct*) (f_data);
+    check_user_input(data->fcount);
+    data->fcount++;
+    double result = loglike_model_recruit(
+        data->x,
+        params[0],
+        params[1],
+        params[2]
+    );
+    if (result > data->best_est) {
+        data->best_est = result;
+    }
+    if (data->verbose) {
+        Rcout << "Iteration: "
+            << data->fcount
+            << ", Result: "
+            << result
+            << ", Best estimate: "
+            << data->best_est
+            << std::endl;
+        Rcout << "p = "
+            << params[0]
+            << ", ls = "
+            << params[1]
+            << ", ln = "
+            << params[2]
+            << ", qn = "
+            << params[3]
+            << ", a = "
+            << params[4]
+            << std::endl;
+        Rcout << "-----" << std::endl;
+    }
+    return result;
+}
+
 /*
 ------------------------------- optimising functions ---------------------------
 */
@@ -275,11 +324,13 @@ double objective_model_scout(
 //' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
 //' @param xtol double, The absolute tolerance on function value. If 0 (default)
 //' then default to nlopt default value.
+//' @param model int The model to run. Must be 0, 1 or 2 which means 'all',
+//' 'scout' or 'recruit' respectively,  defaults to 0 ('all')
 //' @export
 // [[Rcpp::export]]
 NumericVector optimise_model(
     NumericVector x, NumericVector params, NumericVector lb, NumericVector ub,
-    bool verbose = false, double xtol = 0
+    bool verbose = false, double xtol = 0, int model = 0
 )
 {
     // put constant data into data_struct and initialise other data
@@ -291,15 +342,16 @@ NumericVector optimise_model(
 
     // set up the model function to run
     double (*objective_fun)(unsigned, const double*, double*, void*);
-    if (params.size() == 3) {
+    if (model == 1) {
         objective_fun = &objective_model_scout;
-    } else if (params.size() == 5) {
+    } else if (model == 2) {
+        objective_fun = &objective_model_recruit;
+    } else if (model == 0) {
         objective_fun = &objective_model_all;
     } else {
         stop(
-            "Number of parameters is inconsistent with avaliable models.\n" \
-            "Only 3 and 5 parameters are permited, you provided %i",
-            params.size()
+            "Model given is inconsistent with avaliable models.\n" \
+            "Only 0, 1 or 2 (meaning scout, recruit and all) is permited"
         );
     }
 
@@ -316,7 +368,7 @@ NumericVector optimise_model(
 
     // run optimisation
     nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &maxf);
-    check_optimise_result(optimise_result);
+    check_optimise_result(optimise_result, verbose);
 
     // store results
     NumericVector results(params.size() + 1);

@@ -103,14 +103,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // model_ccdf
-NumericVector model_ccdf(NumericVector x, NumericVector params);
-RcppExport SEXP _wagglefit_model_ccdf(SEXP xSEXP, SEXP paramsSEXP) {
+NumericVector model_ccdf(NumericVector x, NumericVector params, int model);
+RcppExport SEXP _wagglefit_model_ccdf(SEXP xSEXP, SEXP paramsSEXP, SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type params(paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(model_ccdf(x, params));
+    Rcpp::traits::input_parameter< int >::type model(modelSEXP);
+    rcpp_result_gen = Rcpp::wrap(model_ccdf(x, params, model));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -191,8 +192,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // optimise_model
-NumericVector optimise_model(NumericVector x, NumericVector params, NumericVector lb, NumericVector ub, bool verbose, double xtol);
-RcppExport SEXP _wagglefit_optimise_model(SEXP xSEXP, SEXP paramsSEXP, SEXP lbSEXP, SEXP ubSEXP, SEXP verboseSEXP, SEXP xtolSEXP) {
+NumericVector optimise_model(NumericVector x, NumericVector params, NumericVector lb, NumericVector ub, bool verbose, double xtol, int model);
+RcppExport SEXP _wagglefit_optimise_model(SEXP xSEXP, SEXP paramsSEXP, SEXP lbSEXP, SEXP ubSEXP, SEXP verboseSEXP, SEXP xtolSEXP, SEXP modelSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -202,7 +203,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type ub(ubSEXP);
     Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
     Rcpp::traits::input_parameter< double >::type xtol(xtolSEXP);
-    rcpp_result_gen = Rcpp::wrap(optimise_model(x, params, lb, ub, verbose, xtol));
+    Rcpp::traits::input_parameter< int >::type model(modelSEXP);
+    rcpp_result_gen = Rcpp::wrap(optimise_model(x, params, lb, ub, verbose, xtol, model));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -215,13 +217,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_ccdf_model_all", (DL_FUNC) &_wagglefit_ccdf_model_all, 7},
     {"_wagglefit_ccdf_model_scout", (DL_FUNC) &_wagglefit_ccdf_model_scout, 5},
     {"_wagglefit_ccdf_model_recruit", (DL_FUNC) &_wagglefit_ccdf_model_recruit, 5},
-    {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 2},
+    {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 3},
     {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 6},
     {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 6},
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},
     {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 4},
     {"_wagglefit_loglike_model_recruit", (DL_FUNC) &_wagglefit_loglike_model_recruit, 4},
-    {"_wagglefit_optimise_model", (DL_FUNC) &_wagglefit_optimise_model, 6},
+    {"_wagglefit_optimise_model", (DL_FUNC) &_wagglefit_optimise_model, 7},
     {NULL, NULL, 0}
 };
 
