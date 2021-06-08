@@ -1,0 +1,95 @@
+# Honeybee foraging analysis
+## Joseph Palmer
+---
+
+### Synopsis
+
+This document contains the analysis of models fit to the data using `run_all_models()`
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+library(tibble)
+source("analysis/fit_data.R")
+```
+
+
+```{r}
+
+path <- "analysis/results_version1"
+data <- get_data()
+
+sites <- purrr::map_chr(
+  list.files(path),
+  ~ {
+    return(gsub(".rds", "", .x))
+  }
+)
+
+plots_data <- purrr::map(
+  sites,
+  ~ {
+    subdat <- data %>% dplyr::filter(.data$site == .x)
+    df <- readRDS(paste0(path, "/", .x, ".rds"))[-3]
+    results_tibble <- make_results_tibble(df) %>%
+      rowwise() %>%
+      mutate(
+        ks_p = calc_ks(
+          subdat$foraging_distance, c(p, ls, ln, qn, a),
+          data_name, TRUE
+        ),
+        ks_d = calc_ks(
+          subdat$foraging_distance, c(p, ls, ln, qn, a),
+          data_name, FALSE
+        ),
+        site = .x
+      ) %>%
+      select(
+        site,
+        everything()
+      )
+    ret <- list(
+      site_name = list(
+        results_tibble,
+        make_full_plot(subdat$foraging_distance, df)
+      )
+    )
+    return(ret)
+  }
+)
+```
+
+
+```{r}
+plots <- plots_data %>%
+  purrr::map(
+    ~ {
+      .x[[1]][[2]]
+    }
+  )
+
+all_data <- plots_data %>%
+  purrr::map(
+    ~ {
+      .x[[1]][[1]]
+    }
+  ) %>%
+  bind_rows()
+
+aic_plot <- all_data %>%
+  group_by(site) %>%
+  slice(which.min(AIC)) %>%
+  select(data_name) %>%
+  group_by(data_name) %>%
+  summarise(lowest_AIC = n()) %>%
+  ggplot(aes(x = data_name, y = lowest_AIC)) +
+  geom_bar(stat = "identity", fill = "#0084ff") +
+  labs(x = "Model", y = "Number of lowest AIC sites")
+```
