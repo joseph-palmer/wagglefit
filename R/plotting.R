@@ -49,7 +49,8 @@ make_ccdf_plot_data <- function(x, param_est, model, npoints = 100) {
 #' Creates ccdf plot of data
 #'
 #' @description Creates a ccdf plot for the data provided
-#' @param x The foraging distance to plot
+#' @param x doubleArray The foraging distance to plot
+#' @param logit Bool to log the probabilities or not.
 #' @return ggplot plot of cumulative probability for foraging distances in Km
 #' @importFrom ggplot2 ggplot aes_string geom_point geom_line theme_set theme
 #' theme_classic element_text labs
@@ -58,17 +59,24 @@ make_ccdf_plot_data <- function(x, param_est, model, npoints = 100) {
 #' @importFrom rlang .data
 #' @export
 #'
-make_base_plot <- function(x) {
+make_base_plot <- function(x, logit = TRUE) {
   theme_set(
     theme_classic() +
       theme(
         text = element_text(family = "URWHelvetica", size = 8)
       )
   )
-  plt <- inverse_ccdf(x) %>%
-    ggplot(aes(x = .data$sd, y = log(.data$prob))) +
-    geom_point() +
-    labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+  if (logit) {
+    plt <- inverse_ccdf(x) %>%
+      ggplot(aes(x = .data$sd, y = log(.data$prob))) +
+      geom_point() +
+      labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+  } else {
+    plt <- inverse_ccdf(x) %>%
+      ggplot(aes(x = .data$sd, y = .data$prob)) +
+      geom_point() +
+      labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+  }
   return(plt)
 }
 
@@ -78,16 +86,21 @@ make_base_plot <- function(x) {
 #' @param x The foraging distance to plot
 #' @param model_result_list namedlist The return of `fit`, a list of parameter
 #' estimates ($est) and the data name ($data_name).
+#' @param logit Bool To log the data or not. Defaults to TRUE
+#' @param subplot_coords doubleArray Coordinates for location of inner histogram
 #' @return ggplot plot of cumulative probability of foraging distances in Km
 #' along with the model fits to this data.
-#' @importFrom ggplot2 ggplot aes geom_line geom_line theme_set theme
-#' theme_classic element_text
+#' @importFrom ggplot2 ggplot aes geom_histogram geom_line theme_set theme
+#' theme_classic element_text element_blank element_rect annotation_custom
+#' ggplotGrob
 #' @importFrom tibble tibble
 #' @importFrom purrr map map_df
 #' @importFrom rlang .data
 #' @export
 #'
-make_full_plot <- function(x, model_result_list) {
+make_full_plot <- function(x, model_result_list,
+                           logit = TRUE,
+                           subplot_coords = c(0.5, 2.5, -7.8, -2.5)) {
   cdf_data <- map(
     model_result_list,
     ~ {
@@ -99,7 +112,8 @@ make_full_plot <- function(x, model_result_list) {
     I,
     .id = "Model"
   )
-  plt <- make_base_plot(x) +
+
+  plt <- make_base_plot(x, TRUE) +
     geom_line(
       data = df,
       aes(
@@ -108,7 +122,30 @@ make_full_plot <- function(x, model_result_list) {
         colour = .data$Model
       )
     )
-  return(plt)
+
+  histoplot <- as_tibble(x) %>%
+    ggplot(aes(x = .data$value)) +
+    geom_histogram(
+      bins = 100,
+      binwidth = (max(x) - min(x)) / 20,
+      col = "white"
+    ) +
+    theme(
+      axis.title.x = element_blank(),
+      legend.position = "none",
+      panel.background = element_rect(fill = "transparent"),
+      plot.background = element_rect(fill = "transparent", colour = NA)
+    )
+
+  full_plot <- plt + annotation_custom(
+    ggplotGrob(histoplot),
+    xmin = subplot_coords[[1]],
+    xmax = subplot_coords[[2]],
+    ymin = subplot_coords[[3]],
+    ymax = subplot_coords[[4]]
+  )
+
+  return(full_plot)
 }
 
 #' Converts results list to tibble
