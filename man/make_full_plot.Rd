@@ -4,13 +4,22 @@
 \alias{make_full_plot}
 \title{Creates plots with model fits from optimised paramaters}
 \usage{
-make_full_plot(x, model_result_list)
+make_full_plot(
+  x,
+  model_result_list,
+  logit = TRUE,
+  subplot_coords = c(0.5, 2.5, -7.8, -2.5)
+)
 }
 \arguments{
 \item{x}{The foraging distance to plot}
 
 \item{model_result_list}{namedlist The return of `fit`, a list of parameter
 estimates ($est) and the data name ($data_name).}
+
+\item{logit}{Bool To log the data or not. Defaults to TRUE}
+
+\item{subplot_coords}{doubleArray Coordinates for location of inner histogram}
 }
 \value{
 ggplot plot of cumulative probability of foraging distances in Km

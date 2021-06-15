@@ -4,6 +4,7 @@ aut
 avaliable
 bool
 Bool
+bootstapped
 CallEntries
 CallMethodDef
 Caluclates
@@ -60,6 +61,7 @@ maxf
 maxpart
 modelSEXP
 mSEXP
+namedlist
 namedList
 NilValue
 nlopt
