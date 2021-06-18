@@ -15,6 +15,7 @@ repos:
           (?x)^(
           data/.*|
           analysis/.*|
+          Simulation/.*|
           (.*/|)\.Rprofile|
           (.*/|)\.Renviron|
           (.*/|)\.gitignore|

@@ -1,0 +1,190 @@
+# Honeybee foraging simulation
+## Joseph Palmer
+---
+
+The code for the honeybee foraging simulation is writen in python and is contained in the `Simulation` directory (specifically `Simulation/Code`). The results of the simulation (as output csv files) are stored in `Results/Results`. Generating the results can be done by running the script `run.py` in `Simulation/Code`. Once you have ran the simulation you can run through this Rmd doc to generate the figures. To run the python code you will need python3 installed, along with the dependencies listed in **init.py?**.
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "URWHelvetica", size = 8)
+    )
+)
+library(dplyr)
+library(tibble)
+library(Matching)
+devtools::load_all()
+```
+
+### Extracting the results
+
+```{r, run_sim}
+
+recruit <- read.csv(
+  "Simulation/Results/recruit_distribution_v2.csv",
+  header = FALSE
+)
+scout <- read.csv(
+  "Simulation/Results/scout_distribution_v2.csv",
+  header = FALSE
+)
+
+recruit$model <- "Recruit"
+scout$model <- "Scout"
+
+print(paste("Recruit:", length(recruit$V1), "Scout:", length(scout$V1)))
+```
+
+
+### Comparison of foraging distance patterns between foraging strategies
+
+For the foraging distances simulated under our different scenarios we evaluate the hypothesis that these two distributions are different and attempt to describe the observed patterns.
+
+To start with describing the obseved pattern we first fit an exponential to the data. The MLE of an exponential distribution is derived as the reciprocal of the data mean.
+
+```{r}
+
+get_exp_prediction <- function(x, n = 100) {
+  rate <- 1 / mean(x)
+  pred_x <- seq(0, max(x), length.out = n)
+  exp_prediction <- purrr::map_dbl(
+    pred_x,
+    ~ {
+      1 - exp(-rate * .x)
+    }
+  )
+  pred <- tibble(x = pred_x, y = 1 - exp_prediction)
+  return(pred)
+}
+
+scout_cdf <- inverse_ccdf(scout$V1 - min(scout$V1))
+pred <- get_exp_prediction(scout_cdf$sd)
+
+# log plot
+ggplot(scout_cdf, aes(x = sd, y = log(prob))) +
+  geom_point() +
+  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
+  labs(
+    x = "Foraging distance (km)",
+    y = "count"
+  )
+
+# nonlog plot
+ggplot(scout_cdf, aes(x = sd, y = prob)) +
+  geom_point() +
+  geom_line(aes(x = x, y = y), pred, colour = "blue") +
+  labs(
+    x = "Foraging distance (km)",
+    y = "count"
+  )
+
+# assessing fit of exponential using sampled KS test
+actual_p <- ks.test(scout_cdf$sd, "pexp", 1 / mean(scout_cdf$sd))$p.value
+simulated_p <- purrr::map_dbl(
+  seq_len(10000),
+  ~ {
+    z <- rexp(length(scout_cdf$sd), 1 / mean(scout_cdf$sd))
+    ks.test(z, "pexp", 1 / mean(z))$p.value
+  }
+)
+
+ggplot(tibble(x = simulated_p), aes(x = x)) +
+  geom_histogram() +
+  geom_vline(xintercept = actual_p)
+
+mean(simulated_p <= actual_p)
+```
+
+
+```{r}
+# recruit
+recruit_cdf <- inverse_ccdf(recruit$V1 - min(recruit$V1))
+pred <- get_exp_prediction(recruit_cdf$sd)
+
+# log plot
+ggplot(recruit_cdf, aes(x = sd, y = log(prob))) +
+  geom_point() +
+  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
+  labs(
+    x = "Foraging distance (km)",
+    y = "count"
+  )
+
+# nonlog plot
+ggplot(recruit_cdf, aes(x = sd, y = prob)) +
+  geom_point() +
+  geom_line(aes(x = x, y = y), pred, colour = "blue") +
+  labs(
+    x = "Foraging distance (km)",
+    y = "count"
+  )
+
+# assessing fit of exponential using sampled KS test
+actual_p <- ks.test(scout_cdf$sd, "pexp", 1 / mean(scout_cdf$sd))$p.value
+simulated_p <- purrr::map_dbl(
+  seq_len(1000),
+  ~ {
+    z <- rexp(length(scout_cdf$sd), 1 / mean(scout_cdf$sd))
+    ks.test(z, "pexp", 1 / mean(z))$p.value
+  }
+)
+
+ggplot(tibble(x = simulated_p), aes(x = x)) +
+  geom_histogram() +
+  geom_vline(xintercept = actual_p)
+
+mean(simulated_p <= actual_p)
+```
+
+### Comparison of the two foraging distance distributions
+
+```{r}
+ks <- ks.boot(scout_cdf$sd, recruit_cdf$sd)
+print(ks)
+```
+
+The distributions are significantly different to each other (Bootstrapped two-sided Kolmogorov-Smirnov test: d = 0.1039, p < 0.001). Whilst the KS test can determine if two data sets stem from different distributions, the stat will also show a different if the data come from the same distribution with different parameter estimates (e.g. exponential with different rates).
+
+
+```{r}
+# testing
+
+x <- inverse_ccdf(rexp(10000, 1.8))
+y <- inverse_ccdf(rnorm(1000, mean = 5, sd = 1))
+pred <- get_exp_prediction(x$sd)
+
+ggplot(x, aes(x = sd, y = log(prob))) +
+  geom_point() +
+  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
+  labs(
+    x = "Foraging distance (km)",
+    y = "count"
+  )
+
+ks.test(x$sd, "pexp", 1 / mean(x$sd))
+
+
+# assessing fit of exponential using KS test with simulation
+actual_d <- ks.test(x$sd, "pexp", 1 / mean(x$sd))$p.value
+simulated_d <- purrr::map_dbl(
+  seq_len(1000),
+  ~ {
+    z <- rexp(length(x$sd), 1 / mean(x$sd))
+    ks.test(z, "pexp", 1 / mean(z))$p.value
+  }
+)
+
+ggplot(tibble(x = simulated_d), aes(x = x)) +
+  geom_histogram() +
+  geom_vline(xintercept = actual_d)
+
+mean(simulated_d <= actual_d)
+```
