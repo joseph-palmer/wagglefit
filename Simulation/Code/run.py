@@ -181,12 +181,12 @@ def main():
             [total_sdist, np.random.choice(sdist, 60, replace = False)]
         )
 
-    sdist_path = "../Results/scout_distribution_v2.csv"
-    rdist_path = "../Results/recruit_distribution_v2.csv"
-    dists = [total_sdist, total_rdist]
-    paths = [sdist_path, rdist_path]
-    for i in range(2):
-        np.savetxt(paths[i], dists[i], delimiter = ",")
+    # sdist_path = "../Results/scout_distribution_v2.csv"
+    # rdist_path = "../Results/recruit_distribution_v2.csv"
+    # dists = [total_sdist, total_rdist]
+    # paths = [sdist_path, rdist_path]
+    # for i in range(2):
+    #     np.savetxt(paths[i], dists[i], delimiter = ",")
     return 0
 
 if __name__ == "__main__":

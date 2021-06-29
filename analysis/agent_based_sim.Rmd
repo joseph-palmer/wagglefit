@@ -28,6 +28,39 @@ devtools::load_all()
 
 ```{r, run_sim}
 
+# model functions
+exp_loglike <- function(x) {
+  rate <- 1 / mean(x)
+  exp_model <- rate * exp(-rate * x)
+  return(sum(log(exp_model)))
+}
+
+expmin_loglike <- function(x) {
+  rate <- 1 / (pi * (mean(x^2) - min(x)^2))
+  expmin_model <- 2 * pi * rate * x * exp(-pi * rate * x^2)
+  return(sum(log(expmin_model)))
+}
+
+# ccdf functions
+get_exp_prediction <- function(x, n = 100) {
+  rate <- 1 / mean(x)
+  print(rate)
+  pred_x <- seq(min(x), max(x), length.out = n)
+  exp_prediction <- 1 - exp(-rate * pred_x)
+  pred <- tibble(x = pred_x, y = 1 - exp_prediction)
+  return(pred)
+}
+
+get_expmin_prediction <- function(x, n = 100) {
+  rate <- 1 / (pi * (mean(x^2) - min(x)^2))
+  print(rate)
+  pred_x <- seq(min(x), max(x), length.out = n)
+  expmin_prediction <- 1 - exp(-pi * rate * pred_x^2)
+  pred <- tibble(x = pred_x, y = 1 - expmin_prediction)
+  return(pred)
+}
+
+# load data
 recruit <- read.csv(
   "Simulation/Results/recruit_distribution_v2.csv",
   header = FALSE
@@ -43,148 +76,89 @@ scout$model <- "Scout"
 print(paste("Recruit:", length(recruit$V1), "Scout:", length(scout$V1)))
 ```
 
+### Comparing model fits to scout and recruit data
 
-### Comparison of foraging distance patterns between foraging strategies
-
-For the foraging distances simulated under our different scenarios we evaluate the hypothesis that these two distributions are different and attempt to describe the observed patterns.
-
-To start with describing the obseved pattern we first fit an exponential to the data. The MLE of an exponential distribution is derived as the reciprocal of the data mean.
+We will fit an exponential and minimum of an exponential to each model. If our theory holds water the exponential will fit to the scouts best and the minimum of an exponential will fit to the recruits best. To be fit with the exponential function we first need to 'normalise' the data by subtracting the minimum foraging distance for all foraging distances. This is to ensure the exonential starts at 0 rather than stepping out to the minimum value and skewing the model fit. In plotting we take the values for the exponential ad add on the minimum value to each point to get the model fit data back in line with the actual data so they can be compared graphically. The data does not need to be transformed for the minimum of the exponential in the 2d plane as this minimum value is incorporated into the model.
 
 ```{r}
+scout_cdf <- inverse_ccdf(scout$V1)
+pred_exp <- get_exp_prediction(scout$V1 - min(scout$V1))
+pred_expmin <- get_expmin_prediction(scout$V1)
 
-get_exp_prediction <- function(x, n = 100) {
-  rate <- 1 / mean(x)
-  pred_x <- seq(0, max(x), length.out = n)
-  exp_prediction <- purrr::map_dbl(
-    pred_x,
-    ~ {
-      1 - exp(-rate * .x)
-    }
+# log plot
+scout_fit <- ggplot(scout_cdf, aes(x = sd, y = log(prob))) +
+  geom_point(size = 0.2) +
+  geom_line(
+    aes(x = x + min(scout$V1), y = log(y)), pred_exp,
+    colour = "#00bfc4"
+  ) +
+  geom_line(aes(x = x, y = log(y)), pred_expmin, colour = "#f8766d") +
+  labs(
+    x = "Simulated foraging distance (km)",
+    y = "ln Inverse cummulative frequency"
   )
-  pred <- tibble(x = pred_x, y = 1 - exp_prediction)
-  return(pred)
+
+ggsave(
+  plot = scout_fit,
+  filename = "Simulation/Results/scout_fit.png",
+  width = 70.1,
+  height = 81.79,
+  units = "mm",
+  dpi = 400
+)
+
+ll_exp <- exp_loglike(scout$V1 - min(scout$V1))
+ll_expmin <- expmin_loglike(scout$V1)
+s_aic <- calc_aic(1, ll_exp)
+r_aic <- calc_aic(1, ll_expmin)
+if (s_aic < r_aic) {
+  print("Scout model is the best")
+} else {
+  print("Recruit model is the best")
 }
+print(paste("Scout loglike:", ll_exp, "Recruit loglike:", ll_expmin))
+print(paste("Scout AIC:", s_aic, "Recruit AIC:", r_aic))
+```
 
-scout_cdf <- inverse_ccdf(scout$V1 - min(scout$V1))
-pred <- get_exp_prediction(scout_cdf$sd)
+```{r}
+recruit_cdf <- inverse_ccdf(recruit$V1)
+pred_exp <- get_exp_prediction(recruit$V1 - min(recruit$V1))
+pred_expmin <- get_expmin_prediction(recruit$V1)
 
 # log plot
-ggplot(scout_cdf, aes(x = sd, y = log(prob))) +
-  geom_point() +
-  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
+recruit_fit <- ggplot(recruit_cdf, aes(x = sd, y = log(prob))) +
+  geom_point(size = 0.2) +
+  geom_line(
+    aes(x = x + min(recruit$V1), y = log(y)),
+    pred_exp,
+    colour = "#00bfc4"
+  ) +
+  geom_line(aes(x = x, y = log(y)), pred_expmin, colour = "#f8766d") +
   labs(
-    x = "Foraging distance (km)",
-    y = "count"
+    x = "Simulated foraging distance (km)",
+    y = "ln Inverse cummulative frequency"
   )
 
-# nonlog plot
-ggplot(scout_cdf, aes(x = sd, y = prob)) +
-  geom_point() +
-  geom_line(aes(x = x, y = y), pred, colour = "blue") +
-  labs(
-    x = "Foraging distance (km)",
-    y = "count"
-  )
-
-# assessing fit of exponential using sampled KS test
-actual_p <- ks.test(scout_cdf$sd, "pexp", 1 / mean(scout_cdf$sd))$p.value
-simulated_p <- purrr::map_dbl(
-  seq_len(10000),
-  ~ {
-    z <- rexp(length(scout_cdf$sd), 1 / mean(scout_cdf$sd))
-    ks.test(z, "pexp", 1 / mean(z))$p.value
-  }
+ggsave(
+  plot = recruit_fit,
+  filename = "Simulation/Results/recruit_fit.png",
+  width = 70.1,
+  height = 81.79,
+  units = "mm",
+  dpi = 400
 )
 
-ggplot(tibble(x = simulated_p), aes(x = x)) +
-  geom_histogram() +
-  geom_vline(xintercept = actual_p)
-
-mean(simulated_p <= actual_p)
+ll_exp <- exp_loglike(recruit$V1 - min(recruit$V1))
+ll_expmin <- expmin_loglike(recruit$V1)
+s_aic <- calc_aic(1, ll_exp)
+r_aic <- calc_aic(1, ll_expmin)
+if (s_aic < r_aic) {
+  print("Scout model is the best")
+} else {
+  print("Recruit model is the best")
+}
+print(paste("Scout loglike:", ll_exp, "Recruit loglike:", ll_expmin))
+print(paste("Scout AIC:", s_aic, "Recruit AIC:", r_aic))
 ```
 
-
-```{r}
-# recruit
-recruit_cdf <- inverse_ccdf(recruit$V1 - min(recruit$V1))
-pred <- get_exp_prediction(recruit_cdf$sd)
-
-# log plot
-ggplot(recruit_cdf, aes(x = sd, y = log(prob))) +
-  geom_point() +
-  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
-  labs(
-    x = "Foraging distance (km)",
-    y = "count"
-  )
-
-# nonlog plot
-ggplot(recruit_cdf, aes(x = sd, y = prob)) +
-  geom_point() +
-  geom_line(aes(x = x, y = y), pred, colour = "blue") +
-  labs(
-    x = "Foraging distance (km)",
-    y = "count"
-  )
-
-# assessing fit of exponential using sampled KS test
-actual_p <- ks.test(scout_cdf$sd, "pexp", 1 / mean(scout_cdf$sd))$p.value
-simulated_p <- purrr::map_dbl(
-  seq_len(1000),
-  ~ {
-    z <- rexp(length(scout_cdf$sd), 1 / mean(scout_cdf$sd))
-    ks.test(z, "pexp", 1 / mean(z))$p.value
-  }
-)
-
-ggplot(tibble(x = simulated_p), aes(x = x)) +
-  geom_histogram() +
-  geom_vline(xintercept = actual_p)
-
-mean(simulated_p <= actual_p)
-```
-
-### Comparison of the two foraging distance distributions
-
-```{r}
-ks <- ks.boot(scout_cdf$sd, recruit_cdf$sd)
-print(ks)
-```
-
-The distributions are significantly different to each other (Bootstrapped two-sided Kolmogorov-Smirnov test: d = 0.1039, p < 0.001). Whilst the KS test can determine if two data sets stem from different distributions, the stat will also show a different if the data come from the same distribution with different parameter estimates (e.g. exponential with different rates).
-
-
-```{r}
-# testing
-
-x <- inverse_ccdf(rexp(10000, 1.8))
-y <- inverse_ccdf(rnorm(1000, mean = 5, sd = 1))
-pred <- get_exp_prediction(x$sd)
-
-ggplot(x, aes(x = sd, y = log(prob))) +
-  geom_point() +
-  geom_line(aes(x = x, y = log(y)), pred, colour = "blue") +
-  labs(
-    x = "Foraging distance (km)",
-    y = "count"
-  )
-
-ks.test(x$sd, "pexp", 1 / mean(x$sd))
-
-
-# assessing fit of exponential using KS test with simulation
-actual_d <- ks.test(x$sd, "pexp", 1 / mean(x$sd))$p.value
-simulated_d <- purrr::map_dbl(
-  seq_len(1000),
-  ~ {
-    z <- rexp(length(x$sd), 1 / mean(x$sd))
-    ks.test(z, "pexp", 1 / mean(z))$p.value
-  }
-)
-
-ggplot(tibble(x = simulated_d), aes(x = x)) +
-  geom_histogram() +
-  geom_vline(xintercept = actual_d)
-
-mean(simulated_d <= actual_d)
-```
+From this analysis we observe that the distribution of foraging distances reported by scouts is better described by an exponential than the minimum of an exponential, whereas the converse is true for foraging distances reported by reruits. These results support our hypothesis for how scout and recruit reported foraging distances occur through different processes and produce different patterns.
