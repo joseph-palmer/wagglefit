@@ -115,7 +115,12 @@
     <p>Using the optimised paramater estimates, creates ccdf plots</p>
     </div>
 
-    <pre class="usage"><span class='fu'>make_full_plot</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>model_result_list</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>make_full_plot</span><span class='op'>(</span>
+  <span class='va'>x</span>,
+  <span class='va'>model_result_list</span>,
+  logit <span class='op'>=</span> <span class='cn'>TRUE</span>,
+  subplot_coords <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>0.5</span>, <span class='fl'>2.5</span>, <span class='op'>-</span><span class='fl'>7.8</span>, <span class='op'>-</span><span class='fl'>2.5</span><span class='op'>)</span>
+<span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -128,6 +133,14 @@
       <th>model_result_list</th>
       <td><p>namedlist The return of `fit`, a list of parameter
 estimates ($est) and the data name ($data_name).</p></td>
+    </tr>
+    <tr>
+      <th>logit</th>
+      <td><p>Bool To log the data or not. Defaults to TRUE</p></td>
+    </tr>
+    <tr>
+      <th>subplot_coords</th>
+      <td><p>doubleArray Coordinates for location of inner histogram</p></td>
     </tr>
     </table>
 
