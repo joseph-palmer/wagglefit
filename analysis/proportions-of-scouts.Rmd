@@ -1,0 +1,88 @@
+# Analysis of the proportion of scouts across environmental gradients
+## Joseph Palmer
+---
+
+To start I am just having a play with the proportion of scouts from each model.
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "URWHelvetica", size = 8)
+    )
+)
+library(cowplot)
+library(dplyr)
+library(tibble)
+source("analysis/fit_data.R")
+```
+
+
+```{r}
+
+# load analysis results
+path <- "analysis/results_version1"
+data <- get_data()
+sites <- purrr::map_chr(
+  list.files(path),
+  ~ {
+    return(gsub(".rds", "", .x))
+  }
+)
+
+# read analysis results into a single dataframe
+model_results <- purrr::map(
+    sites,
+    ~ {
+      subdat <- data %>% dplyr::filter(.data$site == .x)
+      df <- readRDS(paste0(path, "/", .x, ".rds"))[-3]
+      results_tibble <- make_results_tibble(df)
+      results_tibble$site = .x
+      return(results_tibble)
+    }
+  ) %>%
+  bind_rows()
+
+# load raw data
+df <- read.table('analysis/data/FullHBForagingData.csv', header = TRUE,  sep = ',',  stringsAsFactors = FALSE)
+
+# filter for landscape type
+df_site_info <- df %>% select(site, LU) %>% unique()
+
+# join model results with landscape type
+model_results_pscouts <- model_results %>%
+  filter(data_name == "all") %>%
+  inner_join(df_site_info, by = c("site" = "site"))
+
+# point plot of proportion of scouts for each site, coloured by landscape type
+model_results_pscouts %>%
+  ggplot(aes(x = site, y = p)) +
+  geom_point(aes(color = LU))
+
+```
+
+The preceding code block show the proportion of scouts in each urban and rural site.
+
+Lets look at summary stats for each landscape tyepe.
+
+```{r}
+
+model_results_pscouts %>%
+  ggplot(aes(x = LU, y = p)) +
+  geom_boxplot() +
+  geom_dotplot(binaxis = "y", stackdir = "center")
+
+```
+
+There is a much higher spread in the rural sites, but no real difference in the proportion of scouts between each groups.
+
+Need to work more on this and write more on what we should do with this....
+
+Also need to ask vincent what he thinks of this chapter idea. Send him an overview and some data to look over before our next meeting.
