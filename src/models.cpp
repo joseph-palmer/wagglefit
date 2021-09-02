@@ -20,6 +20,7 @@ typedef struct {
     bool verbose;
     int fcount;
     double best_est;
+    double p;
 } data_struct;
 
 /*
@@ -59,15 +60,13 @@ void check_optimise_result(int optimise_result, bool verbose = true) {
 //'
 //' @param x double Foraging distance
 //' @param m double Minimum foraging distance
-//' @param p double Proportion of scouts (0<=p<=1)
 //' @param ls double Scout rate
 //' @param qn double Quality
 //' @param a double alpha value
 //' @export
 // [[Rcpp::export]]
 double scout_dist(double x, double m,
-                  double p, double ls,
-                  double qn, double a)
+                  double ls, double qn, double a)
 {
     double maxpart = (-1+qn-x*a)/a;
     if (maxpart < 0)
@@ -75,7 +74,7 @@ double scout_dist(double x, double m,
         maxpart = 0;
     }
     double result =
-    p * (
+        (
         (exp(((-1 + qn + m * a - x * a) * ls) / a) * a * pow(ls, 2) * maxpart) /
         (exp(m * ls) * a - exp(((-1 + qn) * ls) / a) *
             (a + ls - qn * ls + m * a * ls))
@@ -90,8 +89,7 @@ double scout_dist(double x, double m,
 //' @export
 // [[Rcpp::export]]
 double recruit_dist(double x, double m,
-                    double p, double ln,
-                    double qn, double a)
+                    double ln, double qn, double a)
 {
     double maxpart = -x+((-1+qn)/(qn*a));
     if (maxpart < 0)
@@ -99,7 +97,7 @@ double recruit_dist(double x, double m,
         maxpart = 0;
     }
     double result =
-        (1 - p) * (
+        (
             (2 * exp(-M_PI * pow(x, 2) * ln) * M_PI * x * ln * maxpart) /
             (((exp(-pow(m, 2) * M_PI * ln) * (-1 + qn - m * qn * a)) /
                 (qn * a)) + ((-1 + erf(m * sqrt(M_PI) * sqrt(ln)) +
@@ -116,6 +114,7 @@ double recruit_dist(double x, double m,
 //' Log-likelihood function for scout and recruit superposition
 //'
 //' @param x double* Pointer to array of foraging distances
+//' @param p double Proportion of scouts (0<=p<=1)
 //' @inheritParams scout_dist
 //' @inheritParams recruit_dist
 //' @export
@@ -129,8 +128,8 @@ double loglike_model_all(NumericVector x,
     double ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        ll += log(scout_dist(x[i], m, p, ls, qn, a) +
-            recruit_dist(x[i], m, p, ln, qn, a));
+        ll += log(p * scout_dist(x[i], m, ls, qn, a) +
+            (1 - p) * recruit_dist(x[i], m, ln, qn, a));
     }
     return ll;
 }
@@ -148,7 +147,7 @@ double loglike_model_scout(NumericVector x,
     double ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        ll += log(scout_dist(x[i], m, 1.0, ls, qn, a));
+        ll += log(scout_dist(x[i], m, ls, qn, a));
     }
     return ll;
 }
@@ -172,11 +171,11 @@ double objective_model_all(
     data->fcount++;
     double result = loglike_model_all(
         data->x,
+        data->p,
         params[0],
         params[1],
         params[2],
-        params[3],
-        params[4]
+        params[3]
     );
     if (result > data->best_est) {
         data->best_est = result;
@@ -276,11 +275,19 @@ NumericVector optimise_model(
     ds.best_est = -9999999;
     ds.verbose = verbose;
 
+    // set up NLOPT
+    NumericVector newparams;
+    nlopt_opt opt;
+    double maxf;
+
     // set up the model function to run
     double (*objective_fun)(unsigned, const double*, double*, void*);
     if (model == 0) {
+        ds.p = params[0];
+        newparams = params[Range(1, params.size())];
         objective_fun = &objective_model_all;
     } else if (model == 1) {
+        newparams = params[Range(0, params.size())];
         objective_fun = &objective_model_scout;
     } else {
         stop(
@@ -289,10 +296,8 @@ NumericVector optimise_model(
         );
     }
 
-    // set up NLOPT
-    nlopt_opt opt;
-    double maxf;
-    opt = nlopt_create(NLOPT_LN_COBYLA, params.size());
+    // Add objective to NLOPT
+    opt = nlopt_create(NLOPT_LN_COBYLA, newparams.size());
     nlopt_set_max_objective(opt, objective_fun, &ds);
     nlopt_set_lower_bounds(opt, lb.begin());
     nlopt_set_upper_bounds(opt, ub.begin());
@@ -301,8 +306,15 @@ NumericVector optimise_model(
     }
 
     // run optimisation
-    nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &maxf);
+    nlopt_result optimise_result = nlopt_optimize(opt, newparams.begin(), &maxf);
     check_optimise_result(optimise_result, verbose);
+
+    // move optimised params back into params
+    if (model == 0) {
+        params[Range(1, params.size())] = newparams;
+    } else {
+        params = newparams;
+    }
 
     // store results
     NumericVector results(params.size() + 1);

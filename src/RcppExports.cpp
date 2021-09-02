@@ -107,34 +107,32 @@ BEGIN_RCPP
 END_RCPP
 }
 // scout_dist
-double scout_dist(double x, double m, double p, double ls, double qn, double a);
-RcppExport SEXP _wagglefit_scout_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
+double scout_dist(double x, double m, double ls, double qn, double a);
+RcppExport SEXP _wagglefit_scout_dist(SEXP xSEXP, SEXP mSEXP, SEXP lsSEXP, SEXP qnSEXP, SEXP aSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type x(xSEXP);
     Rcpp::traits::input_parameter< double >::type m(mSEXP);
-    Rcpp::traits::input_parameter< double >::type p(pSEXP);
     Rcpp::traits::input_parameter< double >::type ls(lsSEXP);
     Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
-    rcpp_result_gen = Rcpp::wrap(scout_dist(x, m, p, ls, qn, a));
+    rcpp_result_gen = Rcpp::wrap(scout_dist(x, m, ls, qn, a));
     return rcpp_result_gen;
 END_RCPP
 }
 // recruit_dist
-double recruit_dist(double x, double m, double p, double ln, double qn, double a);
-RcppExport SEXP _wagglefit_recruit_dist(SEXP xSEXP, SEXP mSEXP, SEXP pSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
+double recruit_dist(double x, double m, double ln, double qn, double a);
+RcppExport SEXP _wagglefit_recruit_dist(SEXP xSEXP, SEXP mSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< double >::type x(xSEXP);
     Rcpp::traits::input_parameter< double >::type m(mSEXP);
-    Rcpp::traits::input_parameter< double >::type p(pSEXP);
     Rcpp::traits::input_parameter< double >::type ln(lnSEXP);
     Rcpp::traits::input_parameter< double >::type qn(qnSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
-    rcpp_result_gen = Rcpp::wrap(recruit_dist(x, m, p, ln, qn, a));
+    rcpp_result_gen = Rcpp::wrap(recruit_dist(x, m, ln, qn, a));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -194,8 +192,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_ccdf_model_all", (DL_FUNC) &_wagglefit_ccdf_model_all, 7},
     {"_wagglefit_ccdf_model_scout", (DL_FUNC) &_wagglefit_ccdf_model_scout, 5},
     {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 3},
-    {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 6},
-    {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 6},
+    {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 5},
+    {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 5},
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},
     {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 4},
     {"_wagglefit_optimise_model", (DL_FUNC) &_wagglefit_optimise_model, 7},

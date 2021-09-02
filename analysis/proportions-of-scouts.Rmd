@@ -50,6 +50,10 @@ model_results <- purrr::map(
   ) %>%
   bind_rows()
 
+# keep only best fitting model
+model_results <- model_results %>% group_by(site) %>% top_n(-1, AIC)
+
+
 # load raw data
 df <- read.table('analysis/data/FullHBForagingData.csv', header = TRUE,  sep = ',',  stringsAsFactors = FALSE)
 
@@ -86,3 +90,52 @@ There is a much higher spread in the rural sites, but no real difference in the 
 Need to work more on this and write more on what we should do with this....
 
 Also need to ask vincent what he thinks of this chapter idea. Send him an overview and some data to look over before our next meeting.
+
+```{r}
+# bootstrapped mean / median
+boot.median <- function(data, n = 10000) {
+  resamples <- purrr::map_dbl(
+    seq_len(n),
+    ~ {
+      median(sample(data$p, replace = TRUE))
+    }
+  )
+  std.err <- sqrt(var(resamples))
+  return(list(std.err = std.err, medians = resamples))
+}
+
+urban.boot <- model_results_pscouts %>%
+  filter(LU == "Urban") %>%
+  select(p) %>%
+  boot.median()
+
+hist(urban.boot$medians)
+
+rural.boot <- model_results_pscouts %>%
+  filter(LU == "Rural") %>%
+  select(p) %>%
+  boot.median()
+
+hist(rural.boot$medians)
+
+```
+
+```{r}
+
+# beta regression
+library(betareg)
+
+model_results_pscouts
+
+betamod <- betareg(p ~ LU, data = model_results_pscouts)
+summary(betamod)
+model_results_pscouts$predbeta = predict(betamod, interval = "confidence")
+
+
+ggplot(data = model_results_pscouts, aes(x = LU, y = p)) +
+  geom_point() +
+  geom_point(aes(y = predbeta, color = LU))
+
+```
+
+The above plot (code to make the beta plot) fits a beta regression. The beta regression is to be used when the predictor variables are proprtions. Whilst there is no difference between the proportion of scouts in urban and rural landscapes, there is a much tighter spread in the urban colonies than the rural colonies.

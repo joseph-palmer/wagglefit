@@ -72,6 +72,16 @@ plots_data <- purrr::map(
           )
         )
       )
+    } else if (.x == "CAD") {
+      ret <- list(
+        site_name = list(
+          results_tibble,
+          make_full_plot(
+            subdat$foraging_distance, df,
+            subplot_coords = c(0.8, 2.2, -5, -2)
+          )
+        )
+      )
     } else {
       ret <- list(
         site_name = list(

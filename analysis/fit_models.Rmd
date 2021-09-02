@@ -1,0 +1,25 @@
+# Fitting waggle dance models to waggle dance data
+## Joseph Palmer
+---
+
+```{r, include = FALSE}
+devtools::load_all()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "URWHelvetica", size = 8)
+    )
+)
+library(cowplot)
+library(dplyr)
+library(tibble)
+source("analysis/fit_data.R")
+```

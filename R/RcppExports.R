@@ -86,13 +86,12 @@ model_ccdf <- function(x, params, model = 0L) {
 #'
 #' @param x double Foraging distance
 #' @param m double Minimum foraging distance
-#' @param p double Proportion of scouts (0<=p<=1)
 #' @param ls double Scout rate
 #' @param qn double Quality
 #' @param a double alpha value
 #' @export
-scout_dist <- function(x, m, p, ls, qn, a) {
-    .Call('_wagglefit_scout_dist', PACKAGE = 'wagglefit', x, m, p, ls, qn, a)
+scout_dist <- function(x, m, ls, qn, a) {
+    .Call('_wagglefit_scout_dist', PACKAGE = 'wagglefit', x, m, ls, qn, a)
 }
 
 #' Model function for recruits
@@ -100,13 +99,14 @@ scout_dist <- function(x, m, p, ls, qn, a) {
 #' @param ln double Recruit rate
 #' @inheritParams scout_dist
 #' @export
-recruit_dist <- function(x, m, p, ln, qn, a) {
-    .Call('_wagglefit_recruit_dist', PACKAGE = 'wagglefit', x, m, p, ln, qn, a)
+recruit_dist <- function(x, m, ln, qn, a) {
+    .Call('_wagglefit_recruit_dist', PACKAGE = 'wagglefit', x, m, ln, qn, a)
 }
 
 #' Log-likelihood function for scout and recruit superposition
 #'
 #' @param x double* Pointer to array of foraging distances
+#' @param p double Proportion of scouts (0<=p<=1)
 #' @inheritParams scout_dist
 #' @inheritParams recruit_dist
 #' @export
