@@ -1,0 +1,84 @@
+# Analysis of the parameter likelihood space
+## Joseph Palmer
+---
+
+## Parameter space for previously optimised models
+
+```{r, include = FALSE}
+devtools::load_all()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "URWHelvetica", size = 8)
+    )
+)
+library(cowplot)
+library(dplyr)
+library(tibble)
+library(stringr)
+source("analysis/fit_data.R")
+```
+
+```{r}
+
+# load analysis results
+path <- "analysis/results_version1"
+data <- get_data()
+sites <- purrr::map_chr(
+  list.files(path),
+  ~ {
+    return(gsub(".rds", "", .x))
+  }
+)
+
+# read analysis results into a single dataframe
+model_results <- purrr::map(
+    sites,
+    ~ {
+      subdat <- data %>% dplyr::filter(.data$site == .x)
+      df <- readRDS(paste0(path, "/", .x, ".rds"))[-3]
+      results_tibble <- make_results_tibble(df)
+      results_tibble$site = .x
+      return(results_tibble)
+    }
+  ) %>%
+  bind_rows() %>%
+  filter(data_name == "all")
+
+```
+
+```{r}
+
+usesite <- "BEL"
+
+data <- get_data()
+sitedata <- data %>%
+  filter(site == usesite)
+
+x <- sitedata$foraging_distance
+
+params <- model_results %>%
+  filter(site == usesite) %>%
+  select(p, ls, ln, qn, a)
+
+# show model fit
+solution = list(est = as.double(params), data_name = "all")
+
+make_full_plot(
+  x,
+  list("collective" = solution),
+  subplot_coords = c(0.5, 8, -4.5, -2.5)
+)
+
+# show likelihood space
+result <- map_likelihood_space(x, params)
+result
+```

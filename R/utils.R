@@ -143,3 +143,103 @@ calc_ks_boot <- function(x, param_est, model_type, pvalue = TRUE) {
   ks <- ks.boot(ccdf_data$prob, ccdf_model)
   return(ks$ks.boot.pvalue)
 }
+
+#' Calculate likelihoods for a specified parameter
+#'
+#' @description Calculate likelihoods for a specified parameter to show the
+#' likelihood space for that parameter. This uses the bounds defined for that
+#' parameter and gets the specified number of values to show the likelihood
+#' space.
+#' @param data doubleArray The data to check the parameters against. This should
+#' be the data the parameters were fit to.
+#' @param var characterArray The name of the variable you want to examine the
+#' likelihood space for.
+#' @param p double The proportion of scouts.
+#' @param ls double The scout rate.
+#' @param ln double The recruit rate.
+#' @param q double The quality.
+#' @param a double The alpha value.
+#' @param n integer The number of points to sample, defaults to 1000.
+#' @param upper integer The upper bound
+#' @return tibble The varied parameter and associated likelihood and
+#' log-likelihood scores.
+#' @importFrom tibble tibble
+#' @importFrom purrr map_dbl
+#' @concept utility
+#'
+calc_var_likelihood <- function(
+  data, var, p, ls, ln, q, a, n = 1000, upper = 5) {
+  bnds <- generate_bounds_all(upper)
+  var_bnds <- paste0(var, "_bnds")
+  vals <- seq(bnds[var_bnds, 1], bnds[var_bnds, 2], length.out = n)
+  result <- map_dbl(
+    vals,
+    ~ {
+      if (var == "p") {
+        loglike_model_all_new(data, .x, ls, ln, q, a)
+      } else if (var == "ls") {
+        loglike_model_all_new(data, p, .x, ln, q, a)
+      } else if (var == "ln") {
+        loglike_model_all_new(data, p, ls, .x, q, a)
+      } else if (var == "q") {
+        loglike_model_all_new(data, p, ls, ln, .x, a)
+      } else {
+        loglike_model_all_new(data, p, ls, ln, q, .x)
+      }
+    }
+  )
+  return(tibble( var = vals, loglike = result, likelihood = exp(result)))
+}
+
+#' Calculate likelihoods for all parameters for a given dataset
+#'
+#' @description Calculate likelihoods for all parameters to show their
+#' likelihood space for a given set of data and optimised model parameters. The
+#' idea here is that once you have optimised your parameters you pass them in
+#' here with the data and it shows the likelihood smace of each one wrt. the
+#' others fixed at their optima.
+#' @inheritParams calc_var_likelihood
+#' @param params named list or tibble of optimised parameter values
+#' @return ggplotObj The likelihood plot for each parameter.
+#' @importFrom dplyr gather
+#' @importFrom purrr map
+#' @importFrom cowplot plot_grid
+#' @importFrom ggplot2 ggplot aes geom_line facet_wrap labs
+#' @concept utility
+#'
+map_likelihood_space <- function(data, params, n = 1000, upper = 5) {
+  result <- map(
+    c("p", "ls", "ln", "q", "a"),
+    ~ {
+      calc_var_likelihood(
+        data, .x, params[[1]],
+        params[[2]], params[[3]],
+        params[[4]], params[[5]],
+        n = n,
+        upper = upper
+      ) %>%
+      gather("measurement", "value", -var)
+    }
+  )
+  names(result) <- names(params)
+  p_plots <- map(
+    names(result),
+    ~ {
+      result[[.x]] %>%
+        ggplot(aes(x = var, y = value)) +
+          geom_line() +
+          facet_wrap(~measurement, scale = "free_y") +
+          labs(x = .x)
+    }
+  )
+  master_plot <- plot_grid(
+    plotlist = p_plots,
+    ncol = 1,
+    labels = names(p_plots)
+  )
+
+  print(result$p)
+  print(paste(min(result$p$value), max(result$p$value)))
+
+  return(master_plot)
+}

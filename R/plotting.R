@@ -104,7 +104,11 @@ make_full_plot <- function(x, model_result_list,
   cdf_data <- map(
     model_result_list,
     ~ {
-      make_ccdf_plot_data(x, .x$est, model = .x$data_name)
+      result <- make_ccdf_plot_data(x, .x$est, model = .x$data_name)
+      if(any((is.nan(result$cumul_ccdf)))) {
+        message("The combination of parameters produces nan values in the ccdf")
+      }
+      return(result)
     }
   )
   df <- map_df(
@@ -112,7 +116,6 @@ make_full_plot <- function(x, model_result_list,
     I,
     .id = "Model"
   )
-
   plt <- make_base_plot(x, TRUE) +
     geom_line(
       data = df,

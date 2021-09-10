@@ -103,6 +103,39 @@ recruit_dist <- function(x, m, ln, qn, a) {
     .Call('_wagglefit_recruit_dist', PACKAGE = 'wagglefit', x, m, ln, qn, a)
 }
 
+#' New model function for scouts
+#'
+#' @param x double Foraging distance
+#' @param m double Minimum foraging distance
+#' @param bs double scout rate
+#' @param as double scout alpha
+#' @export
+scout_dist_new <- function(x, m, bs, as) {
+    .Call('_wagglefit_scout_dist_new', PACKAGE = 'wagglefit', x, m, bs, as)
+}
+
+#' New model function for recruits
+#'
+#' @param br double Recruit rate
+#' @param ar double Recruit alpha
+#' @inheritParams scout_dist_new
+#' @export
+recruit_dist_new <- function(x, m, br, ar) {
+    .Call('_wagglefit_recruit_dist_new', PACKAGE = 'wagglefit', x, m, br, ar)
+}
+
+#' Log-likelihood function for scout and recruit superposition using
+#' re-parameterised model
+#'
+#' @param x double* Pointer to array of foraging distances
+#' @param p double Proportion of scouts (0<=p<=1)
+#' @inheritParams scout_dist_new
+#' @inheritParams recruit_dist_new
+#' @export
+loglike_model_all_new <- function(x, p, bs, br, as, ar) {
+    .Call('_wagglefit_loglike_model_all_new', PACKAGE = 'wagglefit', x, p, bs, br, as, ar)
+}
+
 #' Log-likelihood function for scout and recruit superposition
 #'
 #' @param x double* Pointer to array of foraging distances
@@ -122,7 +155,7 @@ loglike_model_scout <- function(x, ls, qn, a) {
     .Call('_wagglefit_loglike_model_scout', PACKAGE = 'wagglefit', x, ls, qn, a)
 }
 
-#' Optimise function for fitting a model using NLOPT
+#' Optimise function for fitting the new collective model using NLOPT
 #'
 #' @param x NumericVector Foraging distance
 #' @param params NumericVector parameter estimates to run the model with
@@ -136,5 +169,21 @@ loglike_model_scout <- function(x, ls, qn, a) {
 #' @export
 optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L) {
     .Call('_wagglefit_optimise_model', PACKAGE = 'wagglefit', x, params, lb, ub, verbose, xtol, model)
+}
+
+#' Optimise function for fitting a model using NLOPT
+#'
+#' @param x NumericVector Foraging distance
+#' @param params NumericVector parameter estimates to run the model with
+#' @param lb NumericVector, array of lower bounds for each paramater
+#' @param ub NumericVector, array of upper bounds for each parameter
+#' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
+#' @param xtol double, The absolute tolerance on function value. If 0 (default)
+#' then default to nlopt default value.
+#' @param model int The model to run. Must be 0 or 1 which means 'all' or
+#' 'scout' respectively,  defaults to 0 ('all')
+#' @export
+optimise_model_old <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L) {
+    .Call('_wagglefit_optimise_model_old', PACKAGE = 'wagglefit', x, params, lb, ub, verbose, xtol, model)
 }
 

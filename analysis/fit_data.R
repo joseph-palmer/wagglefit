@@ -31,12 +31,16 @@ get_data <- function() {
 }
 
 #' Run my analysis
-run_analysis <- function(data, model = "all", n = 5, xtol = 0) {
+run_analysis <- function(
+  data, model = "all", n = 5, upper = 5, xtol = 0,
+  verbose_r = FALSE, verbose = FALSE) {
   best_result <- fit_mutliple(
     data$foraging_distance,
     model = model,
     n = n,
-    verbose_r = FALSE,
+    upper = upper,
+    verbose_r = verbose_r,
+    verbose = verbose,
     xtol = xtol
   )
   best_result$data_name <- model

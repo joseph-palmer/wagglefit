@@ -136,6 +136,50 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// scout_dist_new
+double scout_dist_new(double x, double m, double bs, double as);
+RcppExport SEXP _wagglefit_scout_dist_new(SEXP xSEXP, SEXP mSEXP, SEXP bsSEXP, SEXP asSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    Rcpp::traits::input_parameter< double >::type bs(bsSEXP);
+    Rcpp::traits::input_parameter< double >::type as(asSEXP);
+    rcpp_result_gen = Rcpp::wrap(scout_dist_new(x, m, bs, as));
+    return rcpp_result_gen;
+END_RCPP
+}
+// recruit_dist_new
+double recruit_dist_new(double x, double m, double br, double ar);
+RcppExport SEXP _wagglefit_recruit_dist_new(SEXP xSEXP, SEXP mSEXP, SEXP brSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type m(mSEXP);
+    Rcpp::traits::input_parameter< double >::type br(brSEXP);
+    Rcpp::traits::input_parameter< double >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(recruit_dist_new(x, m, br, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// loglike_model_all_new
+double loglike_model_all_new(NumericVector x, double p, double bs, double br, double as, double ar);
+RcppExport SEXP _wagglefit_loglike_model_all_new(SEXP xSEXP, SEXP pSEXP, SEXP bsSEXP, SEXP brSEXP, SEXP asSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< double >::type bs(bsSEXP);
+    Rcpp::traits::input_parameter< double >::type br(brSEXP);
+    Rcpp::traits::input_parameter< double >::type as(asSEXP);
+    Rcpp::traits::input_parameter< double >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(loglike_model_all_new(x, p, bs, br, as, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
 // loglike_model_all
 double loglike_model_all(NumericVector x, double p, double ls, double ln, double qn, double a);
 RcppExport SEXP _wagglefit_loglike_model_all(SEXP xSEXP, SEXP pSEXP, SEXP lsSEXP, SEXP lnSEXP, SEXP qnSEXP, SEXP aSEXP) {
@@ -183,6 +227,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// optimise_model_old
+NumericVector optimise_model_old(NumericVector x, NumericVector params, NumericVector lb, NumericVector ub, bool verbose, double xtol, int model);
+RcppExport SEXP _wagglefit_optimise_model_old(SEXP xSEXP, SEXP paramsSEXP, SEXP lbSEXP, SEXP ubSEXP, SEXP verboseSEXP, SEXP xtolSEXP, SEXP modelSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lb(lbSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type ub(ubSEXP);
+    Rcpp::traits::input_parameter< bool >::type verbose(verboseSEXP);
+    Rcpp::traits::input_parameter< double >::type xtol(xtolSEXP);
+    Rcpp::traits::input_parameter< int >::type model(modelSEXP);
+    rcpp_result_gen = Rcpp::wrap(optimise_model_old(x, params, lb, ub, verbose, xtol, model));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_alter_in_place", (DL_FUNC) &_wagglefit_alter_in_place, 1},
@@ -194,9 +255,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 3},
     {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 5},
     {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 5},
+    {"_wagglefit_scout_dist_new", (DL_FUNC) &_wagglefit_scout_dist_new, 4},
+    {"_wagglefit_recruit_dist_new", (DL_FUNC) &_wagglefit_recruit_dist_new, 4},
+    {"_wagglefit_loglike_model_all_new", (DL_FUNC) &_wagglefit_loglike_model_all_new, 6},
     {"_wagglefit_loglike_model_all", (DL_FUNC) &_wagglefit_loglike_model_all, 6},
     {"_wagglefit_loglike_model_scout", (DL_FUNC) &_wagglefit_loglike_model_scout, 4},
     {"_wagglefit_optimise_model", (DL_FUNC) &_wagglefit_optimise_model, 7},
+    {"_wagglefit_optimise_model_old", (DL_FUNC) &_wagglefit_optimise_model_old, 7},
     {NULL, NULL, 0}
 };
 

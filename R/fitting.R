@@ -33,10 +33,10 @@ check_upper_bound <- function(upper) {
 #'
 generate_bounds_all <- function(upper) {
   p_bnds <- c(0, 1.0)
-  ls_bnds <- c(1.0e-6, upper)
-  ln_bnds <- c(0, upper)
-  q_bnds <- c(1, upper)
-  a_bnds <- c(0, upper)
+  ls_bnds <- c(1.0e-6, 100)
+  ln_bnds <- c(1.0e-6, 100)
+  q_bnds <- c(1.0e-6, upper)
+  a_bnds <- c(1.0e-6, upper)
   bounds <- rbind(
     p_bnds, ls_bnds,
     ln_bnds, q_bnds,
@@ -93,7 +93,8 @@ generate_bounds_scout <- function(upper) {
 generate_starting_ests_all <- function(distance, bounds, verbose = FALSE) {
   message_verbose(verbose, "  -Generating viable starting estimates")
   res <- Inf
-  while (is.infinite(res) | is.nan(res)) {
+  startest <- c(0, 0, 0, 1, 0)
+  while (is.infinite(res) | is.nan(res) | startest[4] > startest[5]) {
     non_p_bounds <- bounds[2:nrow(bounds), ]
     p_startest <- trunc_normal(
       mean = 0.15, sd = 0.05,
@@ -107,7 +108,7 @@ generate_starting_ests_all <- function(distance, bounds, verbose = FALSE) {
       }
     )
     startest <- c(p_startest, rest_startest)
-    res <- loglike_model_all(
+    res <- loglike_model_all_new(
       distance,
       startest[1],
       startest[2],
