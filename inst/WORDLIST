@@ -49,6 +49,7 @@ fcount
 FUNC
 gb
 ggplot
+ggplotObj
 heaviside
 inheritParams
 init
@@ -116,6 +117,7 @@ RoxygenNote
 Schürch
 sd
 SEXP
+smace
 struct
 structs
 testthat
