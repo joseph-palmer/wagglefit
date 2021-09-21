@@ -32,6 +32,7 @@ Using the new routine in this branch (using Nelder-Mead simplex rather than COBY
 
 ```{r}
 # Run model analysis lots and lots of times.
+use_upper <- 50
 
 bel <- get_data() %>%
   filter(site == "BEL")
@@ -40,87 +41,48 @@ result_data <- purrr::map_df(
   seq_len(10),
   ~ {
     print(paste("Itteration", .x))
-    result <- run_analysis(bel, n = 10, upper = 0.1, verbose_r = T, verbose = F)
+    result <- run_analysis(
+      bel, n = 10, upper = use_upper, verbose_r = T, verbose = F
+    )
     return(
       data.frame(
         ll = result$fmax,
         p = result$est[1],
-        ls = result$est[2],
-        ln = result$est[3],
-        qn = result$est[4],
-        a = result$est[5]
+        bs = result$est[2],
+        br = result$est[3],
+        as = result$est[4],
+        ar = result$est[5]
       )
     )
   }
 )
 
 best_mod <- result_data %>% filter(ll == max(ll))
-params <- best_mod %>% select(p, ls, ln, qn, a)
+if (length(best_mod[, 1] > 1)) {
+  best_mod <- best_mod[1, ]
+}
+params <- best_mod %>% select(p, bs, br, as, ar)
 solution <- list(
   fmax = best_mod$ll,
   data_name = "all",
   est = params %>% as.double()
 )
+
+map_likelihood_space(
+  bel$foraging_distance, params, n = 10000, upper = use_upper
+)
+
 solution
 
-result_data %>%
-  gather("measurement", "value", -ll) %>%
-  ggplot(aes(x = value, y = ll)) +
-  geom_point() +
-  facet_wrap(~measurement, scale = "free")
-
 ```
 
 ```{r}
-# convert new parameters to the old ones and show the fit
-# ls = bs*as
-# ln = br*ar^2
-# qn = ar / as
-# alpha = ar - as
-formated_solution <- solution
-formated_solution$est[2] <- solution$est[2] * solution$est[4]
-formated_solution$est[3] <- solution$est[3] * solution$est[5]^2
-formated_solution$est[4] <- solution$est[5] / solution$est[4]
-formated_solution$est[5] <- solution$est[4] - solution$est[5]
+# show the fit
 
-# check likelihood
-loglike_model_all(
-  bel$foraging_distance,
-  formated_solution$est[1], formated_solution$est[2],
-  formated_solution$est[3], formated_solution$est[4],
-  formated_solution$est[5]
-)
-
-# show fit of the best model to the data
 make_full_plot(
   bel$foraging_distance,
-  list("collective" = formated_solution),
+  list("collective" = solution),
   subplot_coords = c(0.5, 8, -4.5, -2.5)
-)
-
-
-
-```
-
-
-
-```{r}
-# examine likelihood space of best model
-map_likelihood_space(bel$foraging_distance, params, n = 10000, upper = 0.1)
-
-# sanity check
-loglike_model_all_new(
-  bel$foraging_distance,
-  params[[1]], params[[2]],
-  params[[3]], params[[4]],
-  params[[5]]
-)
-
-loglike_model_all(
-  bel$foraging_distance,
-  params[[1]], params[[2]],
-  params[[3]], 5,
-  params[[5]]
 )
 
 

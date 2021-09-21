@@ -16,6 +16,25 @@ double heaviside(double x)
   else return 1;
 }
 
+ //' Model CCDF function for new scout function
+//'
+//' @param x double Foraging distance
+//' @param m double Minimum foraging distance
+//' @param bs double Scout rate
+//' @param as double scout alpha
+//' @return result double the ccdf for that foraging distance (x)
+//' @export
+// [[Rcpp::export]]
+double scout_ccdf_new(double x, double m,
+                  double bs, double as)
+{
+  double result;
+  result = ((1-as*x)-pow(bs, -1)*(exp(-as*bs*(x-m)) - exp(-bs*(1-as*m)))) /
+    ((1-as*m)-pow(bs, -1)*(1-exp(-bs*(1-as*m))));
+  return result;
+}
+
+
 //' Model CCDF function for scouts
 //'
 //' @param x double Foraging distance
@@ -39,6 +58,26 @@ double scout_ccdf(double x, double p,
     ) / (
       exp(m*ls)*a-exp(((-1+qn)*ls)/a)*(a+ls-qn*ls+m*a*ls)
     )) + heaviside(m-x);
+  return result;
+}
+
+//' Model CCDF function for new recruit function
+//'
+//' @param x double Foraging distance
+//' @param m double Minimum foraging distance
+//' @param br double Recruit rate
+//' @param ar double recruit alpha
+//' @return result double the ccdf for that foraging distance (x)
+//' @export
+// [[Rcpp::export]]
+double recruit_ccdf_new(double x, double m,
+                    double br, double ar)
+{
+  double result;
+  result = ((1-ar*x)*exp(-M_PI*br*pow(ar*x, 2)) +
+    ((erf(ar*sqrt(M_PI*br)*x)-erf(sqrt(M_PI*br)))/(2*sqrt(br)))) /
+    ((1-ar*m)*exp(-M_PI*br*pow(ar*m, 2)) +
+    ((erf(ar*sqrt(M_PI*br)*m)-erf(sqrt(M_PI*br)))/(2*sqrt(br))));
   return result;
 }
 
@@ -72,6 +111,27 @@ double recruit_ccdf(double x, double p,
     ))
     ) * heaviside((((-1+qn)/(qn*a))-x)*(x-m));
   return result;
+}
+
+//' Model ccdf function for new scout and recruit superposition. Stores results in
+//' given array (y)
+//'
+//' @param x NumericVector foraging distances
+//' @param y NumericVector storage array for the results
+//' @param p double Proportion of scouts (0<=p<=1)
+//' @inheritParams scout_ccdf_new
+//' @inheritParams recruit_ccdf_new
+//' @export
+// [[Rcpp::export]]
+void ccdf_model_all_new(NumericVector x, NumericVector y,
+                      double p, double bs, double br, double as, double ar)
+{
+  const int x_size = x.size();
+  const double m = min(x);
+  for (int i = 0; i < x_size; i++) {
+    y[i] = p * scout_ccdf_new(x[i], m, bs, as) +
+            (1 - p) * recruit_ccdf_new(x[i], m, br, ar);
+  }
 }
 
 //' Model ccdf function for scout and recruit superposition. Stores results in
@@ -128,7 +188,8 @@ NumericVector model_ccdf(NumericVector x, NumericVector params,
 {
   NumericVector y(x.size());
   if (model == 0) {
-    ccdf_model_all(x, y, params[0], params[1], params[2], params[3], params[4]);
+    Rcout << params << std::endl;
+    ccdf_model_all_new(x, y, params[0], params[1], params[2], params[3], params[4]);
   } else if (model == 1) {
     ccdf_model_scout(x, y, params[0], params[1], params[2]);
   } else {

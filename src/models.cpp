@@ -162,12 +162,9 @@ double recruit_dist_new(double x, double m, double br, double ar)
     {
         maxpart = 0;
     }
-    double result =
-    ar * (
-        (maxpart*2*M_PI*ar*br*x*exp(-M_PI*br*pow(ar*x, 2))) /
+    double result = (maxpart*2*M_PI*pow(ar,2)*br*x*exp(-M_PI*br*pow(ar*x, 2))) /
         ((1-ar*m)*exp(-M_PI*br*pow(ar*m, 2)) +
-        ((erf(ar*sqrt(M_PI*br*m)) - erf(sqrt(M_PI*br))) /(2*sqrt(br))))
-    );
+            ((erf(ar*sqrt(M_PI*br)*m)-erf(sqrt(M_PI*br)))/(2*sqrt(br))));
     return result;
 }
 
@@ -196,9 +193,7 @@ double loglike_model_all_new(NumericVector x,
     {
         tmp_ll = (p * scout_dist_new(x[i], m, bs, as) +
             (1 - p) * recruit_dist_new(x[i], m, br, ar));
-        if (as > ar) {
-            ll += -1e99+ar/(as+1);
-        } else if (tmp_ll < 1e-99) {
+        if (tmp_ll < 1e-99) {
             ll += -1e99-ar;
         } else {
             ll += log(tmp_ll);

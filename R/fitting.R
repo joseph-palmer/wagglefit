@@ -33,8 +33,8 @@ check_upper_bound <- function(upper) {
 #'
 generate_bounds_all <- function(upper) {
   p_bnds <- c(0, 1.0)
-  ls_bnds <- c(1.0e-6, 100)
-  ln_bnds <- c(1.0e-6, 100)
+  ls_bnds <- c(1.0e-6, 10)
+  ln_bnds <- c(1.0e-6, 10)
   q_bnds <- c(1.0e-6, upper)
   a_bnds <- c(1.0e-6, upper)
   bounds <- rbind(

@@ -29,7 +29,7 @@ source("analysis/fit_data.R")
 
 ```{r}
 
-path <- "analysis/results_version1"
+path <- "analysis/results"
 data <- get_data()
 
 sites <- purrr::map_chr(

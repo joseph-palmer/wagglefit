@@ -167,8 +167,7 @@ calc_ks_boot <- function(x, param_est, model_type, pvalue = TRUE) {
 #' @importFrom purrr map_dbl
 #' @concept utility
 #'
-calc_var_likelihood <- function(
-  data, var, p, ls, ln, q, a, n = 1000, upper = 5) {
+calc_var_likelihood <- function(data, var, p, ls, ln, q, a, n = 1000, upper = 5) {
   bnds <- generate_bounds_all(upper)
   var_bnds <- paste0(var, "_bnds")
   vals <- seq(bnds[var_bnds, 1], bnds[var_bnds, 2], length.out = n)
@@ -188,7 +187,7 @@ calc_var_likelihood <- function(
       }
     }
   )
-  return(tibble( var = vals, loglike = result, likelihood = exp(result)))
+  return(tibble(var = vals, loglike = result, likelihood = exp(result)))
 }
 
 #' Calculate likelihoods for all parameters for a given dataset
@@ -218,7 +217,7 @@ map_likelihood_space <- function(data, params, n = 1000, upper = 5) {
         n = n,
         upper = upper
       ) %>%
-      gather("measurement", "value", -var)
+        gather("measurement", "value", -var)
     }
   )
   names(result) <- names(params)
@@ -226,10 +225,11 @@ map_likelihood_space <- function(data, params, n = 1000, upper = 5) {
     names(result),
     ~ {
       result[[.x]] %>%
+        filter(value > -1e99) %>%
         ggplot(aes(x = var, y = value)) +
-          geom_line() +
-          facet_wrap(~measurement, scale = "free_y") +
-          labs(x = .x)
+        geom_line() +
+        facet_wrap(~measurement, scale = "free_y") +
+        labs(x = .x)
     }
   )
   master_plot <- plot_grid(
