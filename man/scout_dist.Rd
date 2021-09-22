@@ -4,18 +4,16 @@
 \alias{scout_dist}
 \title{Model function for scouts}
 \usage{
-scout_dist(x, m, ls, qn, a)
+scout_dist(x, m, bs, as)
 }
 \arguments{
 \item{x}{double Foraging distance}
 
 \item{m}{double Minimum foraging distance}
 
-\item{ls}{double Scout rate}
+\item{bs}{double scout rate}
 
-\item{qn}{double Quality}
-
-\item{a}{double alpha value}
+\item{as}{double scout alpha}
 }
 \description{
 Model function for scouts

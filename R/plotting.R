@@ -46,6 +46,27 @@ make_ccdf_plot_data <- function(x, param_est, model, npoints = 100) {
   return(cumul)
 }
 
+#' Creates data for histogram plot model fit
+#'
+#' @description Using the optimised paramater estimates, creates the data for
+#' the pdf/histogram plots
+#' @param x doubleArray The foraging distance to plot
+#' @param param_est doubleArray The paramater estimates of the optimisation
+#' @param model characterArray The name of the model used
+#' @param npoints integer The number of points to plot the predicted data for.
+#' Defaults to 100.
+#' @return tibble of model data and cumulative probability
+#' @importFrom tibble tibble
+#' @export
+#'
+make_pdf_plot_data <- function(x, param_est, model, npoints = 100) {
+  model_n <- model_number_from_model(model)
+  x_seq <- seq(min(x), max(x), length.out = npoints)
+  pdf <- model_pdf(x_seq, param_est, model_n)
+  cumul <- tibble(x_seq, pdf)
+  return(cumul)
+}
+
 #' Creates ccdf plot of data
 #'
 #' @description Creates a ccdf plot for the data provided
@@ -111,8 +132,23 @@ make_full_plot <- function(x, model_result_list,
       return(result)
     }
   )
+  pdf_data <- map(
+    model_result_list,
+    ~ {
+      result <- make_pdf_plot_data(x, .x$est, model = .x$data_name)
+      if(any((is.nan(result$cumul_ccdf)))) {
+        message("The combination of parameters produces nan values in the ccdf")
+      }
+      return(result)
+    }
+  )
   df <- map_df(
     cdf_data,
+    I,
+    .id = "Model"
+  )
+  df_histo <- map_df(
+    pdf_data,
     I,
     .id = "Model"
   )
@@ -132,6 +168,14 @@ make_full_plot <- function(x, model_result_list,
       bins = 100,
       binwidth = (max(x) - min(x)) / 20,
       col = "white"
+    ) +
+    geom_line(
+      data = df_histo,
+      aes(
+        x = .data$x_seq,
+        y = .data$pdf,
+        colour = .data$Model
+      )
     ) +
     theme(
       axis.title.x = element_blank(),

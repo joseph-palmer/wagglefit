@@ -32,13 +32,14 @@ get_data <- function() {
 
 #' Run my analysis
 run_analysis <- function(
-  data, model = "all", n = 5, upper = 5, xtol = 0,
+  data, model = "all", n = 5, upper = 5, bounds = NULL, xtol = 0,
   verbose_r = FALSE, verbose = FALSE) {
   best_result <- fit_mutliple(
     data$foraging_distance,
     model = model,
     n = n,
     upper = upper,
+    bounds = bounds,
     verbose_r = verbose_r,
     verbose = verbose,
     xtol = xtol
@@ -47,27 +48,93 @@ run_analysis <- function(
   return(best_result)
 }
 
-## run it
-run_all_models <- function() {
-  n <- 5
-  data <- get_data()
-  for (i in unique(data$site)) {
-    print(paste("Working on", i))
-    subdat <- data %>% dplyr::filter(site == i)
-    result_recruit <- run_analysis(
-      subdat,
-      n = n, model = "recruit", xtol = 0
-    )
-    result_all <- run_analysis(subdat, n = n, model = "all", xtol = 0)
-    result_scout <- run_analysis(subdat, n = n, model = "scout", xtol = 0)
-    result_list <- list(
-      "all" = result_all,
-      "scout" = result_scout,
-      "recruit" = result_recruit
-    )
-    saveRDS(object = result_list, file = paste0("analysis/results/", i, ".rds"))
-    print(paste(i, "Completed"))
+#' Run on specific site k times and output likelihood space and plots
+fit_collective_model_to_data <- function(data, bounds, k=10, n = 10,
+                                        verbose_r = FALSE, verbose = FALSE) {
+  # run optimisation k times and return best one
+  result_data <- purrr::map_df(
+    seq_len(k),
+    ~ {
+      print(paste("Itteration", .x))
+      result <- run_analysis(
+        data, model = "collective", n = n, upper = 10, bounds = bounds,
+        verbose_r = verbose_r, verbose = verbose
+      )
+      return(
+        data.frame(
+          ll = result$fmax,
+          p = result$est[1],
+          bs = result$est[2],
+          br = result$est[3],
+          as = result$est[4],
+          ar = result$est[5]
+        )
+      )
+    }
+  )
+
+  # get the best model params
+  best_mod <- result_data %>% filter(ll == max(ll))
+  if (length(best_mod[, 1] > 1)) {
+    best_mod <- best_mod[1, ]
   }
+  params <- best_mod %>% select(p, bs, br, as, ar)
+  solution <- list(
+    fmax = best_mod$ll,
+    data_name = "collective",
+    est = params %>% as.double()
+  )
+
+  # show likelihood space (useful when working out parameter bounds)
+  llspace <- map_likelihood_space(
+    data$foraging_distance, params, model_name = "collective", n = 1000,
+    upper = use_upper, bounds = bounds
+  )
+
+  return(list(solution = solution, llspace = llspace))
+}
+
+#' Run on specific site k times and output likelihood space and plots
+fit_individual_model_to_data <- function(data, bounds, k=10, n = 10,
+                                        verbose_r = FALSE, verbose = FALSE) {
+  # run optimisation k times and return best one
+  result_data <- purrr::map_df(
+    seq_len(k),
+    ~ {
+      print(paste("Itteration", .x))
+      result <- run_analysis(
+        data, model = "individual", n = n, upper = 10, bounds = bounds,
+        verbose_r = verbose_r, verbose = verbose
+      )
+      return(
+        data.frame(
+          ll = result$fmax,
+          bs = result$est[1],
+          as = result$est[2]
+        )
+      )
+    }
+  )
+
+  # get the best model params
+  best_mod <- result_data %>% filter(ll == max(ll))
+  if (length(best_mod[, 1] > 1)) {
+    best_mod <- best_mod[1, ]
+  }
+  params <- best_mod %>% select(bs, as)
+  solution <- list(
+    fmax = best_mod$ll,
+    data_name = "individual",
+    est = params %>% as.double()
+  )
+
+  # show likelihood space (useful when working out parameter bounds)
+  llspace <- map_likelihood_space(
+    data$foraging_distance, params, model_name = "individual", n = 1000,
+    upper = use_upper, bounds = bounds
+  )
+
+  return(list(solution = solution, llspace = llspace))
 }
 
 ## process results

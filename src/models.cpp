@@ -20,26 +20,8 @@ typedef struct {
     bool verbose;
     int fcount;
     double best_est;
-    double p;
 } data_struct;
 
-typedef struct {
-    NumericVector x;
-    bool verbose;
-    int fcount;
-    double best_est;
-} data_struct_new;
-
-typedef struct {
-    NumericVector x;
-    bool verbose;
-    int fcount;
-    double best_est;
-    double ls;
-    double ln;
-    double qn;
-    double a;
-} data_struct_p;
 
 /*
 ------------------------------- helper functions -------------------------------
@@ -78,62 +60,11 @@ void check_optimise_result(int optimise_result, bool verbose = true) {
 //'
 //' @param x double Foraging distance
 //' @param m double Minimum foraging distance
-//' @param ls double Scout rate
-//' @param qn double Quality
-//' @param a double alpha value
-//' @export
-// [[Rcpp::export]]
-double scout_dist(double x, double m,
-                  double ls, double qn, double a)
-{
-    double maxpart = (-1+qn-x*a)/a;
-    if (maxpart < 0)
-    {
-        maxpart = 0;
-    }
-    double result =
-        (
-        (exp(((-1 + qn + m * a - x * a) * ls) / a) * a * pow(ls, 2) * maxpart) /
-        (exp(m * ls) * a - exp(((-1 + qn) * ls) / a) *
-            (a + ls - qn * ls + m * a * ls))
-    );
-    return result;
-}
-
-//' Model function for recruits
-//'
-//' @param ln double Recruit rate
-//' @inheritParams scout_dist
-//' @export
-// [[Rcpp::export]]
-double recruit_dist(double x, double m,
-                    double ln, double qn, double a)
-{
-    double maxpart = -x+((-1+qn)/(qn*a));
-    if (maxpart < 0)
-    {
-        maxpart = 0;
-    }
-    double result =
-        (
-            (2 * exp(-M_PI * pow(x, 2) * ln) * M_PI * x * ln * maxpart) /
-            (((exp(-pow(m, 2) * M_PI * ln) * (-1 + qn - m * qn * a)) /
-                (qn * a)) + ((-1 + erf(m * sqrt(M_PI) * sqrt(ln)) +
-                erfc((sqrt(M_PI) * (-1 + qn) * sqrt(ln)) /
-                (qn * a))) / (2 * sqrt(ln))))
-    );
-    return result;
-}
-
-//' New model function for scouts
-//'
-//' @param x double Foraging distance
-//' @param m double Minimum foraging distance
 //' @param bs double scout rate
 //' @param as double scout alpha
 //' @export
 // [[Rcpp::export]]
-double scout_dist_new(double x, double m, double bs, double as)
+double scout_dist(double x, double m, double bs, double as)
 {
     double maxpart = 1-as*x;
     if (maxpart < 0)
@@ -148,14 +79,14 @@ double scout_dist_new(double x, double m, double bs, double as)
     return result;
 }
 
-//' New model function for recruits
+//' Model function for recruits
 //'
 //' @param br double Recruit rate
 //' @param ar double Recruit alpha
-//' @inheritParams scout_dist_new
+//' @inheritParams scout_dist
 //' @export
 // [[Rcpp::export]]
-double recruit_dist_new(double x, double m, double br, double ar)
+double recruit_dist(double x, double m, double br, double ar)
 {
     double maxpart = 1-ar*x;
     if (maxpart < 0)
@@ -172,16 +103,16 @@ double recruit_dist_new(double x, double m, double br, double ar)
 ------------------------------- likelihood functions ---------------------------
 */
 
-//' Log-likelihood function for scout and recruit superposition using
-//' re-parameterised model
+//' Log-likelihood function for scout and recruit superposition
+//' (collective model)
 //'
 //' @param x double* Pointer to array of foraging distances
 //' @param p double Proportion of scouts (0<=p<=1)
-//' @inheritParams scout_dist_new
-//' @inheritParams recruit_dist_new
+//' @inheritParams scout_dist
+//' @inheritParams recruit_dist
 //' @export
 // [[Rcpp::export]]
-double loglike_model_all_new(NumericVector x,
+double loglike_model_collective(NumericVector x,
                          double p, double bs,
                          double br, double as, double ar)
 {
@@ -191,8 +122,8 @@ double loglike_model_all_new(NumericVector x,
     double tmp_ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        tmp_ll = (p * scout_dist_new(x[i], m, bs, as) +
-            (1 - p) * recruit_dist_new(x[i], m, br, ar));
+        tmp_ll = (p * scout_dist(x[i], m, bs, as) +
+            (1 - p) * recruit_dist(x[i], m, br, ar));
         if (tmp_ll < 1e-99) {
             ll += -1e99-ar;
         } else {
@@ -202,17 +133,13 @@ double loglike_model_all_new(NumericVector x,
     return ll;
 }
 
-//' Log-likelihood function for scout and recruit superposition
+//' Log-likelihood function for individual foraging
 //'
-//' @param x double* Pointer to array of foraging distances
-//' @param p double Proportion of scouts (0<=p<=1)
-//' @inheritParams scout_dist
-//' @inheritParams recruit_dist
+//' @inheritParams loglike_model_collective
 //' @export
 // [[Rcpp::export]]
-double loglike_model_all(NumericVector x,
-                         double p, double ls,
-                         double ln, double qn, double a)
+double loglike_model_individual(NumericVector x,
+                           double bs, double as)
 {
     const int x_size = x.size();
     const double m = min(x);
@@ -220,31 +147,12 @@ double loglike_model_all(NumericVector x,
     double tmp_ll = 0;
     for (int i = 0; i < x_size; i++)
     {
-        tmp_ll = (p * scout_dist(x[i], m, ls, qn, a) +
-            (1 - p) * recruit_dist(x[i], m, ln, qn, a));
+        tmp_ll = scout_dist(x[i], m, bs, as);
         if (tmp_ll < 1e-99) {
-            ll += -1e8+(qn-1)/a;
+            ll += -1e99-as;
         } else {
             ll += log(tmp_ll);
         };
-    }
-    return ll;
-}
-
-//' Log-likelihood function for scouts
-//'
-//' @inheritParams loglike_model_all
-//' @export
-// [[Rcpp::export]]
-double loglike_model_scout(NumericVector x,
-                           double ls, double qn, double a)
-{
-    const int x_size = x.size();
-    const double m = min(x);
-    double ll = 0;
-    for (int i = 0; i < x_size; i++)
-    {
-        ll += log(scout_dist(x[i], m, ls, qn, a));
     }
     return ll;
 }
@@ -253,20 +161,20 @@ double loglike_model_scout(NumericVector x,
 ------------------------------- objective functions ----------------------------
 */
 
-// Objective function for new collective model
+// Objective function for collective model
 //
 // param: n unsigned, record parameter required for nlopt
 // param: params NumericVector, array of parameter estimates to run the model with
 // param: grad double*, gradient value (unused but required as positional)
 // param: x NumericVector, The data to load fit to
-double objective_model_all_new(
+double objective_model_collective(
     unsigned n, const double* params, double* grad, void* f_data
     )
 {
-    data_struct_new* data = (data_struct_new*) (f_data);
+    data_struct* data = (data_struct*) (f_data);
     check_user_input(data->fcount);
     data->fcount++;
-    double result = loglike_model_all_new(
+    double result = loglike_model_collective(
         data->x,
         params[0],
         params[1],
@@ -301,65 +209,23 @@ double objective_model_all_new(
     return result;
 }
 
-// Objective function for collective model for just p
+// Objective function for individual model
 //
 // param: n unsigned, record parameter required for nlopt
 // param: NumericVector, array of parameter estimates to run the model with
 // param: grad double*, gradient value (unused but required as positional)
 // param: x NumericVector, The data to load fit to
-double objective_model_p(
-    unsigned n, const double* params, double* grad, void* f_data
-    )
-{
-    data_struct_p* data = (data_struct_p*) (f_data);
-    check_user_input(data->fcount);
-    data->fcount++;
-    double result = loglike_model_all(
-        data->x,
-        params[0],
-        data->ls,
-        data->ln,
-        data->qn,
-        data->a
-    );
-    if (result > data->best_est) {
-        data->best_est = result;
-    }
-    if (data->verbose) {
-        Rcout << "Iteration: "
-            << data->fcount
-            << ", Result: "
-            << result
-            << ", Best estimate: "
-            << data->best_est
-            << std::endl;
-        Rcout << "p = "
-            << std::endl;
-        Rcout << "-----" << std::endl;
-    }
-    return result;
-}
-
-// Objective function for collective model
-//
-// param: n unsigned, record parameter required for nlopt
-// param: NumericVector, array of parameter estimates to run the model with
-// param: grad double*, gradient value (unused but required as positional)
-// param: x NumericVector, The data to load fit to
-double objective_model_all(
+double objective_model_individual(
     unsigned n, const double* params, double* grad, void* f_data
     )
 {
     data_struct* data = (data_struct*) (f_data);
     check_user_input(data->fcount);
     data->fcount++;
-    double result = loglike_model_all(
+    double result = loglike_model_individual(
         data->x,
-        data->p,
         params[0],
-        params[1],
-        params[2],
-        params[3]
+        params[1]
     );
     if (result > data->best_est) {
         data->best_est = result;
@@ -372,58 +238,10 @@ double objective_model_all(
             << ", Best estimate: "
             << data->best_est
             << std::endl;
-        Rcout << "ls = "
+        Rcout << "bs = "
             << params[0]
-            << ", qn = "
+            << ", as = "
             << params[1]
-            << ", a = "
-            << params[2]
-            << std::endl;
-        Rcout << "-----" << std::endl;
-    }
-    return result;
-}
-
-// Objective function for scout model
-//
-// param: n unsigned, record parameter required for nlopt
-// param: NumericVector, array of parameter estimates to run the model with
-// param: grad double*, gradient value (unused but required as positional)
-// param: x NumericVector, The data to load fit to
-double objective_model_scout(
-    unsigned n, const double* params, double* grad, void* f_data
-    )
-{
-    data_struct* data = (data_struct*) (f_data);
-    check_user_input(data->fcount);
-    data->fcount++;
-    double result = loglike_model_scout(
-        data->x,
-        params[0],
-        params[1],
-        params[2]
-    );
-    if (result > data->best_est) {
-        data->best_est = result;
-    }
-    if (data->verbose) {
-        Rcout << "Iteration: "
-            << data->fcount
-            << ", Result: "
-            << result
-            << ", Best estimate: "
-            << data->best_est
-            << std::endl;
-        Rcout << "p = "
-            << params[0]
-            << ", ls = "
-            << params[1]
-            << ", ln = "
-            << params[2]
-            << ", qn = "
-            << params[3]
-            << ", a = "
-            << params[4]
             << std::endl;
         Rcout << "-----" << std::endl;
     }
@@ -434,7 +252,7 @@ double objective_model_scout(
 ------------------------------- optimising functions ---------------------------
 */
 
-//' Optimise function for fitting the new collective model using NLOPT
+//' Optimise function for fitting the collective model using NLOPT
 //'
 //' @param x NumericVector Foraging distance
 //' @param params NumericVector parameter estimates to run the model with
@@ -453,7 +271,7 @@ NumericVector optimise_model(
 )
 {
     // put constant data into data_struct and initialise other data
-    data_struct_new ds;
+    data_struct ds;
     ds.x = x;
     ds.fcount = 0;
     ds.best_est = -1e-90;
@@ -464,18 +282,28 @@ NumericVector optimise_model(
     double maxf;
 
     // set up the model function to run
-
+    double (*objective_fun)(unsigned, const double*, double*, void*);
+    if (model == 0) {
+        objective_fun = &objective_model_collective;
+    } else if (model == 1) {
+        objective_fun = &objective_model_individual;
+    } else {
+        stop(
+            "Model given is inconsistent with avaliable models.\n" \
+            "Only 0 or 1 (meaning all or scout) is permited"
+        );
+    }
 
     // Add objective to NLOPT
     opt = nlopt_create(NLOPT_LN_NELDERMEAD, params.size());
-    nlopt_set_max_objective(opt, objective_model_all_new, &ds);
+    nlopt_set_max_objective(opt, objective_fun, &ds);
     nlopt_set_lower_bounds(opt, lb.begin());
     nlopt_set_upper_bounds(opt, ub.begin());
     if (xtol != 0) {
         nlopt_set_xtol_rel(opt, xtol);
     }
 
-    // run optimisation for all parameters but p
+    // run optimisation for all parameters
     nlopt_result optimise_result = nlopt_optimize(opt, params.begin(), &maxf);
     check_optimise_result(optimise_result, verbose);
 
@@ -489,115 +317,75 @@ NumericVector optimise_model(
     return results;
 }
 
-//' Optimise function for fitting a model using NLOPT
+
+/*
+------------------------------- pdf plot functions -----------------------------
+*/
+
+//' Model pdf function for scout and recruit superposition. Stores results in
+//' given array (y)
 //'
-//' @param x NumericVector Foraging distance
-//' @param params NumericVector parameter estimates to run the model with
-//' @param lb NumericVector, array of lower bounds for each paramater
-//' @param ub NumericVector, array of upper bounds for each parameter
-//' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
-//' @param xtol double, The absolute tolerance on function value. If 0 (default)
-//' then default to nlopt default value.
-//' @param model int The model to run. Must be 0 or 1 which means 'all' or
-//' 'scout' respectively,  defaults to 0 ('all')
+//' @param x NumericVector foraging distances
+//' @param y NumericVector storage array for the results
+//' @param p double Proportion of scouts (0<=p<=1)
+//' @inheritParams scout_dist
+//' @inheritParams recruit_dist
 //' @export
 // [[Rcpp::export]]
-NumericVector optimise_model_old(
-    NumericVector x, NumericVector params, NumericVector lb, NumericVector ub,
-    bool verbose = false, double xtol = 0, int model = 0
-)
+void pdf_model_all(NumericVector x, NumericVector y,
+                    double p, double bs, double br,
+                    double as, double ar)
 {
-    // put constant data into data_struct and initialise other data
-    data_struct ds;
-    ds.x = x;
-    ds.fcount = 0;
-    ds.best_est = -9999999999999;
-    ds.verbose = verbose;
+  const int x_size = x.size();
+  const double m = min(x);
+  for (int i = 0; i < x_size; i++) {
+    y[i] = p * scout_dist(x[i], m, bs, as) +
+            (1 - p) * recruit_dist(x[i], m, br, ar);
+  }
+}
 
-    // set up NLOPT
-    NumericVector newparams(4);
-    NumericVector newlb(4);
-    NumericVector newub(4);
-    nlopt_opt opt;
-    double maxf;
+//' Model pdf function for scout model. Stores results in given array (y)
+//'
+//' @param x NumericVector foraging distances
+//' @param y NumericVector storage array for the results
+//' @inheritParams scout_dist
+//' @export
+// [[Rcpp::export]]
+void pdf_model_scout(NumericVector x, NumericVector y,
+                      double bs, double as)
+{
+  const int x_size = x.size();
+  const double m = min(x);
+  for (int i = 0; i < x_size; i++) {
+    y[i] = scout_dist(x[i], m, bs, as);
+  }
+}
 
-    // set up the model function to run
-    double (*objective_fun)(unsigned, const double*, double*, void*);
-    if (model == 0) {
-        ds.p = params[0];
-        newparams = params[Range(1, params.size()-1)];
-        newlb = lb[Range(1, lb.size()-1)];
-        newub = ub[Range(1, ub.size()-1)];
-        objective_fun = &objective_model_all;
-    } else if (model == 1) {
-        newparams = params[Range(0, params.size())];
-        newlb = lb[Range(0, lb.size())];
-        newub = ub[Range(0, ub.size())];
-        objective_fun = &objective_model_scout;
-    } else {
+//' Get model pdf for a given model
+//'
+//' @param x NumericVector foraging distances
+//' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
+//' the scout model their will only be three (ls, qn, a) but if all their will
+//' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
+//' @param model int The model to run. Must be 0 or 1 which means 'all',
+//' or 'scout' respectively,  defaults to 0 ('all')
+//' @return y NumericVector the ccdf
+//' @export
+// [[Rcpp::export]]
+NumericVector model_pdf(NumericVector x, NumericVector params,
+                         int model = 0)
+{
+  NumericVector y(x.size());
+  if (model == 0) {
+    pdf_model_all(x, y, params[0], params[1], params[2], params[3], params[4]);
+  } else if (model == 1) {
+    Rcout << params << std::endl;
+    pdf_model_scout(x, y, params[0], params[1]);
+  } else {
         stop(
             "Model given is inconsistent with avaliable models.\n" \
             "Only 0 or 1 (meaning all or scout) is permited"
         );
     }
-
-    // Add objective to NLOPT
-    opt = nlopt_create(NLOPT_LN_NELDERMEAD, newparams.size());
-    nlopt_set_max_objective(opt, objective_fun, &ds);
-    nlopt_set_lower_bounds(opt, newlb.begin());
-    nlopt_set_upper_bounds(opt, newub.begin());
-    if (xtol != 0) {
-        nlopt_set_xtol_rel(opt, xtol);
-    }
-
-    // run optimisation for all parameters but p
-    nlopt_result optimise_result = nlopt_optimize(opt, newparams.begin(), &maxf);
-    check_optimise_result(optimise_result, verbose);
-
-    // maximise p using Newtons method
-    data_struct_p dsp;
-    dsp.x = x;
-    dsp.fcount = 0;
-    dsp.best_est = -9999999;
-    dsp.verbose = verbose;
-    dsp.ls = newparams[0];
-    dsp.ln = newparams[1];
-    dsp.qn = newparams[2];
-    dsp.a = newparams[3];
-
-    nlopt_opt opt_p;
-    NumericVector pest = {params[0]};
-    NumericVector plb = {0};
-    NumericVector pub = {1};
-    double maxf_p;
-
-    opt_p = nlopt_create(NLOPT_LN_NELDERMEAD, pest.size());
-    nlopt_set_max_objective(opt_p, objective_model_p, &dsp);
-    nlopt_set_lower_bounds(opt_p, plb.begin());
-    nlopt_set_upper_bounds(opt_p, pub.begin());
-    if (xtol != 0) {
-        nlopt_set_xtol_rel(opt_p, xtol);
-    }
-
-    // run optimisation for just p
-    nlopt_result optimise_result_p = nlopt_optimize(opt_p, pest.begin(), &maxf_p);
-    check_optimise_result(optimise_result_p, verbose);
-
-    // move optimised params back into params
-    if (model == 0) {
-        params[Range(1, params.size())] = newparams;
-        params[0] = pest[0];
-    } else {
-        params = newparams;
-    }
-
-    // store results
-    NumericVector results(params.size() + 1);
-    results[0] = maxf_p;
-    for (int i = 0; i < results.size()-1; i++) {
-        results[i + 1] = params[i];
-    }
-    nlopt_destroy(opt);
-    nlopt_destroy(opt_p);
-    return results;
+  return y;
 }

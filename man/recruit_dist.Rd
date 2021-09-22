@@ -4,18 +4,16 @@
 \alias{recruit_dist}
 \title{Model function for recruits}
 \usage{
-recruit_dist(x, m, ln, qn, a)
+recruit_dist(x, m, br, ar)
 }
 \arguments{
 \item{x}{double Foraging distance}
 
 \item{m}{double Minimum foraging distance}
 
-\item{ln}{double Recruit rate}
+\item{br}{double Recruit rate}
 
-\item{qn}{double Quality}
-
-\item{a}{double alpha value}
+\item{ar}{double Recruit alpha}
 }
 \description{
 Model function for recruits

@@ -4,7 +4,7 @@
 \alias{calc_var_likelihood}
 \title{Calculate likelihoods for a specified parameter}
 \usage{
-calc_var_likelihood(data, var, p, ls, ln, q, a, n = 1000, upper = 5)
+calc_var_likelihood(data, var, p, bs, as, br, ar, n = 1000, upper = 5)
 }
 \arguments{
 \item{data}{doubleArray The data to check the parameters against. This should
@@ -15,13 +15,13 @@ likelihood space for.}
 
 \item{p}{double The proportion of scouts.}
 
-\item{ls}{double The scout rate.}
+\item{bs}{double The scout rate.}
 
-\item{ln}{double The recruit rate.}
+\item{as}{double The scout alpha.}
 
-\item{q}{double The quality.}
+\item{br}{double The recruit rate.}
 
-\item{a}{double The alpha value.}
+\item{ar}{double The recruit alpha.}
 
 \item{n}{integer The number of points to sample, defaults to 1000.}
 

@@ -2,7 +2,6 @@
 ## Joseph Palmer
 ---
 
-
 ```{r, include = FALSE}
 devtools::load_all()
 
@@ -26,64 +25,1607 @@ source("analysis/fit_data.R")
 
 ```
 
-## Trial run of a single site using new routine
+## Optimising each site
 
-Using the new routine in this branch (using Nelder-Mead simplex rather than COBYLA) and seperatly optimising p.
+In this document I have fit the collective and individual model to each site. So al the sites have reasonable likelihood values, however in some cases the fits are simply wrong (i.e. they show the probability of sampling a value greater than on equal to $x$ as increasing in the tail). I need to trouble shoot these with Vincent. I also need to get some advice on how to plot the model fits to the histogram of data.
+
+Would be a good idea to knit this as a single document / run in R studio on the laptop.
+
+
+### BEL
+
+Provides a good fit on the data. All parameters look central and nicely covered.
 
 ```{r}
-# Run model analysis lots and lots of times.
-use_upper <- 50
 
-bel <- get_data() %>%
-  filter(site == "BEL")
+target_site <- "BEL"
 
-result_data <- purrr::map_df(
-  seq_len(10),
-  ~ {
-    print(paste("Itteration", .x))
-    result <- run_analysis(
-      bel, n = 10, upper = use_upper, verbose_r = T, verbose = F
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 10, -5.5, -2)
+)
+
+# bring results together
+bel_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
     )
-    return(
-      data.frame(
-        ll = result$fmax,
-        p = result$est[1],
-        bs = result$est[2],
-        br = result$est[3],
-        as = result$est[4],
-        ar = result$est[5]
-      )
-    )
-  }
+  )
 )
 
-best_mod <- result_data %>% filter(ll == max(ll))
-if (length(best_mod[, 1] > 1)) {
-  best_mod <- best_mod[1, ]
-}
-params <- best_mod %>% select(p, bs, br, as, ar)
-solution <- list(
-  fmax = best_mod$ll,
-  data_name = "all",
-  est = params %>% as.double()
-)
-
-map_likelihood_space(
-  bel$foraging_distance, params, n = 10000, upper = use_upper
-)
-
-solution
+bel_model_fits
 
 ```
 
-```{r}
-# show the fit
 
-make_full_plot(
-  bel$foraging_distance,
-  list("collective" = solution),
-  subplot_coords = c(0.5, 8, -4.5, -2.5)
+
+### BFI
+
+All parameters look central in the likelihood space and a nice fit is returned.
+
+```{r}
+
+target_site <- "BFI"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
 )
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.6)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 4.5, -8, -2.5)
+)
+
+# bring results together
+bfi_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+bfi_model_fits
+
+```
+
+
+### BLO
+
+CCDF plot is not right. Cant go back on its self which indicates there is probably some round off error somewhere throwing things off.
+
+The individual fit isnt great and the Bs paramater is increasing up to the boundry, indicating it can only really take on a straight line / exponential fit. The parameters for the collective model are fairly central which raises questions as to why the fit is misbehaved in the tail.
+
+```{r}
+
+target_site <- "BLO"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-10, 5)
+br_bnds <- c(1.0e-10, 5)
+as_bnds <- c(1.0e-5, 5)
+ar_bnds <- c(1.0e-10, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 105)
+as_bnds <- c(1.0e-12, 0.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 12, -8., -2.5)
+)
+
+# bring results together
+blo_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+blo_model_fits
+
+```
+
+
+### BUR
+
+Bs and Br go in oposite directions. E.g. Bs approaches 0 whilst Br approaches an every higher number.
+
+Fit looks good.
+
+```{r}
+
+target_site <- "BUR"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 500)
+br_bnds <- c(1.0e-6, 500)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 5.5, -6.5, -2.5)
+)
+
+# bring results together
+bur_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+bur_model_fits
+
+```
+
+
+### CAD
+
+The only graph I can get to make sense is one where the collective reduces to the individual. The others show the ccdf going off.
+
+```{r}
+
+target_site <- "CAD"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 100)
+br_bnds <- c(1.0e-6, 100)
+as_bnds <- c(1.0e-12, 10)
+ar_bnds <- c(1.0e-12, 10)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 2)
+as_bnds <- c(1.0e-12, 0.8)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 2.5, -5, -1.5)
+)
+
+# bring results together
+cad_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+cad_model_fits
+
+```
+
+
+### GIL
+
+Again, the likelihood scores look good but the model fits are doing crazy things at the tail!
+
+```{r}
+
+target_site <- "GIL"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.8)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 2.7, -8., -2)
+)
+
+# bring results together
+gil_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+gil_model_fits
+
+```
+
+
+### HER
+
+Also has a weird CCDF plot
+
+```{r}
+
+target_site <- "HER"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 100)
+br_bnds <- c(1.0e-6, 100)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 2)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 5, -6.5, -1.5)
+)
+
+# bring results together
+her_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+her_model_fits
+
+```
+
+
+### HHS
+
+Shit ccdf.
+
+```{r}
+
+target_site <- "HHS"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 50)
+br_bnds <- c(1.0e-6, 50)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 6, -6.5, -2.5)
+)
+
+# bring results together
+hhs_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+hhs_model_fits
+
+```
+
+
+### HOR
+
+Agin weird behaviour in the tail. Seems to be something to do with the Bs parameter approaching the lower bound. If the lower bound is made closer to zero (just 1e-7) the plot goes mad and the log-likelihood score becomes very large, indicating a round off error or something stupid.
+
+```{r}
+
+target_site <- "HOR"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 4, -9, -2.5)
+)
+
+# bring results together
+hor_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+hor_model_fits
+
+```
+
+
+### MAK
+
+Same problem as with the others.
+
+```{r}
+
+target_site <- "MAK"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 5, -6.5, -2.5)
+)
+
+# bring results together
+mak_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+mak_model_fits
+
+```
+
+
+### MEL
+
+Slight misbehaviour in the tail creaping up.
+
+```{r}
+
+target_site <- "MEL"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 3.5, -7, -2.5)
+)
+
+# bring results together
+mel_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+mel_model_fits
+
+```
+
+
+### MPA
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "MPA"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 4.5, -7.2, -2.5)
+)
+
+# bring results together
+mpa_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+mpa_model_fits
+
+```
+
+### ROT
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "ROT"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 3., -5.5, -2.5)
+)
+
+# bring results together
+rot_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+rot_model_fits
+
+```
+
+
+### SAU
+
+No problems here!
+
+```{r}
+
+target_site <- "SAU"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 3.5, -6.5, -2.5)
+)
+
+# bring results together
+sau_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+sau_model_fits
+
+```
+
+### SOM
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "SOM"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site) %>%
+  filter(foraging_distance < 9) # remove outlier distance
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 3., -5.5, -2.5)
+)
+
+# bring results together
+som_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+som_model_fits
+
+```
+
+### SRA
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "SRA"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 4., -7.5, -2.5)
+)
+
+# bring results together
+sra_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+sra_model_fits
+
+```
+
+### STU
+
+Same problem with the tail. Increasing the bounds for as and ar seems to coerce it towards the better visual fit, despite it not changing what they optimise at. Weird thing is the model is getting close in the region of p but not actually to it.
+
+```{r}
+
+target_site <- "STU"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12,10)
+ar_bnds <- c(1.0e-12, 10)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 5.5, -6.5, -1.5)
+)
+
+# bring results together
+stu_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+stu_model_fits
+
+```
+
+### SWP
+
+Same problem with the tail. Weird P behaviour when we move some of the other parameters around. Looks like it can get a fit that looks very similar with p = 0
+
+```{r}
+
+target_site <- "SWP"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 15)
+br_bnds <- c(1.0e-6, 15)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 2.5, -6, -2.)
+)
+
+# bring results together
+swp_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+swp_model_fits
+
+```
+
+### YAL
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "YAL"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 5., -8, -2.5)
+)
+
+# bring results together
+yal_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+yal_model_fits
+
+```
+
+### ZSL
+
+Same problem with the tail.
+
+```{r}
+
+target_site <- "ZSL"
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
+# fit collective model
+colletive_result <- fit_collective_model_to_data(data, bounds)
+
+# view collective model likelihood space to check bounds look ok
+colletive_result$llspace
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 50)
+as_bnds <- c(1.0e-12, 1.3)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# make plot of model fits
+make_full_plot(
+  data$foraging_distance,
+  list(
+    "collective" = colletive_result$solution,
+    "individual" = individual_result$solution
+  ),
+  subplot_coords = c(0.5, 2.4, -8, -2)
+)
+
+# bring results together
+zsl_model_fits <- tibble(
+  site = c(target_site, target_site),
+  model = c("collective", "individual"),
+  loglikelihood = c(
+    colletive_result$solution$fmax, individual_result$solution$fmax
+  ),
+  p = c(colletive_result$solution$est[1], 1),
+  k = c(
+    length(colletive_result$solution$est),
+    length(individual_result$solution$est)
+  ),
+  AIC = c(
+    calc_aic(
+      length(colletive_result$solution$est), colletive_result$solution$fmax
+    ),
+    calc_aic(
+      length(individual_result$solution$est), individual_result$solution$fmax
+    )
+  )
+)
+
+zsl_model_fits
 
 ```

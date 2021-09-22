@@ -5,7 +5,7 @@
 \title{Model ccdf function for scout and recruit superposition. Stores results in
 given array (y)}
 \usage{
-ccdf_model_all(x, y, p, ls, ln, qn, a)
+ccdf_model_all(x, y, p, bs, br, as, ar)
 }
 \arguments{
 \item{x}{NumericVector foraging distances}
@@ -14,13 +14,13 @@ ccdf_model_all(x, y, p, ls, ln, qn, a)
 
 \item{p}{double Proportion of scouts (0<=p<=1)}
 
-\item{ls}{double Scout rate}
+\item{bs}{double Scout rate}
 
-\item{ln}{double Recruit rate}
+\item{br}{double Recruit rate}
 
-\item{qn}{double Quality}
+\item{as}{double scout alpha}
 
-\item{a}{double alpha value}
+\item{ar}{double recruit alpha}
 }
 \description{
 Model ccdf function for scout and recruit superposition. Stores results in

@@ -2,26 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{recruit_ccdf}
 \alias{recruit_ccdf}
-\title{Model CCDF function for recruits}
+\title{Model CCDF for recruit distribution}
 \usage{
-recruit_ccdf(x, p, ln, qn, a, m)
+recruit_ccdf(x, m, br, ar)
 }
 \arguments{
 \item{x}{double Foraging distance}
 
-\item{p}{double Proportion of scouts (0<=p<=1)}
-
-\item{ln}{double Recruit rate}
-
-\item{qn}{double Quality}
-
-\item{a}{double alpha value}
-
 \item{m}{double Minimum foraging distance}
+
+\item{br}{double Recruit rate}
+
+\item{ar}{double recruit alpha}
 }
 \value{
 result double the ccdf for that foraging distance (x)
 }
 \description{
-Model CCDF function for recruits
+Model CCDF for recruit distribution
 }

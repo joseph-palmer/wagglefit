@@ -6,8 +6,8 @@
 #' @concept utility
 model_number_from_model <- function(model) {
   model_list <- list(
-    "all" = 0,
-    "scout" = 1
+    "collective" = 0,
+    "individual" = 1
   )
   if (!(model %in% names(model_list))) {
     stop("Model name not found")
@@ -144,7 +144,7 @@ calc_ks_boot <- function(x, param_est, model_type, pvalue = TRUE) {
   return(ks$ks.boot.pvalue)
 }
 
-#' Calculate likelihoods for a specified parameter
+#' Calculate likelihoods for a specified parameter for the collective model
 #'
 #' @description Calculate likelihoods for a specified parameter to show the
 #' likelihood space for that parameter. This uses the bounds defined for that
@@ -155,10 +155,10 @@ calc_ks_boot <- function(x, param_est, model_type, pvalue = TRUE) {
 #' @param var characterArray The name of the variable you want to examine the
 #' likelihood space for.
 #' @param p double The proportion of scouts.
-#' @param ls double The scout rate.
-#' @param ln double The recruit rate.
-#' @param q double The quality.
-#' @param a double The alpha value.
+#' @param bs double The scout rate.
+#' @param as double The scout alpha.
+#' @param br double The recruit rate.
+#' @param ar double The recruit alpha.
 #' @param n integer The number of points to sample, defaults to 1000.
 #' @param upper integer The upper bound
 #' @return tibble The varied parameter and associated likelihood and
@@ -167,24 +167,79 @@ calc_ks_boot <- function(x, param_est, model_type, pvalue = TRUE) {
 #' @importFrom purrr map_dbl
 #' @concept utility
 #'
-calc_var_likelihood <- function(data, var, p, ls, ln, q, a, n = 1000, upper = 5) {
-  bnds <- generate_bounds_all(upper)
+calc_var_likelihood_collective <- function(
+  data, var, params, n = 1000, upper = 5, bounds = NULL
+  ) {
+  p <- params[[1]]
+  bs <- params[[2]]
+  br <- params[[3]]
+  as <- params[[4]]
+  ar <- params[[5]]
+
+  if (is.null(bounds)) {
+    bnds <- generate_bounds_all(upper)
+  } else {
+    bnds <- bounds
+  }
   var_bnds <- paste0(var, "_bnds")
   vals <- seq(bnds[var_bnds, 1], bnds[var_bnds, 2], length.out = n)
   result <- map_dbl(
     vals,
     ~ {
-      if (var == "p") {
-        loglike_model_all_new(data, .x, ls, ln, q, a)
-      } else if (var == "ls") {
-        loglike_model_all_new(data, p, .x, ln, q, a)
-      } else if (var == "ln") {
-        loglike_model_all_new(data, p, ls, .x, q, a)
-      } else if (var == "q") {
-        loglike_model_all_new(data, p, ls, ln, .x, a)
-      } else {
-        loglike_model_all_new(data, p, ls, ln, q, .x)
-      }
+      switch(var,
+        p = loglike_model_collective(data, .x, bs, br, as, ar),
+        bs = loglike_model_collective(data, p, .x, br, as, ar),
+        br = loglike_model_collective(data, p, bs, .x, as, ar),
+        as = loglike_model_collective(data, p, bs, br, .x, ar),
+        ar = loglike_model_collective(data, p, bs, br, as, .x),
+        stop(paste("Unknown input", var))
+      )
+    }
+  )
+  return(tibble(var = vals, loglike = result, likelihood = exp(result)))
+}
+
+#' Calculate likelihoods for a specified parameter for the individual model
+#'
+#' @description Calculate likelihoods for a specified parameter to show the
+#' likelihood space for that parameter. This uses the bounds defined for that
+#' parameter and gets the specified number of values to show the likelihood
+#' space.
+#' @param data doubleArray The data to check the parameters against. This should
+#' be the data the parameters were fit to.
+#' @param var characterArray The name of the variable you want to examine the
+#' likelihood space for.
+#' @param p double The proportion of scouts.
+#' @param bs double The scout rate.
+#' @param as double The scout alpha.
+#' @param n integer The number of points to sample, defaults to 1000.
+#' @param upper integer The upper bound
+#' @return tibble The varied parameter and associated likelihood and
+#' log-likelihood scores.
+#' @importFrom tibble tibble
+#' @importFrom purrr map_dbl
+#' @concept utility
+#'
+calc_var_likelihood_individual <- function(
+  data, var, params, n = 1000, upper = 5, bounds = NULL
+  ) {
+  bs <- params[[1]]
+  as <- params[[2]]
+  if (is.null(bounds)) {
+    bnds <- generate_bounds_all(upper)
+  } else {
+    bnds <- bounds
+  }
+  var_bnds <- paste0(var, "_bnds")
+  vals <- seq(bnds[var_bnds, 1], bnds[var_bnds, 2], length.out = n)
+  result <- map_dbl(
+    vals,
+    ~ {
+      switch(var,
+        bs = loglike_model_individual(data, .x, as),
+        as = loglike_model_individual(data, bs, .x),
+        stop(paste("Unknown input", var))
+      )
     }
   )
   return(tibble(var = vals, loglike = result, likelihood = exp(result)))
@@ -199,23 +254,32 @@ calc_var_likelihood <- function(data, var, p, ls, ln, q, a, n = 1000, upper = 5)
 #' others fixed at their optima.
 #' @inheritParams calc_var_likelihood
 #' @param params named list or tibble of optimised parameter values
+#' @param model_name character array The name of the model to evaluate
 #' @return ggplotObj The likelihood plot for each parameter.
-#' @importFrom dplyr gather
+#' @importFrom tidyr gather
 #' @importFrom purrr map
 #' @importFrom cowplot plot_grid
 #' @importFrom ggplot2 ggplot aes geom_line facet_wrap labs
 #' @concept utility
 #'
-map_likelihood_space <- function(data, params, n = 1000, upper = 5) {
+map_likelihood_space <- function(data, params, model_name = "collective",
+                                n = 1000, upper = 5, bounds = NULL) {
+  use_params <- list(
+    "individual" = c("bs", "as"),
+    "collective" = c("p", "bs", "br", "as", "ar")
+  )
+  use_model <- list(
+    "individual" = calc_var_likelihood_individual,
+    "collective" = calc_var_likelihood_collective
+  )
   result <- map(
-    c("p", "ls", "ln", "q", "a"),
+    use_params[[model_name]],
     ~ {
-      calc_var_likelihood(
-        data, .x, params[[1]],
-        params[[2]], params[[3]],
-        params[[4]], params[[5]],
+      use_model[[model_name]](
+        data, .x, params,
         n = n,
-        upper = upper
+        upper = upper,
+        bounds = bounds
       ) %>%
         gather("measurement", "value", -var)
     }
@@ -237,9 +301,6 @@ map_likelihood_space <- function(data, params, n = 1000, upper = 5) {
     ncol = 1,
     labels = names(p_plots)
   )
-
-  print(result$p)
-  print(paste(min(result$p$value), max(result$p$value)))
 
   return(master_plot)
 }

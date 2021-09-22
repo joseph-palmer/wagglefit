@@ -2,26 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{scout_ccdf}
 \alias{scout_ccdf}
-\title{Model CCDF function for scouts}
+\title{Model CCDF for scout distribution}
 \usage{
-scout_ccdf(x, p, ls, qn, a, m)
+scout_ccdf(x, m, bs, as)
 }
 \arguments{
 \item{x}{double Foraging distance}
 
-\item{p}{double Proportion of scouts (0<=p<=1)}
-
-\item{ls}{double Scout rate}
-
-\item{qn}{double Quality}
-
-\item{a}{double alpha value}
-
 \item{m}{double Minimum foraging distance}
+
+\item{bs}{double Scout rate}
+
+\item{as}{double scout alpha}
 }
 \value{
 result double the ccdf for that foraging distance (x)
 }
 \description{
-Model CCDF function for scouts
+Model CCDF for scout distribution
 }

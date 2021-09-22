@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{optimise_model}
 \alias{optimise_model}
-\title{Optimise function for fitting the new collective model using NLOPT}
+\title{Optimise function for fitting the collective model using NLOPT}
 \usage{
 optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L)
 }
@@ -24,5 +24,5 @@ then default to nlopt default value.}
 'scout' respectively,  defaults to 0 ('all')}
 }
 \description{
-Optimise function for fitting the new collective model using NLOPT
+Optimise function for fitting the collective model using NLOPT
 }

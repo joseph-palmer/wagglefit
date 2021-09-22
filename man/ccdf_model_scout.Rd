@@ -4,18 +4,16 @@
 \alias{ccdf_model_scout}
 \title{Model ccdf function for scout model. Stores results in given array (y)}
 \usage{
-ccdf_model_scout(x, y, ls, qn, a)
+ccdf_model_scout(x, y, ls, bs, as)
 }
 \arguments{
 \item{x}{NumericVector foraging distances}
 
 \item{y}{NumericVector storage array for the results}
 
-\item{ls}{double Scout rate}
+\item{bs}{double Scout rate}
 
-\item{qn}{double Quality}
-
-\item{a}{double alpha value}
+\item{as}{double scout alpha}
 }
 \description{
 Model ccdf function for scout model. Stores results in given array (y)
