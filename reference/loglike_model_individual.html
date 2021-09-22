@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout • wagglefit</title>
+<title>Log-likelihood function for individual foraging — loglike_model_individual • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout" />
-<meta property="og:description" content="Model ccdf function for scout model. Stores results in given array (y)" />
+<meta property="og:title" content="Log-likelihood function for individual foraging — loglike_model_individual" />
+<meta property="og:description" content="Log-likelihood function for individual foraging" />
 
 
 
@@ -106,31 +106,27 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Model ccdf function for scout model. Stores results in given array (y)</h1>
+    <h1>Log-likelihood function for individual foraging</h1>
     
-    <div class="hidden name"><code>ccdf_model_scout.Rd</code></div>
+    <div class="hidden name"><code>loglike_model_individual.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Model ccdf function for scout model. Stores results in given array (y)</p>
+    <p>Log-likelihood function for individual foraging</p>
     </div>
 
-    <pre class="usage"><span class='fu'>ccdf_model_scout</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, <span class='va'>ls</span>, <span class='va'>bs</span>, <span class='va'>as</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>loglike_model_individual</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>bs</span>, <span class='va'>as</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>NumericVector foraging distances</p></td>
-    </tr>
-    <tr>
-      <th>y</th>
-      <td><p>NumericVector storage array for the results</p></td>
+      <td><p>double* Pointer to array of foraging distances</p></td>
     </tr>
     <tr>
       <th>bs</th>
-      <td><p>double Scout rate</p></td>
+      <td><p>double scout rate</p></td>
     </tr>
     <tr>
       <th>as</th>

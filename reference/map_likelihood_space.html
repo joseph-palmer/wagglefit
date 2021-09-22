@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout • wagglefit</title>
+<title>Calculate likelihoods for all parameters for a given dataset — map_likelihood_space • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,12 @@
 
 
 
-<meta property="og:title" content="Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout" />
-<meta property="og:description" content="Model ccdf function for scout model. Stores results in given array (y)" />
+<meta property="og:title" content="Calculate likelihoods for all parameters for a given dataset — map_likelihood_space" />
+<meta property="og:description" content="Calculate likelihoods for all parameters to show their
+likelihood space for a given set of data and optimised model parameters. The
+idea here is that once you have optimised your parameters you pass them in
+here with the data and it shows the likelihood smace of each one wrt. the
+others fixed at their optima." />
 
 
 
@@ -106,38 +110,46 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Model ccdf function for scout model. Stores results in given array (y)</h1>
+    <h1>Calculate likelihoods for all parameters for a given dataset</h1>
     
-    <div class="hidden name"><code>ccdf_model_scout.Rd</code></div>
+    <div class="hidden name"><code>map_likelihood_space.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Model ccdf function for scout model. Stores results in given array (y)</p>
+    <p>Calculate likelihoods for all parameters to show their
+likelihood space for a given set of data and optimised model parameters. The
+idea here is that once you have optimised your parameters you pass them in
+here with the data and it shows the likelihood smace of each one wrt. the
+others fixed at their optima.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>ccdf_model_scout</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, <span class='va'>ls</span>, <span class='va'>bs</span>, <span class='va'>as</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>map_likelihood_space</span><span class='op'>(</span><span class='va'>data</span>, <span class='va'>params</span>, n <span class='op'>=</span> <span class='fl'>1000</span>, upper <span class='op'>=</span> <span class='fl'>5</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>x</th>
-      <td><p>NumericVector foraging distances</p></td>
+      <th>data</th>
+      <td><p>doubleArray The data to check the parameters against. This should
+be the data the parameters were fit to.</p></td>
     </tr>
     <tr>
-      <th>y</th>
-      <td><p>NumericVector storage array for the results</p></td>
+      <th>params</th>
+      <td><p>named list or tibble of optimised parameter values</p></td>
     </tr>
     <tr>
-      <th>bs</th>
-      <td><p>double Scout rate</p></td>
+      <th>n</th>
+      <td><p>integer The number of points to sample, defaults to 1000.</p></td>
     </tr>
     <tr>
-      <th>as</th>
-      <td><p>double scout alpha</p></td>
+      <th>upper</th>
+      <td><p>integer The upper bound</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>ggplotObj The likelihood plot for each parameter.</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
