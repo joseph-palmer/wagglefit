@@ -226,7 +226,7 @@ colletive_result <- fit_collective_model_to_data(data, bounds)
 colletive_result$llspace
 
 # set up bounds for the individual model
-bs_bnds <- c(1.0e-6, 105)
+bs_bnds <- c(1.0e-6, 5505)
 as_bnds <- c(1.0e-12, 0.1)
 bounds <- rbind(
   bs_bnds, as_bnds

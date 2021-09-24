@@ -16,8 +16,12 @@ double scout_ccdf(double x, double m,
                   double bs, double as)
 {
   double result;
-  result = ((1-as*x)*exp(-as*bs*x)-pow(bs, -1)*(exp(-as*bs*x)-exp(-bs))) /
+  if (x > 1/as) {
+    result = 0;
+  } else {
+    result = ((1-as*x)*exp(-as*bs*x)-pow(bs, -1)*(exp(-as*bs*x)-exp(-bs))) /
     ((1-as*m)*exp(-as*bs*m)-pow(bs, -1)*(exp(-as*bs*m)-exp(-bs)));
+  }
   return result;
 }
 
@@ -34,10 +38,14 @@ double recruit_ccdf(double x, double m,
                     double br, double ar)
 {
   double result;
-  result = ((1-ar*x)*exp(-M_PI*br*pow(ar*x, 2)) +
-    ((erf(ar*sqrt(M_PI*br)*x)-erf(sqrt(M_PI*br)))/(2*sqrt(br)))) /
-    ((1-ar*m)*exp(-M_PI*br*pow(ar*m, 2)) +
-    ((erf(ar*sqrt(M_PI*br)*m)-erf(sqrt(M_PI*br)))/(2*sqrt(br))));
+  if (x > 1/ar) {
+    result = 0;
+  } else {
+    result = ((1-ar*x)*exp(-M_PI*br*pow(ar*x, 2)) +
+      ((erf(ar*sqrt(M_PI*br)*x)-erf(sqrt(M_PI*br)))/(2*sqrt(br)))) /
+      ((1-ar*m)*exp(-M_PI*br*pow(ar*m, 2)) +
+      ((erf(ar*sqrt(M_PI*br)*m)-erf(sqrt(M_PI*br)))/(2*sqrt(br))));
+  }
   return result;
 }
 

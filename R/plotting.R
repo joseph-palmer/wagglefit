@@ -62,7 +62,7 @@ make_ccdf_plot_data <- function(x, param_est, model, npoints = 100) {
 make_pdf_plot_data <- function(x, param_est, model, npoints = 100) {
   model_n <- model_number_from_model(model)
   x_seq <- seq(min(x), max(x), length.out = npoints)
-  pdf <- model_pdf(x_seq, param_est, model_n)
+  pdf <- model_pdf(x_seq, param_est, model_n) * length(x) * ((max(x) - min(x)) / 20)
   cumul <- tibble(x_seq, pdf)
   return(cumul)
 }
