@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout • wagglefit</title>
+<title>Get model pdf for a given model — model_pdf • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Model ccdf function for scout model. Stores results in given array (y) — ccdf_model_scout" />
-<meta property="og:description" content="Model ccdf function for scout model. Stores results in given array (y)" />
+<meta property="og:title" content="Get model pdf for a given model — model_pdf" />
+<meta property="og:description" content="Get model pdf for a given model" />
 
 
 
@@ -106,16 +106,16 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Model ccdf function for scout model. Stores results in given array (y)</h1>
+    <h1>Get model pdf for a given model</h1>
     
-    <div class="hidden name"><code>ccdf_model_scout.Rd</code></div>
+    <div class="hidden name"><code>model_pdf.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Model ccdf function for scout model. Stores results in given array (y)</p>
+    <p>Get model pdf for a given model</p>
     </div>
 
-    <pre class="usage"><span class='fu'>ccdf_model_scout</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, <span class='va'>bs</span>, <span class='va'>as</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>model_pdf</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>params</span>, model <span class='op'>=</span> <span class='fl'>0L</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -125,19 +125,21 @@
       <td><p>NumericVector foraging distances</p></td>
     </tr>
     <tr>
-      <th>y</th>
-      <td><p>NumericVector storage array for the results</p></td>
+      <th>params</th>
+      <td><p>NumericVector parameters to calculate the ccdfs for. E.g. if
+the scout model their will only be three (ls, qn, a) but if all their will
+be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make</p></td>
     </tr>
     <tr>
-      <th>bs</th>
-      <td><p>double Scout rate</p></td>
-    </tr>
-    <tr>
-      <th>as</th>
-      <td><p>double scout alpha</p></td>
+      <th>model</th>
+      <td><p>int The model to run. Must be 0 or 1 which means 'all',
+or 'scout' respectively,  defaults to 0 ('all')</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
+
+    <p>y NumericVector the ccdf</p>
 
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
