@@ -79,7 +79,7 @@ individual_result <- fit_individual_model_to_data(data, bounds)
 individual_result$llspace
 
 # make plot of model fits
-make_full_plot(
+bel_plot <- make_full_plot(
   data$foraging_distance,
   list(
     "collective" = colletive_result$solution,
@@ -87,6 +87,8 @@ make_full_plot(
   ),
   subplot_coords = c(0.5, 10, -5.5, -2)
 )
+
+bel_plot
 
 # calculate ks statistics
 ks_test_result_collective <- calc_ks_boot(
@@ -2094,13 +2096,10 @@ sites_sf_t <- st_transform(
 points_area <- st_bbox(locations)
 
 zoom_plt <- ggplot() +
-  geom_sf(data = croped_data, fill = "#ededed") +
-  geom_sf(data = locations, aes(shape = model), size = 2) +
-  geom_sf_text(
-    data = selected_sites, aes(label = site),
-    nudge_x = c(0.5, 105), nudge_y = c(-0.5, -105)
-  ) +
-  scale_shape_manual(values = c(2, 17)) +
+  geom_sf(data = croped_data, fill = "#ededed", size = .1) +
+  geom_sf(data = locations, aes(shape = model), size = 1.5) +
+  geom_sf(data = selected_sites, aes(shape = site, size = 1)) +
+  scale_shape_manual(values = c(1, 2, 17, 16)) +
   theme_nothing() +
   scale_x_continuous(expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
@@ -2152,6 +2151,8 @@ merge_plot <- ggdraw() +
   )
 
 merge_plot
+
+zsl_model_fit
 
 ggsave(
   plot = merge_plot,
