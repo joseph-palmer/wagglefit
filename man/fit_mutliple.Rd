@@ -10,6 +10,7 @@ fit_mutliple(
   model = "all",
   n = 5,
   upper = 5,
+  bounds = NULL,
   verbose_r = FALSE,
   verbose_cpp = FALSE,
   xtol = 0
@@ -18,11 +19,14 @@ fit_mutliple(
 \arguments{
 \item{distance}{doubleArray The distance decoded from the waggle dance.}
 
-\item{model}{characterArray The model to run (scout or all)}
+\item{model}{characterArray The model to run (collective or individual)}
 
 \item{n}{integer The number of models to run}
 
 \item{upper}{double The upper parameter bound. Defaults to 5.}
+
+\item{bounds}{named list user supplied bounds. Defaults to NULL, i.e. bounds
+automatically generated}
 
 \item{verbose_r}{Bool, to display R function evaluations, defaults to FALSE}
 

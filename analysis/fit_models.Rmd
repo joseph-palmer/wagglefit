@@ -23,6 +23,9 @@ library(dplyr)
 library(tibble)
 source("analysis/fit_data.R")
 
+
+all_data <- as.list(rep(0, 20))
+
 ```
 
 ## Optimising each site
@@ -85,6 +88,14 @@ make_full_plot(
   subplot_coords = c(0.5, 10, -5.5, -2)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 bel_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -104,8 +115,18 @@ bel_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[1]] <- bel_model_fits
 
 bel_model_fits
 
@@ -166,6 +187,14 @@ make_full_plot(
   subplot_coords = c(0.5, 4.5, -8, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 bfi_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -185,8 +214,18 @@ bfi_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[2]] <- bfi_model_fits
 
 bfi_model_fits
 
@@ -195,9 +234,7 @@ bfi_model_fits
 
 ### BLO
 
-CCDF plot is not right. Cant go back on its self which indicates there is probably some round off error somewhere throwing things off.
-
-The individual fit isnt great and the Bs paramater is increasing up to the boundry, indicating it can only really take on a straight line / exponential fit. The parameters for the collective model are fairly central which raises questions as to why the fit is misbehaved in the tail.
+The individual fit isnt great and the Bs paramater is increasing up to the boundry, indicating it can only really take on a straight line / exponential fit. The parameters for the collective model are fairly central in the likelihood space, the fit looks very good.
 
 ```{r}
 
@@ -248,6 +285,14 @@ make_full_plot(
   subplot_coords = c(0.5, 12, -8., -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 blo_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -267,8 +312,18 @@ blo_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[3]] <- blo_model_fits
 
 blo_model_fits
 
@@ -330,6 +385,14 @@ make_full_plot(
   subplot_coords = c(0.5, 5.5, -6.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 bur_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -349,8 +412,18 @@ bur_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[4]] <- bur_model_fits
 
 bur_model_fits
 
@@ -359,7 +432,9 @@ bur_model_fits
 
 ### CAD
 
-The only graph I can get to make sense is one where the collective reduces to the individual. The others show the ccdf going off.
+The collective model roughly follows the individual model but is able to acheive a slightly improved fit to the shoulder, hence it provides a higher likelihood score. The AIC indicates this is overfitting, suggesting the individual model provides a more parsimonious explanation.
+
+$p$ does not approach 1 as one might expect, indicating there is overfitting and so a comparison with an individual model is required.
 
 ```{r}
 
@@ -367,8 +442,8 @@ target_site <- "CAD"
 
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
-bs_bnds <- c(1.0e-6, 100)
-br_bnds <- c(1.0e-6, 100)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 10)
 ar_bnds <- c(1.0e-12, 10)
 bounds <- rbind(
@@ -410,6 +485,14 @@ make_full_plot(
   subplot_coords = c(0.5, 2.5, -5, -1.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 cad_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -429,8 +512,18 @@ cad_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[5]] <- cad_model_fits
 
 cad_model_fits
 
@@ -439,7 +532,7 @@ cad_model_fits
 
 ### GIL
 
-Again, the likelihood scores look good but the model fits are doing crazy things at the tail!
+The collective model provides the most parsimonious and best fit.
 
 ```{r}
 
@@ -490,6 +583,14 @@ make_full_plot(
   subplot_coords = c(0.5, 2.7, -8., -2)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 gil_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -509,8 +610,18 @@ gil_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[6]] <- gil_model_fits
 
 gil_model_fits
 
@@ -519,7 +630,7 @@ gil_model_fits
 
 ### HER
 
-Also has a weird CCDF plot
+The collective model provides the best fit to the data, but the proportion of scouts is high.
 
 ```{r}
 
@@ -570,6 +681,14 @@ make_full_plot(
   subplot_coords = c(0.5, 5, -6.5, -1.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 her_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -589,8 +708,18 @@ her_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[7]] <- her_model_fits
 
 her_model_fits
 
@@ -599,7 +728,7 @@ her_model_fits
 
 ### HHS
 
-Shit ccdf.
+Collective model provides the best fit but falls under the tail and shoulder. The individual model strugles to find a good fit, probably due to the tail.
 
 ```{r}
 
@@ -650,6 +779,14 @@ make_full_plot(
   subplot_coords = c(0.5, 6, -6.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 hhs_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -669,8 +806,18 @@ hhs_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[8]] <- hhs_model_fits
 
 hhs_model_fits
 
@@ -679,7 +826,7 @@ hhs_model_fits
 
 ### HOR
 
-Agin weird behaviour in the tail. Seems to be something to do with the Bs parameter approaching the lower bound. If the lower bound is made closer to zero (just 1e-7) the plot goes mad and the log-likelihood score becomes very large, indicating a round off error or something stupid.
+Collective model provides a very good fit, whilst the individual model fails to find much traction. The proportion of scouts goes very low (~3%) suggesting the majority of the colony are following a small number of scouting individuals.
 
 ```{r}
 
@@ -730,6 +877,14 @@ make_full_plot(
   subplot_coords = c(0.5, 4, -9, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 hor_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -749,8 +904,18 @@ hor_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[9]] <- hor_model_fits
 
 hor_model_fits
 
@@ -759,7 +924,7 @@ hor_model_fits
 
 ### MAK
 
-Same problem as with the others.
+Again the collective model provides a good fit to the data, however, the individual model fits poorly, reducing to an exponential.
 
 ```{r}
 
@@ -788,7 +953,7 @@ colletive_result <- fit_collective_model_to_data(data, bounds)
 colletive_result$llspace
 
 # set up bounds for the individual model
-bs_bnds <- c(1.0e-6, 10)
+bs_bnds <- c(1.0e-6, 20)
 as_bnds <- c(1.0e-12, 1.1)
 bounds <- rbind(
   bs_bnds, as_bnds
@@ -810,6 +975,14 @@ make_full_plot(
   subplot_coords = c(0.5, 5, -6.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 mak_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -829,8 +1002,18 @@ mak_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[10]] <- mak_model_fits
 
 mak_model_fits
 
@@ -839,7 +1022,7 @@ mak_model_fits
 
 ### MEL
 
-Slight misbehaviour in the tail creaping up.
+Collective model provides the best fit, however it misses a large section of the shoulder for the tail. The $bs$ parameter wants to go to zero, however when let go bellow 1e-6 the behaviour becomes very erratic and the fit deteriorates.
 
 ```{r}
 
@@ -890,6 +1073,14 @@ make_full_plot(
   subplot_coords = c(0.5, 3.5, -7, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 mel_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -909,8 +1100,18 @@ mel_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[11]] <- mel_model_fits
 
 mel_model_fits
 
@@ -919,7 +1120,7 @@ mel_model_fits
 
 ### MPA
 
-Same problem with the tail.
+Collective provides the best fit.
 
 ```{r}
 
@@ -970,6 +1171,14 @@ make_full_plot(
   subplot_coords = c(0.5, 4.5, -7.2, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 mpa_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -989,8 +1198,18 @@ mpa_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[12]] <- mpa_model_fits
 
 mpa_model_fits
 
@@ -998,7 +1217,7 @@ mpa_model_fits
 
 ### ROT
 
-Same problem with the tail.
+Colletive provides the best fit.
 
 ```{r}
 
@@ -1049,6 +1268,14 @@ make_full_plot(
   subplot_coords = c(0.5, 3., -5.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 rot_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1068,8 +1295,18 @@ rot_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[13]] <- rot_model_fits
 
 rot_model_fits
 
@@ -1078,7 +1315,7 @@ rot_model_fits
 
 ### SAU
 
-No problems here!
+Collective provides the best fit.
 
 ```{r}
 
@@ -1129,6 +1366,14 @@ make_full_plot(
   subplot_coords = c(0.5, 3.5, -6.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 sau_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1148,8 +1393,18 @@ sau_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[14]] <- sau_model_fits
 
 sau_model_fits
 
@@ -1157,7 +1412,7 @@ sau_model_fits
 
 ### SOM
 
-Same problem with the tail.
+Collective provides the best fit but misses a large section of the shoulder.
 
 ```{r}
 
@@ -1209,6 +1464,14 @@ make_full_plot(
   subplot_coords = c(0.5, 3., -5.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 som_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1228,8 +1491,18 @@ som_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[15]] <- som_model_fits
 
 som_model_fits
 
@@ -1237,7 +1510,7 @@ som_model_fits
 
 ### SRA
 
-Same problem with the tail.
+Collective provides the best fit.
 
 ```{r}
 
@@ -1288,6 +1561,14 @@ make_full_plot(
   subplot_coords = c(0.5, 4., -7.5, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 sra_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1307,8 +1588,18 @@ sra_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[16]] <- sra_model_fits
 
 sra_model_fits
 
@@ -1316,7 +1607,7 @@ sra_model_fits
 
 ### STU
 
-Same problem with the tail. Increasing the bounds for as and ar seems to coerce it towards the better visual fit, despite it not changing what they optimise at. Weird thing is the model is getting close in the region of p but not actually to it.
+Individual provides the best fit. Again, the proportion of scouts does not move towards 1. I.e. the collective model fails to reduce to the individual in the MLE fit.
 
 ```{r}
 
@@ -1367,6 +1658,14 @@ make_full_plot(
   subplot_coords = c(0.5, 5.5, -6.5, -1.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 stu_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1386,8 +1685,18 @@ stu_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[17]] <- stu_model_fits
 
 stu_model_fits
 
@@ -1395,7 +1704,7 @@ stu_model_fits
 
 ### SWP
 
-Same problem with the tail. Weird P behaviour when we move some of the other parameters around. Looks like it can get a fit that looks very similar with p = 0
+Collective provides the best fit.
 
 ```{r}
 
@@ -1446,6 +1755,14 @@ make_full_plot(
   subplot_coords = c(0.5, 2.5, -6, -2.)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 swp_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1465,8 +1782,18 @@ swp_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[18]] <- swp_model_fits
 
 swp_model_fits
 
@@ -1474,7 +1801,7 @@ swp_model_fits
 
 ### YAL
 
-Same problem with the tail.
+Collective provides the best fit.
 
 ```{r}
 
@@ -1525,6 +1852,14 @@ make_full_plot(
   subplot_coords = c(0.5, 5., -8, -2.5)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 yal_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1544,8 +1879,18 @@ yal_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
+
+all_data[[19]] <- yal_model_fits
 
 yal_model_fits
 
@@ -1553,7 +1898,7 @@ yal_model_fits
 
 ### ZSL
 
-Same problem with the tail.
+Collective provides the best fit.
 
 ```{r}
 
@@ -1604,6 +1949,14 @@ make_full_plot(
   subplot_coords = c(0.5, 2.4, -8, -2)
 )
 
+# calculate ks statistics
+ks_test_result_collective <- calc_ks_boot(
+  data$foraging_distance, colletive_result$solution$est, "collective"
+)
+ks_test_result_individual <- calc_ks_boot(
+  data$foraging_distance, individual_result$solution$est, "individual"
+)
+
 # bring results together
 zsl_model_fits <- tibble(
   site = c(target_site, target_site),
@@ -1623,9 +1976,207 @@ zsl_model_fits <- tibble(
     calc_aic(
       length(individual_result$solution$est), individual_result$solution$fmax
     )
+  ),
+  ks_statistic = c(
+    ks_test_result_collective$ks$statistic[[1]],
+    ks_test_result_individual$ks$statistic[[1]]
+  ),
+  ks_pvalue = c(
+    ks_test_result_collective$ks.boot.pvalue,
+    ks_test_result_individual$ks.boot.pvalue
   )
 )
 
+all_data[[20]] <- zsl_model_fits
+
 zsl_model_fits
 
+```
+
+## Overall findings
+
+```{r}
+
+# group all site results together
+df <- all_data %>%
+  bind_rows()
+
+# AIC plot
+aic_plot <- df %>%
+  group_by(site) %>%
+  slice(which.min(AIC)) %>%
+  select(model) %>%
+  group_by(model) %>%
+  summarise(lowest_AIC = n()) %>%
+  ggplot(aes(x = model, y = lowest_AIC)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Model", y = "Count") +
+  scale_y_continuous(breaks = seq(0, 20, by = 1))
+
+ggsave(
+  plot = aic_plot,
+  filename = "analysis/figures/AIC_plot.png",
+  width = 86,
+  height = 90,
+  units = "mm",
+  dpi = 400
+)
+
+# ks plot
+ks_plot_dist <- df %>%
+  ggplot(aes(x = ks_pvalue)) +
+  geom_histogram(bins = 10, binwidth = 0.1, col = "white") +
+  geom_vline(xintercept = 0.05, color = "red", linetype = "dashed") +
+  scale_y_continuous(breaks = seq(0, 12, by = 2)) +
+  labs(x = "KS P value") +
+  facet_wrap(~model, nrow = 3)
+
+ggsave(
+  plot = ks_plot_dist,
+  filename = "analysis/figures/sites_ks.png",
+  width = 86,
+  height = 180,
+  units = "mm",
+  dpi = 400
+)
+
+```
+
+
+### Map plots
+
+
+```{r}
+
+library(ggplot2)
+library(cowplot)
+library(ggsn)
+library(sf)
+library(rworldmap)
+
+full_data_path <- "analysis/data/FullHBForagingData.csv"
+data_raw <- tibble(read.csv(full_data_path))
+
+map_data <- data_raw %>%
+  select(
+    site, lat, lon
+  ) %>%
+  distinct()
+
+map_data <- df %>%
+  group_by(site) %>%
+  slice(which.min(AIC)) %>%
+  select(site, model) %>%
+  left_join(map_data, on = "site")
+
+locations <- st_as_sf(
+  map_data,
+  coords = c("lon", "lat"), crs = 4326
+)
+
+zoomed_area <- st_read("analysis/shapefiles/english_region_region.shp")
+
+# cropped
+croped_data <- st_crop(
+  zoomed_area,
+  xmin = 470000,
+  xmax = 610000,
+  ymin = 130000,
+  ymax = 225000
+)
+
+# location of sites box
+selected_sites <- filter(locations, site %in% c("STU", "ZSL"))
+sites_sf_t <- st_transform(
+  selected_sites
+)
+
+points_area <- st_bbox(locations)
+
+zoom_plt <- ggplot() +
+  geom_sf(data = croped_data, fill = "#ededed") +
+  geom_sf(data = locations, aes(shape = model), size = 2) +
+  geom_sf_text(
+    data = selected_sites, aes(label = site),
+    nudge_x = c(0.5, 105), nudge_y = c(-0.5, -105)
+  ) +
+  scale_shape_manual(values = c(2, 17)) +
+  theme_nothing() +
+  scale_x_continuous(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = 1),
+    text = element_text(family = "URWHelvetica", size = 8)
+  )
+
+zoom_plt
+
+# make full plot
+# get underlaying map
+worldmap <- getMap(resolution = "high")
+
+base <- ggplot() +
+  geom_polygon(data = worldmap,
+               aes(x = long, y = lat,
+                   group = group),
+               fill = '#c4cfc8',
+               color = '#4b4949d0') +
+  coord_fixed(ratio = 1.8,
+              xlim = c(-11, 13),
+              ylim = c(50, 59)) +
+  geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
+  geom_rect(
+    aes(
+      xmin = points_area$xmin[[1]] - 0.2, xmax = points_area$xmax[[1]] + 0.2,
+      ymin = points_area$ymin[[1]] - 0.2, ymax = points_area$ymax[[1]] + 0.2
+    ),
+    fill = NA,
+    colour = "black",
+    size = 0.2
+  ) +
+  theme_nothing() +
+  scale_x_continuous(expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = 1)
+  )
+
+base
+
+merge_plot <- ggdraw() +
+  draw_plot(ggplotGrob(base)) +
+  draw_plot(
+    ggplotGrob(zoom_plt), x = 0.47, y = 0.35, width = 0.5, height = 0.5
+  )
+
+merge_plot
+
+ggsave(
+  plot = merge_plot,
+  file = "analysis/figures/map_aic.png",
+  width = 86,
+  height = 90,
+  units = "mm",
+  dpi = 400
+)
+
+ggsave(
+  plot = plots[[20]][[1]],
+  file = "analysis/figures/ZSL.png",
+  width = 86,
+  height = 90,
+  units = "mm",
+  dpi = 400
+)
+
+ggsave(
+  plot = plots[[17]][[1]],
+  file = "analysis/figures/STU.png",
+  width = 86,
+  height = 90,
+  units = "mm",
+  dpi = 400
+)
 ```

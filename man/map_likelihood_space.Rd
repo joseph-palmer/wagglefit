@@ -4,17 +4,19 @@
 \alias{map_likelihood_space}
 \title{Calculate likelihoods for all parameters for a given dataset}
 \usage{
-map_likelihood_space(data, params, n = 1000, upper = 5)
+map_likelihood_space(
+  data,
+  params,
+  model_name = "collective",
+  n = 1000,
+  upper = 5,
+  bounds = NULL
+)
 }
 \arguments{
-\item{data}{doubleArray The data to check the parameters against. This should
-be the data the parameters were fit to.}
-
 \item{params}{named list or tibble of optimised parameter values}
 
-\item{n}{integer The number of points to sample, defaults to 1000.}
-
-\item{upper}{integer The upper bound}
+\item{model_name}{character array The name of the model to evaluate}
 }
 \value{
 ggplotObj The likelihood plot for each parameter.
