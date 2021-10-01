@@ -15,7 +15,7 @@ library(ggplot2)
 theme_set(
   theme_classic() +
     theme(
-      text = element_text(family = "URWHelvetica", size = 8)
+      text = element_text(family = "DejaVuSerif", size = 8)
     )
 )
 library(cowplot)
@@ -23,8 +23,85 @@ library(dplyr)
 library(tibble)
 source("analysis/fit_data.R")
 
+library(showtext)
+showtext_auto()
 
-all_data <- as.list(rep(0, 20))
+run_wagglefit_analysis <- function(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+  ) {
+
+  # run collective model
+  colletive_result <- fit_collective_model_to_data(data, collective_bounds)
+
+  # run individual model
+  individual_result <- fit_individual_model_to_data(data, individual_bounds)
+
+  # make plot of model fits
+  full_plot <- make_full_plot(
+    data$foraging_distance,
+    list(
+      "collective" = colletive_result$solution,
+      "individual" = individual_result$solution
+    ),
+    subplot_coords = subplot_coords
+  )
+
+  # calculate ks statistics
+  ks_test_result_collective <- calc_ks_boot(
+    data$foraging_distance, colletive_result$solution$est, "collective"
+  )
+  ks_test_result_individual <- calc_ks_boot(
+    data$foraging_distance, individual_result$solution$est, "individual"
+  )
+
+  # bring results together
+  model_fits <- tibble(
+    site = c(target_site, target_site),
+    model = c("collective", "individual"),
+    loglikelihood = c(
+      colletive_result$solution$fmax, individual_result$solution$fmax
+    ),
+    p = c(colletive_result$solution$est[1], 1),
+    bs = c(colletive_result$solution$est[2], individual_result$solution$est[1]),
+    br = c(colletive_result$solution$est[3], NA),
+    as = c(colletive_result$solution$est[4], individual_result$solution$est[2]),
+    ar = c(colletive_result$solution$est[5], NA),
+    k = c(
+      length(colletive_result$solution$est),
+      length(individual_result$solution$est)
+    ),
+    AIC = c(
+      calc_aic(
+        length(colletive_result$solution$est), colletive_result$solution$fmax
+      ),
+      calc_aic(
+        length(individual_result$solution$est), individual_result$solution$fmax
+      )
+    ),
+    ks_statistic = c(
+      ks_test_result_collective$ks$statistic[[1]],
+      ks_test_result_individual$ks$statistic[[1]]
+    ),
+    ks_pvalue = c(
+      ks_test_result_collective$ks.boot.pvalue,
+      ks_test_result_individual$ks.boot.pvalue
+    )
+  )
+
+  return(
+    list(
+      fit_result = model_fits, fit = full_plot,
+      individual_llspace = individual_result$llspace,
+      collective_llspace = colletive_result$llspace
+    )
+  )
+}
+
+all_sites <- as.list(rep(0, 20))
+names(all_sites) <- get_data() %>%
+    select(site) %>%
+    unique() %>%
+    pull()
 
 ```
 
@@ -43,94 +120,39 @@ Provides a good fit on the data. All parameters look central and nicely covered.
 
 target_site <- "BEL"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 0.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 10, -5.5, -2)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-bel_plot <- make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 10, -5.5, -2)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-bel_plot
+all_sites[[target_site]]
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
-
-# bring results together
-bel_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[1]] <- bel_model_fits
-
-bel_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -144,6 +166,10 @@ All parameters look central in the likelihood space and a nice fit is returned.
 
 target_site <- "BFI"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
@@ -156,16 +182,6 @@ bounds <- rbind(
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 0.6)
@@ -173,63 +189,16 @@ bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 4.5, -6.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 4.5, -8, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-bfi_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[2]] <- bfi_model_fits
-
-bfi_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -242,92 +211,39 @@ The individual fit isnt great and the Bs paramater is increasing up to the bound
 
 target_site <- "BLO"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-10, 5)
 br_bnds <- c(1.0e-10, 5)
 as_bnds <- c(1.0e-5, 5)
 ar_bnds <- c(1.0e-10, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 5505)
 as_bnds <- c(1.0e-12, 0.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 12, -8., -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 12, -8., -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-blo_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[3]] <- blo_model_fits
-
-blo_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -342,92 +258,39 @@ Fit looks good.
 
 target_site <- "BUR"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 500)
 br_bnds <- c(1.0e-6, 500)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 0.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 5.5, -6.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 5.5, -6.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-bur_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[4]] <- bur_model_fits
-
-bur_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -442,92 +305,39 @@ $p$ does not approach 1 as one might expect, indicating there is overfitting and
 
 target_site <- "CAD"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 10)
 ar_bnds <- c(1.0e-12, 10)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 2)
 as_bnds <- c(1.0e-12, 0.8)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 2.5, -5, -1.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 2.5, -5, -1.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-cad_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[5]] <- cad_model_fits
-
-cad_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -540,92 +350,39 @@ The collective model provides the most parsimonious and best fit.
 
 target_site <- "GIL"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 0.8)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 2.7, -8., -2)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 2.7, -8., -2)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-gil_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[6]] <- gil_model_fits
-
-gil_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -638,92 +395,39 @@ The collective model provides the best fit to the data, but the proportion of sc
 
 target_site <- "HER"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 100)
 br_bnds <- c(1.0e-6, 100)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 2)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 5, -6.5, -1.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 5, -6.5, -1.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-her_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[7]] <- her_model_fits
-
-her_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -736,92 +440,39 @@ Collective model provides the best fit but falls under the tail and shoulder. Th
 
 target_site <- "HHS"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 50)
 br_bnds <- c(1.0e-6, 50)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 6, -6.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 6, -6.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-hhs_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[8]] <- hhs_model_fits
-
-hhs_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -834,92 +485,39 @@ Collective model provides a very good fit, whilst the individual model fails to 
 
 target_site <- "HOR"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 1.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 4, -9, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 4, -9, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-hor_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[9]] <- hor_model_fits
-
-hor_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -932,32 +530,26 @@ Again the collective model provides a good fit to the data, however, the individ
 
 target_site <- "MAK"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 20)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
@@ -967,57 +559,16 @@ individual_result <- fit_individual_model_to_data(data, bounds)
 # view individual model likelihood space to check bounds look ok
 individual_result$llspace
 
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 5, -6.5, -2.5)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 5, -6.5, -2.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-mak_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[10]] <- mak_model_fits
-
-mak_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1030,92 +581,40 @@ Collective model provides the best fit, however it misses a large section of the
 
 target_site <- "MEL"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 3.5, -7, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 3.5, -7, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-mel_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
+all_sites[[target_site]]$fit
 
-all_data[[11]] <- mel_model_fits
-
-mel_model_fits
 
 ```
 
@@ -1128,92 +627,39 @@ Collective provides the best fit.
 
 target_site <- "MPA"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 4.5, -7.2, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 4.5, -7.2, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-mpa_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[12]] <- mpa_model_fits
-
-mpa_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1225,92 +671,39 @@ Colletive provides the best fit.
 
 target_site <- "ROT"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 3., -5.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 3., -5.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-rot_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[13]] <- rot_model_fits
-
-rot_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1323,92 +716,39 @@ Collective provides the best fit.
 
 target_site <- "SAU"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+# set coordinates for histogram subplot
+subplot_coords <- c(0.5, 3.5, -6.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 3.5, -6.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-sau_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[14]] <- sau_model_fits
-
-sau_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1420,93 +760,40 @@ Collective provides the best fit but misses a large section of the shoulder.
 
 target_site <- "SOM"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site) %>%
+  filter(foraging_distance < 9) # remove outlier distance
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site) %>%
-  filter(foraging_distance < 9) # remove outlier distance
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 3., -5.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 3., -5.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-som_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[15]] <- som_model_fits
-
-som_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1518,92 +805,39 @@ Collective provides the best fit.
 
 target_site <- "SRA"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 4., -7.5, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 4., -7.5, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-sra_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[16]] <- sra_model_fits
-
-sra_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1615,92 +849,39 @@ Individual provides the best fit. Again, the proportion of scouts does not move 
 
 target_site <- "STU"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
-as_bnds <- c(1.0e-12,10)
+as_bnds <- c(1.0e-12, 10)
 ar_bnds <- c(1.0e-12, 10)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 5.5, -6.5, -1.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 5.5, -6.5, -1.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-stu_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[17]] <- stu_model_fits
-
-stu_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1712,92 +893,39 @@ Collective provides the best fit.
 
 target_site <- "SWP"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 15)
 br_bnds <- c(1.0e-6, 15)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 2.5, -6, -2.)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 2.5, -6, -2.)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-swp_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[18]] <- swp_model_fits
-
-swp_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1809,92 +937,39 @@ Collective provides the best fit.
 
 target_site <- "YAL"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.1)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 5., -8, -2.5)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 5., -8, -2.5)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-yal_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[19]] <- yal_model_fits
-
-yal_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -1906,92 +981,39 @@ Collective provides the best fit.
 
 target_site <- "ZSL"
 
+# subset data for target site
+data <- get_data() %>%
+  filter(site == target_site)
+
 # set up bounds for the collective model
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
 ar_bnds <- c(1.0e-12, 0.5)
-bounds <- rbind(
+collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
   ar_bnds
 )
 
-# subset data for target site
-data <- get_data() %>%
-  filter(site == target_site)
-
-# fit collective model
-colletive_result <- fit_collective_model_to_data(data, bounds)
-
-# view collective model likelihood space to check bounds look ok
-colletive_result$llspace
-
 # set up bounds for the individual model
 bs_bnds <- c(1.0e-6, 50)
 as_bnds <- c(1.0e-12, 1.3)
-bounds <- rbind(
+individual_bounds <- rbind(
   bs_bnds, as_bnds
 )
 
-# run individual model
-individual_result <- fit_individual_model_to_data(data, bounds)
+ # set coordinates for histogram subplot
+subplot_coords <- c(0.5, 2.4, -8, -2)
 
-# view individual model likelihood space to check bounds look ok
-individual_result$llspace
-
-# make plot of model fits
-make_full_plot(
-  data$foraging_distance,
-  list(
-    "collective" = colletive_result$solution,
-    "individual" = individual_result$solution
-  ),
-  subplot_coords = c(0.5, 2.4, -8, -2)
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-# calculate ks statistics
-ks_test_result_collective <- calc_ks_boot(
-  data$foraging_distance, colletive_result$solution$est, "collective"
-)
-ks_test_result_individual <- calc_ks_boot(
-  data$foraging_distance, individual_result$solution$est, "individual"
-)
+all_sites[[target_site]]
 
-# bring results together
-zsl_model_fits <- tibble(
-  site = c(target_site, target_site),
-  model = c("collective", "individual"),
-  loglikelihood = c(
-    colletive_result$solution$fmax, individual_result$solution$fmax
-  ),
-  p = c(colletive_result$solution$est[1], 1),
-  k = c(
-    length(colletive_result$solution$est),
-    length(individual_result$solution$est)
-  ),
-  AIC = c(
-    calc_aic(
-      length(colletive_result$solution$est), colletive_result$solution$fmax
-    ),
-    calc_aic(
-      length(individual_result$solution$est), individual_result$solution$fmax
-    )
-  ),
-  ks_statistic = c(
-    ks_test_result_collective$ks$statistic[[1]],
-    ks_test_result_individual$ks$statistic[[1]]
-  ),
-  ks_pvalue = c(
-    ks_test_result_collective$ks.boot.pvalue,
-    ks_test_result_individual$ks.boot.pvalue
-  )
-)
-
-all_data[[20]] <- zsl_model_fits
-
-zsl_model_fits
+all_sites[[target_site]]$fit
 
 ```
 
@@ -2000,7 +1022,7 @@ zsl_model_fits
 ```{r}
 
 # group all site results together
-df <- all_data %>%
+df <- map(all_sites, 1) %>%
   bind_rows()
 
 # AIC plot
@@ -2013,13 +1035,16 @@ aic_plot <- df %>%
   ggplot(aes(x = model, y = lowest_AIC)) +
   geom_bar(stat = "identity") +
   labs(x = "Model", y = "Count") +
-  scale_y_continuous(breaks = seq(0, 20, by = 1))
+  scale_y_continuous(breaks = seq(0, 20, by = 1)) +
+  theme(
+    text = element_text(size = 12)
+  )
 
 ggsave(
   plot = aic_plot,
   filename = "analysis/figures/AIC_plot.png",
-  width = 86,
-  height = 90,
+  width = 90,
+  height = 110,
   units = "mm",
   dpi = 400
 )
@@ -2031,7 +1056,11 @@ ks_plot_dist <- df %>%
   geom_vline(xintercept = 0.05, color = "red", linetype = "dashed") +
   scale_y_continuous(breaks = seq(0, 12, by = 2)) +
   labs(x = "KS P value") +
-  facet_wrap(~model, nrow = 3)
+  facet_wrap(~model, nrow = 3) +
+  theme(
+    text = element_text(size = 12)
+  )
+
 
 ggsave(
   plot = ks_plot_dist,
@@ -2042,19 +1071,44 @@ ggsave(
   dpi = 400
 )
 
+ggsave(
+  plot = all_sites$STU$fit,
+  filename = "analysis/figures/STU.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 400
+)
+
+ggsave(
+  plot = all_sites$ZSL$fit,
+  filename = "analysis/figures/ZSL.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 400
+)
+
 ```
 
 
 ### Map plots
 
 
+Code to make the individual mal plots. These figures are created standalone but are combined in to facets manually in an image processor.
+
 ```{r}
 
 library(ggplot2)
-library(cowplot)
+library(ggrepel)
+library(gridExtra)
 library(ggsn)
 library(sf)
 library(rworldmap)
+library(ggspatial)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
 
 full_data_path <- "analysis/data/FullHBForagingData.csv"
 data_raw <- tibble(read.csv(full_data_path))
@@ -2069,115 +1123,120 @@ map_data <- df %>%
   group_by(site) %>%
   slice(which.min(AIC)) %>%
   select(site, model) %>%
-  left_join(map_data, on = "site")
+  left_join(map_data, on = "site") %>%
+  mutate(col = ifelse(site %in% c("STU", "ZSL"), "1", "0"))
 
 locations <- st_as_sf(
   map_data,
   coords = c("lon", "lat"), crs = 4326
 )
 
-zoomed_area <- st_read("analysis/shapefiles/english_region_region.shp")
-
-# cropped
-croped_data <- st_crop(
-  zoomed_area,
-  xmin = 470000,
-  xmax = 610000,
-  ymin = 130000,
-  ymax = 225000
-)
-
-# location of sites box
-selected_sites <- filter(locations, site %in% c("STU", "ZSL"))
-sites_sf_t <- st_transform(
-  selected_sites
-)
+# Extract selected sites for figure
+selected_sites <- filter(map_data, site %in% c("STU", "ZSL"))
 
 points_area <- st_bbox(locations)
 
-zoom_plt <- ggplot() +
-  geom_sf(data = croped_data, fill = "#ededed", size = .1) +
-  geom_sf(data = locations, aes(shape = model), size = 1.5) +
-  geom_sf(data = selected_sites, aes(shape = site, size = 1)) +
-  scale_shape_manual(values = c(1, 2, 17, 16)) +
+worldmap <- ne_countries(scale = "large", returnclass = "sf")
+
+# london area
+london <- st_read(
+  "analysis/shapefiles/statistical-gis-boundaries-london/ESRI/London_Ward.shp"
+)
+
+london <- st_transform(
+  london,
+  CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+)
+
+inset <- ggplot() +
+  geom_sf(
+    data = worldmap,
+    fill = 'grey90',
+    color = '#4b4949d0'
+  ) +
+  geom_sf(
+    data = london,
+    fill = '#ced0cffc',
+    lwd = 0
+  ) +
+  coord_sf(
+    xlim = c(points_area[[1]] - 0.1, points_area[[3]] + 0.1),
+    ylim = c(points_area[[2]] - 0.1, points_area[[4]] + 0.1)
+  ) +
+  geom_point(
+    data = map_data,
+    aes(x = lon, y = lat, shape = model, colour = col), size = 1
+  ) +
+  geom_text(
+    data = selected_sites, aes(x = lon, y = lat, label = site),
+    nudge_x = c(0, -0.05), nudge_y = c(0.05, 0.05)
+  ) +
+  annotation_north_arrow(
+    location = "tr", which_north = "true",
+    style = north_arrow_fancy_orienteering
+  ) +
+  annotation_scale(location = "br") +
+  scale_shape_manual(values = c(1, 2)) +
+  scale_colour_manual(values = c("black", "red")) +
   theme_nothing() +
-  scale_x_continuous(expand=c(0,0)) +
-  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
   labs(x = NULL, y = NULL) +
   theme(
-    panel.border = element_rect(color = "black", fill = NA, size = 1),
-    text = element_text(family = "URWHelvetica", size = 8)
+    panel.border = element_rect(color = "black", fill = NA, size = .5),
+    text = element_text(size = 12)
   )
 
-zoom_plt
+inset
 
 # make full plot
-# get underlaying map
-worldmap <- getMap(resolution = "high")
-
-base <- ggplot() +
-  geom_polygon(data = worldmap,
-               aes(x = long, y = lat,
-                   group = group),
-               fill = '#c4cfc8',
-               color = '#4b4949d0') +
-  coord_fixed(ratio = 1.8,
-              xlim = c(-11, 13),
-              ylim = c(50, 59)) +
+base <- ggplot(data = worldmap) +
+  geom_sf(
+    fill = '#c4cfc8',
+    color = '#4b4949d0'
+  ) +
+  coord_sf(
+    xlim = c(-11, 14),
+    ylim = c(47.5, 60)
+  ) +
   geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
   geom_rect(
     aes(
-      xmin = points_area$xmin[[1]] - 0.2, xmax = points_area$xmax[[1]] + 0.2,
-      ymin = points_area$ymin[[1]] - 0.2, ymax = points_area$ymax[[1]] + 0.2
+      xmin = points_area$xmin[[1]] - 0.1, xmax = points_area$xmax[[1]] + 0.1,
+      ymin = points_area$ymin[[1]] - 0.1, ymax = points_area$ymax[[1]] + 0.1
     ),
     fill = NA,
     colour = "black",
-    size = 0.2
+    size = .02
   ) +
   theme_nothing() +
-  scale_x_continuous(expand=c(0,0)) +
-  scale_y_continuous(expand=c(0,0)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
   labs(x = NULL, y = NULL) +
   theme(
-    panel.border = element_rect(color = "black", fill = NA, size = 1)
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
   )
 
 base
 
-merge_plot <- ggdraw() +
-  draw_plot(ggplotGrob(base)) +
-  draw_plot(
-    ggplotGrob(zoom_plt), x = 0.47, y = 0.35, width = 0.5, height = 0.5
+merge_plot <- base +
+  annotation_custom(
+    ggplotGrob(inset),
+    xmin = 1,
+    xmax = 13,
+    ymin = 52.5,
+    ymax = 60
   )
 
 merge_plot
 
-zsl_model_fit
-
 ggsave(
   plot = merge_plot,
-  file = "analysis/figures/map_aic.png",
-  width = 86,
-  height = 90,
+  filename = "analysis/figures/site_map.png",
+  width = 90,
+  height = 110,
   units = "mm",
   dpi = 400
 )
 
-ggsave(
-  plot = plots[[20]][[1]],
-  file = "analysis/figures/ZSL.png",
-  width = 86,
-  height = 90,
-  units = "mm",
-  dpi = 400
-)
-
-ggsave(
-  plot = plots[[17]][[1]],
-  file = "analysis/figures/STU.png",
-  width = 86,
-  height = 90,
-  units = "mm",
-  dpi = 400
-)
 ```

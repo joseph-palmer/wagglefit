@@ -124,6 +124,9 @@ make_full_plot <- function(x, model_result_list,
         y = log(.data$cumul_ccdf),
         colour = .data$Model
       )
+    ) +
+    theme(
+      legend.position = "none"
     )
 
   histoplot <- as_tibble(x) %>%
