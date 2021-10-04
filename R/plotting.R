@@ -63,7 +63,7 @@ make_base_plot <- function(x, logit = TRUE) {
   theme_set(
     theme_classic() +
       theme(
-        text = element_text(family = "URWHelvetica", size = 8)
+        text = element_text(family = "URWHelvetica", size = 12)
       )
   )
   if (logit) {

@@ -1035,7 +1035,7 @@ aic_plot <- df %>%
   ggplot(aes(x = model, y = lowest_AIC)) +
   geom_bar(stat = "identity") +
   labs(x = "Model", y = "Count") +
-  scale_y_continuous(breaks = seq(0, 20, by = 1)) +
+  scale_y_continuous(breaks = seq(0, 20, by = 2)) +
   theme(
     text = element_text(size = 12)
   )
@@ -1132,7 +1132,10 @@ locations <- st_as_sf(
 )
 
 # Extract selected sites for figure
-selected_sites <- filter(map_data, site %in% c("STU", "ZSL"))
+selected_sites <- filter(map_data, site %in% c("STU", "ZSL")) %>%
+  mutate(
+    label = ifelse(site == "STU", "C (STU)", "D (ZSL)")
+  )
 
 points_area <- st_bbox(locations)
 
@@ -1165,15 +1168,17 @@ inset <- ggplot() +
   ) +
   geom_point(
     data = map_data,
-    aes(x = lon, y = lat, shape = model, colour = col), size = 1
+    aes(x = lon, y = lat, shape = model, colour = col), size = 1.5
   ) +
   geom_text(
-    data = selected_sites, aes(x = lon, y = lat, label = site),
-    nudge_x = c(0, -0.05), nudge_y = c(0.05, 0.05)
+    data = selected_sites, aes(x = lon, y = lat, label = label),
+    nudge_x = c(0, -0.07), nudge_y = c(0.05, 0.05)
   ) +
   annotation_north_arrow(
     location = "tr", which_north = "true",
-    style = north_arrow_fancy_orienteering
+    style = north_arrow_fancy_orienteering,
+    height = unit(10, "mm"),
+    width = unit(10, "mm")
   ) +
   annotation_scale(location = "br") +
   scale_shape_manual(values = c(1, 2)) +
@@ -1193,13 +1198,14 @@ inset
 base <- ggplot(data = worldmap) +
   geom_sf(
     fill = '#c4cfc8',
-    color = '#4b4949d0'
+    color = '#4b4949d0',
+    lwd = 0.2
   ) +
   coord_sf(
-    xlim = c(-11, 14),
-    ylim = c(47.5, 60)
+    xlim = c(-11, 3),
+    ylim = c(49.5, 60)
   ) +
-  geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
+  # geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
   geom_rect(
     aes(
       xmin = points_area$xmin[[1]] - 0.1, xmax = points_area$xmax[[1]] + 0.1,
@@ -1237,6 +1243,33 @@ ggsave(
   height = 110,
   units = "mm",
   dpi = 400
+)
+
+
+merge_plot_2 <- inset +
+  annotation_custom(
+    ggplotGrob(base),
+    xmin = -3.35,
+    xmax = 2,
+    ymin = 51.05,
+    ymax = 51.35
+  )
+
+merge_plot_2
+
+sites_model_plot <- plot_grid(
+  merge_plot_2, aic_plot, all_sites$STU$fit, all_sites$ZSL$fit,
+  labels = c("A", "B", "C", "D")
+)
+
+ggsave(
+  plot = sites_model_plot,
+  filename = "analysis/figures/sites_model_plot.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 300,
+  scaling = 0.5
 )
 
 ```
