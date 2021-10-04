@@ -129,7 +129,7 @@ p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
 as_bnds <- c(1.0e-12, 1.5)
-ar_bnds <- c(1.0e-12, 0.5)
+ar_bnds <- c(1.0e-12, 1.5)
 collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
@@ -1037,7 +1037,7 @@ aic_plot <- df %>%
   labs(x = "Model", y = "Count") +
   scale_y_continuous(breaks = seq(0, 20, by = 2)) +
   theme(
-    text = element_text(size = 12)
+    text = element_text(size = 42)
   )
 
 ggsave(
@@ -1046,7 +1046,7 @@ ggsave(
   width = 90,
   height = 110,
   units = "mm",
-  dpi = 400
+  dpi = 300
 )
 
 # ks plot
@@ -1058,7 +1058,8 @@ ks_plot_dist <- df %>%
   labs(x = "KS P value") +
   facet_wrap(~model, nrow = 3) +
   theme(
-    text = element_text(size = 12)
+    text = element_text(size = 42),
+    strip.background = element_blank()
   )
 
 
@@ -1068,7 +1069,7 @@ ggsave(
   width = 86,
   height = 180,
   units = "mm",
-  dpi = 400
+  dpi = 300
 )
 
 ggsave(
@@ -1077,7 +1078,7 @@ ggsave(
   width = 90,
   height = 110,
   units = "mm",
-  dpi = 400
+  dpi = 300
 )
 
 ggsave(
@@ -1086,7 +1087,7 @@ ggsave(
   width = 90,
   height = 110,
   units = "mm",
-  dpi = 400
+  dpi = 300
 )
 
 ```
@@ -1189,7 +1190,7 @@ inset <- ggplot() +
   labs(x = NULL, y = NULL) +
   theme(
     panel.border = element_rect(color = "black", fill = NA, size = .5),
-    text = element_text(size = 12)
+    text = element_text(size = 82)
   )
 
 inset
@@ -1242,7 +1243,7 @@ ggsave(
   width = 90,
   height = 110,
   units = "mm",
-  dpi = 400
+  dpi = 300
 )
 
 
@@ -1265,11 +1266,125 @@ sites_model_plot <- plot_grid(
 ggsave(
   plot = sites_model_plot,
   filename = "analysis/figures/sites_model_plot.png",
-  width = 90,
-  height = 110,
+  width = 183,
+  height = 190,
   units = "mm",
-  dpi = 300,
-  scaling = 0.5
+  dpi = 300
+)
+
+```
+
+
+```{r}
+# other map plots
+inset <- ggplot() +
+  geom_sf(
+    data = worldmap,
+    fill = 'grey90',
+    color = '#4b4949d0'
+  ) +
+  geom_sf(
+    data = london,
+    fill = '#ced0cffc',
+    lwd = 0
+  ) +
+  coord_sf(
+    xlim = c(points_area[[1]] - 0.1, points_area[[3]] + 0.1),
+    ylim = c(points_area[[2]] - 0.1, points_area[[4]] + 0.1)
+  ) +
+  geom_point(
+    data = map_data,
+    aes(x = lon, y = lat, shape = model, colour = model), size = 1.5
+  ) +
+  annotation_north_arrow(
+    location = "tr", which_north = "true",
+    style = north_arrow_fancy_orienteering,
+    height = unit(10, "mm"),
+    width = unit(10, "mm")
+  ) +
+  annotation_scale(
+    location = "br",
+    text_cex = 3
+  ) +
+  scale_shape_manual(values = c(1, 2)) +
+  scale_colour_manual(values = c("black", "red")) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5),
+    text = element_text(size = 42)
+  )
+
+inset
+
+# make full plot
+base <- ggplot(data = worldmap) +
+  geom_sf(
+    fill = '#c4cfc8',
+    color = '#4b4949d0',
+    lwd = 0.2
+  ) +
+  coord_sf(
+    xlim = c(-11, 15),
+    ylim = c(49.5, 60)
+  ) +
+  geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
+  geom_rect(
+    aes(
+      xmin = points_area$xmin[[1]] - 0.1, xmax = points_area$xmax[[1]] + 0.1,
+      ymin = points_area$ymin[[1]] - 0.1, ymax = points_area$ymax[[1]] + 0.1
+    ),
+    fill = NA,
+    colour = "black",
+    size = .02
+  ) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
+  )
+
+base
+
+merge_plot <- base +
+  annotation_custom(
+    ggplotGrob(inset),
+    xmin = 1,
+    xmax = 13,
+    ymin = 52.5,
+    ymax = 60
+  )
+
+merge_plot
+
+ggsave(
+  plot = merge_plot,
+  filename = "analysis/figures/site_map.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+
+sites_model_plot <- plot_grid(
+  all_sites$STU$fit, all_sites$ZSL$fit, aic_plot, ks_plot_dist,
+  labels = c("A", "B", "C", "D"), label_size = 42
+)
+
+sites_model_plot
+
+ggsave(
+  plot = sites_model_plot,
+  filename = "analysis/figures/results_model_plot.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
 )
 
 ```
