@@ -1003,6 +1003,9 @@ all_sites[[target_site]]$fit
 df <- map(all_sites, 1) %>%
   bind_rows()
 
+# save results
+saveRDS(df, file = "analysis/results/site_fit_results.Rda")
+
 # AIC plot
 aic_plot <- df %>%
   group_by(site) %>%
@@ -1020,7 +1023,7 @@ aic_plot <- df %>%
 
 ggsave(
   plot = aic_plot,
-  filename = "analysis/figures/AIC_plot.png",
+  filename = "analysis/results/figures/AIC_plot.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1043,7 +1046,7 @@ ks_plot_dist <- df %>%
 
 ggsave(
   plot = ks_plot_dist,
-  filename = "analysis/figures/sites_ks.png",
+  filename = "analysis/results/figures/sites_ks.png",
   width = 86,
   height = 180,
   units = "mm",
@@ -1052,7 +1055,7 @@ ggsave(
 
 ggsave(
   plot = all_sites$STU$fit,
-  filename = "analysis/figures/STU.png",
+  filename = "analysis/results/figures/STU.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1061,7 +1064,7 @@ ggsave(
 
 ggsave(
   plot = all_sites$ZSL$fit,
-  filename = "analysis/figures/ZSL.png",
+  filename = "analysis/results/figures/ZSL.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1216,7 +1219,7 @@ merge_plot
 
 ggsave(
   plot = merge_plot,
-  filename = "analysis/figures/site_map.png",
+  filename = "analysis/results/figures/site_map.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1242,7 +1245,7 @@ sites_model_plot <- plot_grid(
 
 ggsave(
   plot = sites_model_plot,
-  filename = "analysis/figures/sites_model_plot.png",
+  filename = "analysis/results/figures/sites_model_plot.png",
   width = 183,
   height = 190,
   units = "mm",
@@ -1339,7 +1342,7 @@ merge_plot
 
 ggsave(
   plot = merge_plot,
-  filename = "analysis/figures/site_map.png",
+  filename = "analysis/results/figures/site_map.png",
   width = 183,
   height = 190,
   units = "mm",
@@ -1356,7 +1359,7 @@ sites_model_plot
 
 ggsave(
   plot = sites_model_plot,
-  filename = "analysis/figures/results_model_plot.png",
+  filename = "analysis/results/figures/results_model_plot.png",
   width = 183,
   height = 190,
   units = "mm",

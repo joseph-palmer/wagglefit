@@ -1,0 +1,82 @@
+# Analysing the proportion of scouts estimated in different environments
+## Joseph Palmer
+---
+
+```{r, include = FALSE}
+devtools::load_all()
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(size = 8)
+    )
+)
+```
+
+First we load in the data and make the tables required. I.e. site land type information along with the estimates proportion of scouts from the model fits in `fit_models.Rmd`.
+
+```{r}
+# load results of model fit (code to generate found in fit_models.Rmd)
+sitedata <- readRDS("analysis/results/site_fit_results.Rda")
+
+# filter for best model
+sitedata <- sitedata %>%
+  group_by(site) %>%
+  slice(which.min(AIC))
+
+
+# Load land use data taken (taken from Samuelson et al. 2021)
+urban_lu <- read.csv(file = "analysis/data/urban-landuse.csv")
+rural_lu <- read.csv(file = "analysis/data/agri-rural-landuse.csv")
+
+# put proportion of scouts into landuse data
+urban_lu_long <- sitedata %>%
+  select(site, p) %>%
+  inner_join(urban_lu) %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+rural_lu_long <- sitedata %>%
+  select(site, p) %>%
+  inner_join(rural_lu) %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+```
+
+Now we have everything in, lests do a basic plotting to see what the relationships between each landuse type and the proportion of scouts looks like.
+
+
+For rural we can see that for most catagories there isn't much of a relationship, however, from a basic linear model the proportion of scouts seems to increase with arable and decrease with more built up areas.
+
+```{r}
+
+rural_lu_long %>%
+  ggplot(aes(x = p, y = values)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~landuse, ncol = 2) +
+  theme(
+    text = element_text(size = 8)
+  )
+```
+
+for urban we don't really see much at all. There is a slight increase the proportion of scouts in a continous central landscape, and a decrese in sparse residential areas. Everything else seems rather flat.
+
+```{r}
+
+urban_lu_long %>%
+  ggplot(aes(x = p, y = values)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~landuse, ncol = 2) +
+  theme(
+    text = element_text(size = 8)
+  )
+```
