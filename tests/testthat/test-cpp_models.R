@@ -1,32 +1,32 @@
-test_scout_dist <- function(x, m, p, ls, qn, a) {
-  truth <- 0.8000732527680952
-  ans <- scout_dist(x, m, p, ls, qn, a)
+test_scout_dist <- function(x, m, bs, as) {
+  truth <- 4.15163
+  ans <- scout_dist(x, m, bs, as)
   test_that("scout_dist gives expected result", {
-    expect_equal(truth, ans)
+    expect_equal(truth, round(ans, 5))
   })
 }
 
-test_recruit_dist <- function(x, m, p, ln, qn, a) {
-  truth <- 1.0095546946431222
-  ans <- recruit_dist(x, m, p, ln, qn, a)
+test_recruit_dist <- function(x, m, br, ar) {
+  truth <- 0.63748
+  ans <- recruit_dist(x, m, br, ar)
   test_that("recruit_dist gives expected results", {
     expect_identical(round(truth, 5), round(ans, 5))
   })
 }
 
-test_loglike_model_all <- function(x, p, ls, ln, qn, a) {
-  truth <- -0.48062578001916395
-  ans <- loglike_model_all(x, p, ls, ln, qn, a)
-  test_that("loglike_model_all gives expected results", {
-    expect_equal(truth, ans)
+test_loglike_model_collective <- function(x, p, bs, br, as, ar) {
+  truth <- -2.233698
+  ans <- loglike_model_collective(x, p, bs, br, as, ar)
+  test_that("loglike_model_collective gives expected results", {
+    expect_equal(truth, round(ans, 6))
   })
 }
 
-test_loglike_model_scout <- function(x, ls, qn, a) {
-  truth <- -0.7072428399318523
-  ans <- loglike_model_scout(x, ls, qn, a)
-  test_that("loglike_model_scout gives expected results", {
-    expect_equal(truth, ans)
+test_loglike_model_individual <- function(x, br, ar) {
+  truth <- -0.83449
+  ans <- loglike_model_individual(x, br, ar)
+  test_that("loglike_model_individual gives expected results", {
+    expect_equal(truth, round(ans, 5))
   })
 }
 
@@ -62,20 +62,20 @@ model_tests <- function() {
     0.1, 0.48
   )
   p <- 0.5
-  ls <- 1.3
-  ln <- 1.3
-  qn <- 2.2
-  a <- 0.5
+  bs <- 1.3
+  br <- 1.3
+  as <- 2.2
+  ar <- 0.5
 
   # run through model tests
-  test_scout_dist(x[1], min(x), p, ls, qn, a)
-  test_recruit_dist(x[1], min(x), p, ln, qn, a)
-  test_loglike_model_all(x, p, ls, ln, qn, a)
-  test_loglike_model_scout(x, ls, qn, a)
+  test_scout_dist(x[1], min(x), bs, as)
+  test_recruit_dist(x[1], min(x), br, ar)
+  test_loglike_model_collective(x, p, bs, br, as, ar)
+  test_loglike_model_individual(x, br, ar)
   # test_optimise_model (x, p, ls, ln, qn, a)
   # test_optimise_model fails on check as 'nlopt_create' not provided by
-  # package 'nloptr'. Despite the fact it works locally. Keep off unless you
-  # wish to run locally (raise issue later for fix)
+  # package 'nloptr'. Despite the fact it works locally. Uncomment to run test
+  # locally
 }
 
 # run tests

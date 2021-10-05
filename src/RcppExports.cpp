@@ -43,9 +43,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// ccdf_model_all
-void ccdf_model_all(NumericVector x, NumericVector y, double p, double bs, double br, double as, double ar);
-RcppExport SEXP _wagglefit_ccdf_model_all(SEXP xSEXP, SEXP ySEXP, SEXP pSEXP, SEXP bsSEXP, SEXP brSEXP, SEXP asSEXP, SEXP arSEXP) {
+// ccdf_model_collective
+void ccdf_model_collective(NumericVector x, NumericVector y, double p, double bs, double br, double as, double ar);
+RcppExport SEXP _wagglefit_ccdf_model_collective(SEXP xSEXP, SEXP ySEXP, SEXP pSEXP, SEXP bsSEXP, SEXP brSEXP, SEXP asSEXP, SEXP arSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
@@ -55,20 +55,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type br(brSEXP);
     Rcpp::traits::input_parameter< double >::type as(asSEXP);
     Rcpp::traits::input_parameter< double >::type ar(arSEXP);
-    ccdf_model_all(x, y, p, bs, br, as, ar);
+    ccdf_model_collective(x, y, p, bs, br, as, ar);
     return R_NilValue;
 END_RCPP
 }
-// ccdf_model_scout
-void ccdf_model_scout(NumericVector x, NumericVector y, double bs, double as);
-RcppExport SEXP _wagglefit_ccdf_model_scout(SEXP xSEXP, SEXP ySEXP, SEXP bsSEXP, SEXP asSEXP) {
+// ccdf_model_individual
+void ccdf_model_individual(NumericVector x, NumericVector y, double bs, double as);
+RcppExport SEXP _wagglefit_ccdf_model_individual(SEXP xSEXP, SEXP ySEXP, SEXP bsSEXP, SEXP asSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type y(ySEXP);
     Rcpp::traits::input_parameter< double >::type bs(bsSEXP);
     Rcpp::traits::input_parameter< double >::type as(asSEXP);
-    ccdf_model_scout(x, y, bs, as);
+    ccdf_model_individual(x, y, bs, as);
     return R_NilValue;
 END_RCPP
 }
@@ -206,8 +206,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_wagglefit_alter_in_place", (DL_FUNC) &_wagglefit_alter_in_place, 1},
     {"_wagglefit_scout_ccdf", (DL_FUNC) &_wagglefit_scout_ccdf, 4},
     {"_wagglefit_recruit_ccdf", (DL_FUNC) &_wagglefit_recruit_ccdf, 4},
-    {"_wagglefit_ccdf_model_all", (DL_FUNC) &_wagglefit_ccdf_model_all, 7},
-    {"_wagglefit_ccdf_model_scout", (DL_FUNC) &_wagglefit_ccdf_model_scout, 4},
+    {"_wagglefit_ccdf_model_collective", (DL_FUNC) &_wagglefit_ccdf_model_collective, 7},
+    {"_wagglefit_ccdf_model_individual", (DL_FUNC) &_wagglefit_ccdf_model_individual, 4},
     {"_wagglefit_model_ccdf", (DL_FUNC) &_wagglefit_model_ccdf, 3},
     {"_wagglefit_scout_dist", (DL_FUNC) &_wagglefit_scout_dist, 4},
     {"_wagglefit_recruit_dist", (DL_FUNC) &_wagglefit_recruit_dist, 4},

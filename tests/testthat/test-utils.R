@@ -38,7 +38,7 @@ test_that("message_verbose does not return a message when asked", {
 test_that("model_number_from_model returns correct models", {
   expected <- c(0, 1)
   results <- purrr::map_dbl(
-    c("all", "scout"),
+    c("collective", "individual"),
     model_number_from_model
   )
   expect_identical(expected, results)
@@ -57,7 +57,31 @@ test_that("calc_aic works as expected", {
   expect_equal(result, expected)
 })
 
-test_that("calc_ks works as expected", {
-  # add code to test the calc_ks function. Write in once bootstrapped.
-  expect_equal(1, 1)
+expect_collective_dstat <- 0.4
+expect_individual_dstat <- 0.7
+x <- c(
+  0.2, 0.5,
+  0.3, 0.6,
+  0.8, 0.5,
+  0.9, 0.6,
+  0.1, 0.48
+)
+p <- 0.5
+bs <- 1.3
+br <- 1.3
+as <- 2.2
+ar <- 0.5
+param_est_collective <- c(p, bs, br, as, ar)
+param_est_individual <- c(bs, as)
+collective_result <- calc_ks_boot(x, param_est_collective, "collective")
+individual_result <- calc_ks_boot(x, param_est_individual, "individual")
+test_that("calc_ks_boot collective gives correct D stat", {
+  expect_equal(
+    as.numeric(collective_result$ks$statistic), expect_collective_dstat
+  )
+})
+test_that("calc_ks_boot individual gives correct D stat", {
+  expect_equal(
+    as.numeric(individual_result$ks$statistic), expect_individual_dstat
+  )
 })

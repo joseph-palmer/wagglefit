@@ -33,7 +33,7 @@ recruit_ccdf <- function(x, m, br, ar) {
     .Call('_wagglefit_recruit_ccdf', PACKAGE = 'wagglefit', x, m, br, ar)
 }
 
-#' Model ccdf function for scout and recruit superposition. Stores results in
+#' Model ccdf function for collective model. Stores results in
 #' given array (y)
 #'
 #' @param x NumericVector foraging distances
@@ -42,18 +42,18 @@ recruit_ccdf <- function(x, m, br, ar) {
 #' @inheritParams scout_ccdf
 #' @inheritParams recruit_ccdf
 #' @export
-ccdf_model_all <- function(x, y, p, bs, br, as, ar) {
-    invisible(.Call('_wagglefit_ccdf_model_all', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
+ccdf_model_collective <- function(x, y, p, bs, br, as, ar) {
+    invisible(.Call('_wagglefit_ccdf_model_collective', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
 }
 
-#' Model ccdf function for scout model. Stores results in given array (y)
+#' Model ccdf function for individual model. Stores results in given array (y)
 #'
 #' @param x NumericVector foraging distances
 #' @param y NumericVector storage array for the results
 #' @inheritParams scout_ccdf
 #' @export
-ccdf_model_scout <- function(x, y, bs, as) {
-    invisible(.Call('_wagglefit_ccdf_model_scout', PACKAGE = 'wagglefit', x, y, bs, as))
+ccdf_model_individual <- function(x, y, bs, as) {
+    invisible(.Call('_wagglefit_ccdf_model_individual', PACKAGE = 'wagglefit', x, y, bs, as))
 }
 
 #' Get model ccdf for a given model

@@ -49,7 +49,7 @@ double recruit_ccdf(double x, double m,
   return result;
 }
 
-//' Model ccdf function for scout and recruit superposition. Stores results in
+//' Model ccdf function for collective model. Stores results in
 //' given array (y)
 //'
 //' @param x NumericVector foraging distances
@@ -59,7 +59,7 @@ double recruit_ccdf(double x, double m,
 //' @inheritParams recruit_ccdf
 //' @export
 // [[Rcpp::export]]
-void ccdf_model_all(NumericVector x, NumericVector y,
+void ccdf_model_collective(NumericVector x, NumericVector y,
                     double p, double bs, double br,
                     double as, double ar)
 {
@@ -71,14 +71,14 @@ void ccdf_model_all(NumericVector x, NumericVector y,
   }
 }
 
-//' Model ccdf function for scout model. Stores results in given array (y)
+//' Model ccdf function for individual model. Stores results in given array (y)
 //'
 //' @param x NumericVector foraging distances
 //' @param y NumericVector storage array for the results
 //' @inheritParams scout_ccdf
 //' @export
 // [[Rcpp::export]]
-void ccdf_model_scout(NumericVector x, NumericVector y,
+void ccdf_model_individual(NumericVector x, NumericVector y,
                       double bs, double as)
 {
   const int x_size = x.size();
@@ -104,14 +104,17 @@ NumericVector model_ccdf(NumericVector x, NumericVector params,
 {
   NumericVector y(x.size());
   if (model == 0) {
-    ccdf_model_all(x, y, params[0], params[1], params[2], params[3], params[4]);
+    ccdf_model_collective(
+      x, y, params[0], params[1], params[2], params[3], params[4]
+    );
   } else if (model == 1) {
-    Rcout << params << std::endl;
-    ccdf_model_scout(x, y, params[0], params[1]);
+    ccdf_model_individual(
+      x, y, params[0], params[1]
+    );
   } else {
         stop(
             "Model given is inconsistent with avaliable models.\n" \
-            "Only 0 or 1 (meaning all or scout) is permited"
+            "Only 0 or 1 (meaning collective or individual) is permited"
         );
     }
   return y;

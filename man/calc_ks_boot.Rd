@@ -4,7 +4,7 @@
 \alias{calc_ks_boot}
 \title{Run a bootstapped KS test on the data}
 \usage{
-calc_ks_boot(x, param_est, model_type, pvalue = TRUE)
+calc_ks_boot(x, param_est, model_type)
 }
 \arguments{
 \item{x}{doubleArray Foraging distance data}
@@ -12,9 +12,6 @@ calc_ks_boot(x, param_est, model_type, pvalue = TRUE)
 \item{param_est}{doubleArray The parameter estimates for a model}
 
 \item{model_type}{characterArray the name of the model ran}
-
-\item{pvalue}{Bool To return the p value (TRUE) or D statistic (FALSE).
-Defaults to TRUE.}
 }
 \description{
 Calulctate the ks test stat and p value for a given model

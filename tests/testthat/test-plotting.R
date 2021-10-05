@@ -20,7 +20,7 @@ test_make_ccdf_plot_data <- function(x, param_est, model, npoints) {
       0.100, 0.189, 0.278, 0.367, 0.456, 0.544, 0.633, 0.722, 0.811, 0.900
     ),
     cumul_ccdf = c(
-      1.000, 0.848, 0.687, 0.534, 0.402, 0.297, 0.219, 0.164, 0.125, 0.097
+      1.000, 0.713, 0.534, 0.425, 0.362, 0.314, 0.267, 0.221, 0.178, 0.140
     )
   )
   actual <- round(make_ccdf_plot_data(x, param_est, model, npoints), 3)
@@ -54,13 +54,13 @@ test_make_full_plot <- function(x, model_result_list) {
 test_make_results_tibble <- function(result) {
   expected <- tibble::tibble(
     fmax = c(-256, -256),
-    data_name = c("all", "scout"),
+    data_name = c("collective", "individual"),
     p = c(0.5, 1),
-    ls = c(1.3, 1.3),
-    ln = c(1.3, NA),
-    qn = c(2.2, 2.2),
-    a = c(0.5, 0.5),
-    AIC = c(522, 518)
+    bs = c(1.3, 1.3),
+    br = c(1.3, NA),
+    as = c(2.2, 2.2),
+    ar = c(0.5, NA),
+    AIC = c(522, 516)
   )
   actual <- make_results_tibble(result)
   test_that("make_results_tibble returns the expected result", {
@@ -77,26 +77,26 @@ plotting_tests <- function() {
     0.1, 0.48
   )
   p <- 0.5
-  ls <- 1.3
-  ln <- 1.3
-  qn <- 2.2
-  a <- 0.5
-  param_est <- c(p, ls, ln, qn, a)
+  bs <- 1.3
+  br <- 1.3
+  as <- 2.2
+  ar <- 0.5
+  param_est <- c(p, bs, br, as, ar)
   example_result <- list(
-    "all" = list(
+    "collective" = list(
       est = param_est,
       fmax = -256,
-      data_name = "all"
+      data_name = "collective"
     ),
-    "scout" = list(
-      est = c(ls, qn, a),
+    "individual" = list(
+      est = c(bs, as),
       fmax = -256,
-      data_name = "scout"
+      data_name = "individual"
     )
   )
 
   test_inverse_cdf(x)
-  test_make_ccdf_plot_data(x, param_est, "all", 10)
+  test_make_ccdf_plot_data(x, param_est, "collective", 10)
   test_make_base_plot(x)
   test_make_full_plot(x, example_result)
   test_make_results_tibble(example_result)

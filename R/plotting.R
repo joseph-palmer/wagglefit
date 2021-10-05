@@ -169,13 +169,13 @@ make_full_plot <- function(x, model_result_list,
 #'
 make_results_tibble <- function(result) {
   . <- NULL
-  all_tibble <- as_tibble(result$all)
-  all_tibble$parameter <- c("p", "ls", "ln", "qn", "a")
-  scout_tibble <- as_tibble(result$scout)
-  scout_tibble$parameter <- c("ls", "qn", "a")
+  collective_tibble <- as_tibble(result$collective)
+  collective_tibble$parameter <- c("p", "bs", "br", "as", "ar")
+  individual_tibble <- as_tibble(result$individual)
+  individual_tibble$parameter <- c("bs", "as")
   result_tibble <- bind_rows(
-    all_tibble,
-    scout_tibble
+    collective_tibble,
+    individual_tibble
   )
   result_tibble <- result_tibble %>%
     pivot_wider(names_from = .data$parameter, values_from = .data$est) %>%
@@ -184,7 +184,7 @@ make_results_tibble <- function(result) {
     ) %>%
     mutate(
       p = ifelse(
-        .data$data_name == "scout",
+        .data$data_name == "individual",
         1,
         .data$p
       )
