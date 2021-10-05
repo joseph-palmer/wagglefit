@@ -2,6 +2,8 @@
 ## Joseph Palmer
 ---
 
+This document contains code to fit the waggle dance model to each of our 20 different sites. The code here uses the wagglefit package, as well as some additional code stored in `fit_data.R` to help simplify things here.
+
 ```{r, include = FALSE}
 devtools::load_all()
 
@@ -1144,7 +1146,7 @@ worldmap <- ne_countries(scale = "large", returnclass = "sf")
 
 # london area
 london <- st_read(
-  "analysis/shapefiles/statistical-gis-boundaries-london/ESRI/London_Ward.shp"
+  "analysis/shapefiles/London_Ward.shp"
 )
 
 london <- st_transform(
