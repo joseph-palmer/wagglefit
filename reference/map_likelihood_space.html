@@ -136,12 +136,29 @@ others fixed at their optima.</p>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
+      <th>data</th>
+      <td><p>doubleArray The data to check the parameters against. This should
+be the data the parameters were fit to.</p></td>
+    </tr>
+    <tr>
       <th>params</th>
       <td><p>named list or tibble of optimised parameter values</p></td>
     </tr>
     <tr>
       <th>model_name</th>
       <td><p>character array The name of the model to evaluate</p></td>
+    </tr>
+    <tr>
+      <th>n</th>
+      <td><p>integer The number of points to sample, defaults to 1000.</p></td>
+    </tr>
+    <tr>
+      <th>upper</th>
+      <td><p>integer The upper bound</p></td>
+    </tr>
+    <tr>
+      <th>bounds</th>
+      <td><p>list User supplied list of upper and lower bounds.</p></td>
     </tr>
     </table>
 
