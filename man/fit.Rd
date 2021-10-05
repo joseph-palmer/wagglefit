@@ -2,13 +2,13 @@
 % Please edit documentation in R/fitting.R
 \name{fit}
 \alias{fit}
-\title{fit either the scout and recruit superposition model or the scout model to
-data}
+\title{fit either the collective or individual model to data}
 \usage{
 fit(
   distance,
-  model = "all",
+  model = "collective",
   upper = 5,
+  bounds = NULL,
   iteration = c(1, 1),
   verbose_r = FALSE,
   verbose_cpp = FALSE,
@@ -18,9 +18,13 @@ fit(
 \arguments{
 \item{distance}{doubleArray The distance decoded from the waggle dance.}
 
-\item{model}{characterArray The model to run (scout or all)}
+\item{model}{characterArray The model to run (collective or individual).
+Defaults to collective.}
 
 \item{upper}{double The upper parameter bound. Defaults to 5.}
+
+\item{bounds}{named list user supplied bounds. Defaults to NULL. If null the
+bounds are automatically generated.}
 
 \item{iteration}{integerArray The number of times fit has been called out of
 the number to be called. Defaults to c(1, 1)}

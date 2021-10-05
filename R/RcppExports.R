@@ -6,58 +6,112 @@
 #' @param x NumericArray
 #' @export
 alter_in_place <- function(x) {
-  invisible(.Call("_wagglefit_alter_in_place", PACKAGE = "wagglefit", x))
+    invisible(.Call('_wagglefit_alter_in_place', PACKAGE = 'wagglefit', x))
+}
+
+#' Model CCDF for scout distribution
+#'
+#' @param x double Foraging distance
+#' @param m double Minimum foraging distance
+#' @param bs double Scout rate
+#' @param as double scout alpha
+#' @return result double the ccdf for that foraging distance (x)
+#' @export
+scout_ccdf <- function(x, m, bs, as) {
+    .Call('_wagglefit_scout_ccdf', PACKAGE = 'wagglefit', x, m, bs, as)
+}
+
+#' Model CCDF for recruit distribution
+#'
+#' @param x double Foraging distance
+#' @param m double Minimum foraging distance
+#' @param br double Recruit rate
+#' @param ar double recruit alpha
+#' @return result double the ccdf for that foraging distance (x)
+#' @export
+recruit_ccdf <- function(x, m, br, ar) {
+    .Call('_wagglefit_recruit_ccdf', PACKAGE = 'wagglefit', x, m, br, ar)
+}
+
+#' Model ccdf function for collective model. Stores results in
+#' given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @param p double Proportion of scouts (0<=p<=1)
+#' @inheritParams scout_ccdf
+#' @inheritParams recruit_ccdf
+#' @export
+ccdf_model_collective <- function(x, y, p, bs, br, as, ar) {
+    invisible(.Call('_wagglefit_ccdf_model_collective', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
+}
+
+#' Model ccdf function for individual model. Stores results in given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @inheritParams scout_ccdf
+#' @export
+ccdf_model_individual <- function(x, y, bs, as) {
+    invisible(.Call('_wagglefit_ccdf_model_individual', PACKAGE = 'wagglefit', x, y, bs, as))
+}
+
+#' Get model ccdf for a given model
+#'
+#' @param x NumericVector foraging distances
+#' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
+#' the scout model their will only be three (ls, qn, a) but if all their will
+#' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
+#' @param model int The model to run. Must be 0 or 1 which means 'all',
+#' or 'scout' respectively,  defaults to 0 ('all')
+#' @return y NumericVector the ccdf
+#' @export
+model_ccdf <- function(x, params, model = 0L) {
+    .Call('_wagglefit_model_ccdf', PACKAGE = 'wagglefit', x, params, model)
 }
 
 #' Model function for scouts
 #'
 #' @param x double Foraging distance
 #' @param m double Minimum foraging distance
-#' @param p double Proportion of scouts (0<=p<=1)
-#' @param ls double Scout rate
-#' @param qn double Quality
-#' @param a double alpha value
+#' @param bs double scout rate
+#' @param as double scout alpha
 #' @export
-scout_dist <- function(x, m, p, ls, qn, a) {
-  .Call("_wagglefit_scout_dist", PACKAGE = "wagglefit", x, m, p, ls, qn, a)
+scout_dist <- function(x, m, bs, as) {
+    .Call('_wagglefit_scout_dist', PACKAGE = 'wagglefit', x, m, bs, as)
 }
 
 #' Model function for recruits
 #'
-#' @param ln double Recruit rate
+#' @param br double Recruit rate
+#' @param ar double Recruit alpha
 #' @inheritParams scout_dist
 #' @export
-recruit_dist <- function(x, m, p, ln, qn, a) {
-  .Call("_wagglefit_recruit_dist", PACKAGE = "wagglefit", x, m, p, ln, qn, a)
+recruit_dist <- function(x, m, br, ar) {
+    .Call('_wagglefit_recruit_dist', PACKAGE = 'wagglefit', x, m, br, ar)
 }
 
 #' Log-likelihood function for scout and recruit superposition
+#' (collective model)
 #'
 #' @param x double* Pointer to array of foraging distances
+#' @param p double Proportion of scouts (0<=p<=1)
 #' @inheritParams scout_dist
 #' @inheritParams recruit_dist
 #' @export
-loglike_model_all <- function(x, p, ls, ln, qn, a) {
-  .Call("_wagglefit_loglike_model_all", PACKAGE = "wagglefit", x, p, ls, ln, qn, a)
+loglike_model_collective <- function(x, p, bs, br, as, ar) {
+    .Call('_wagglefit_loglike_model_collective', PACKAGE = 'wagglefit', x, p, bs, br, as, ar)
 }
 
-#' Log-likelihood function for scouts
+#' Log-likelihood function for individual foraging
 #'
-#' @inheritParams loglike_model_all
+#' @inheritParams loglike_model_collective
 #' @export
-loglike_model_scout <- function(x, ls, qn, a) {
-  .Call("_wagglefit_loglike_model_scout", PACKAGE = "wagglefit", x, ls, qn, a)
+loglike_model_individual <- function(x, bs, as) {
+    .Call('_wagglefit_loglike_model_individual', PACKAGE = 'wagglefit', x, bs, as)
 }
 
-#' Log-likelihood function for recruits
-#'
-#' @inheritParams loglike_model_all
-#' @export
-loglike_model_recruit <- function(x, ln, qn, a) {
-  .Call("_wagglefit_loglike_model_recruit", PACKAGE = "wagglefit", x, ln, qn, a)
-}
-
-#' Optimise function for fitting a model using NLOPT
+#' Optimise function for fitting the collective model using NLOPT
 #'
 #' @param x NumericVector Foraging distance
 #' @param params NumericVector parameter estimates to run the model with
@@ -66,7 +120,47 @@ loglike_model_recruit <- function(x, ln, qn, a) {
 #' @param verbose Bool, to display optimisation as it runs, defaults to FALSE
 #' @param xtol double, The absolute tolerance on function value. If 0 (default)
 #' then default to nlopt default value.
+#' @param model int The model to run. Must be 0 or 1 which means 'all' or
+#' 'scout' respectively,  defaults to 0 ('all')
 #' @export
-optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0) {
-  .Call("_wagglefit_optimise_model", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol)
+optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L) {
+    .Call('_wagglefit_optimise_model', PACKAGE = 'wagglefit', x, params, lb, ub, verbose, xtol, model)
 }
+
+#' Model pdf function for scout and recruit superposition. Stores results in
+#' given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @param p double Proportion of scouts (0<=p<=1)
+#' @inheritParams scout_dist
+#' @inheritParams recruit_dist
+#' @export
+pdf_model_all <- function(x, y, p, bs, br, as, ar) {
+    invisible(.Call('_wagglefit_pdf_model_all', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
+}
+
+#' Model pdf function for scout model. Stores results in given array (y)
+#'
+#' @param x NumericVector foraging distances
+#' @param y NumericVector storage array for the results
+#' @inheritParams scout_dist
+#' @export
+pdf_model_scout <- function(x, y, bs, as) {
+    invisible(.Call('_wagglefit_pdf_model_scout', PACKAGE = 'wagglefit', x, y, bs, as))
+}
+
+#' Get model pdf for a given model
+#'
+#' @param x NumericVector foraging distances
+#' @param params NumericVector parameters to calculate the ccdfs for. E.g. if
+#' the scout model their will only be three (ls, qn, a) but if all their will
+#' be 5 (p, ls, ln, qn, a). The number of params determines which ccdf to make
+#' @param model int The model to run. Must be 0 or 1 which means 'all',
+#' or 'scout' respectively,  defaults to 0 ('all')
+#' @return y NumericVector the ccdf
+#' @export
+model_pdf <- function(x, params, model = 0L) {
+    .Call('_wagglefit_model_pdf', PACKAGE = 'wagglefit', x, params, model)
+}
+

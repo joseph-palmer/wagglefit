@@ -2,9 +2,9 @@
 % Please edit documentation in R/RcppExports.R
 \name{optimise_model}
 \alias{optimise_model}
-\title{Optimise function for fitting a model using NLOPT}
+\title{Optimise function for fitting the collective model using NLOPT}
 \usage{
-optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0)
+optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L)
 }
 \arguments{
 \item{x}{NumericVector Foraging distance}
@@ -19,7 +19,10 @@ optimise_model(x, params, lb, ub, verbose = FALSE, xtol = 0)
 
 \item{xtol}{double, The absolute tolerance on function value. If 0 (default)
 then default to nlopt default value.}
+
+\item{model}{int The model to run. Must be 0 or 1 which means 'all' or
+'scout' respectively,  defaults to 0 ('all')}
 }
 \description{
-Optimise function for fitting a model using NLOPT
+Optimise function for fitting the collective model using NLOPT
 }
