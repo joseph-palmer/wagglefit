@@ -6,7 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Run a bootstapped KS test on the data — calc_ks_boot • wagglefit</title>
+<title>Generates bounds for all parameters of the individual model — get_bounds_individual • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +39,8 @@
 
 
 
-<meta property="og:title" content="Run a bootstapped KS test on the data — calc_ks_boot" />
-<meta property="og:description" content="Calulctate the ks test stat and p value for a given model" />
+<meta property="og:title" content="Generates bounds for all parameters of the individual model — get_bounds_individual" />
+<meta property="og:description" content="Generates upper and lower bounds for all parameters" />
 
 
 
@@ -106,35 +106,36 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Run a bootstapped KS test on the data</h1>
+    <h1>Generates bounds for all parameters of the individual model</h1>
     
-    <div class="hidden name"><code>calc_ks_boot.Rd</code></div>
+    <div class="hidden name"><code>get_bounds_individual.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Calulctate the ks test stat and p value for a given model</p>
+    <p>Generates upper and lower bounds for all parameters</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_ks_boot</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>param_est</span>, <span class='va'>model_type</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>get_bounds_individual</span><span class='op'>(</span><span class='va'>upper</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
-      <th>x</th>
-      <td><p>doubleArray Foraging distance data</p></td>
-    </tr>
-    <tr>
-      <th>param_est</th>
-      <td><p>doubleArray The parameter estimates for a model</p></td>
-    </tr>
-    <tr>
-      <th>model_type</th>
-      <td><p>characterArray the name of the model ran</p></td>
+      <th>upper</th>
+      <td><p>double The upper bound for the params</p></td>
     </tr>
     </table>
 
+    <h2 class="hasAnchor" id="value"><a class="anchor" href="#value"></a>Value</h2>
 
+    <p>bounds matrix of lower ([,1]) and upper ([,2]) bounds</p>
+
+    <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
+    <pre class="examples"><div class='input'><span class='kw'>if</span> <span class='op'>(</span><span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>{</span>
+<span class='fu'>generate_bounds_all</span><span class='op'>(</span><span class='op'>)</span>
+<span class='op'>}</span>
+
+</div></pre>
   </div>
   <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
     <nav id="toc" data-toggle="toc" class="sticky-top">

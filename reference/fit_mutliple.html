@@ -124,7 +124,7 @@ search of the model sample space.</p>
 
     <pre class="usage"><span class='fu'>fit_mutliple</span><span class='op'>(</span>
   <span class='va'>distance</span>,
-  model <span class='op'>=</span> <span class='st'>"all"</span>,
+  model <span class='op'>=</span> <span class='st'>"collective"</span>,
   n <span class='op'>=</span> <span class='fl'>5</span>,
   upper <span class='op'>=</span> <span class='fl'>5</span>,
   bounds <span class='op'>=</span> <span class='cn'>NULL</span>,
@@ -142,7 +142,8 @@ search of the model sample space.</p>
     </tr>
     <tr>
       <th>model</th>
-      <td><p>characterArray The model to run (collective or individual)</p></td>
+      <td><p>characterArray The model to run (collective or individual).
+Defaults to collective.</p></td>
     </tr>
     <tr>
       <th>n</th>
@@ -154,8 +155,8 @@ search of the model sample space.</p>
     </tr>
     <tr>
       <th>bounds</th>
-      <td><p>named list user supplied bounds. Defaults to NULL, i.e. bounds
-automatically generated</p></td>
+      <td><p>named list user supplied bounds. Defaults to NULL. If null the
+bounds are automatically generated.</p></td>
     </tr>
     <tr>
       <th>verbose_r</th>

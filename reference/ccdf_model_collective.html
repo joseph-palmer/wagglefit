@@ -6,7 +6,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Run a bootstapped KS test on the data — calc_ks_boot • wagglefit</title>
+<title>Model ccdf function for collective model. Stores results in
+given array (y) — ccdf_model_collective • wagglefit</title>
 
 
 <!-- jquery -->
@@ -39,8 +40,10 @@
 
 
 
-<meta property="og:title" content="Run a bootstapped KS test on the data — calc_ks_boot" />
-<meta property="og:description" content="Calulctate the ks test stat and p value for a given model" />
+<meta property="og:title" content="Model ccdf function for collective model. Stores results in
+given array (y) — ccdf_model_collective" />
+<meta property="og:description" content="Model ccdf function for collective model. Stores results in
+given array (y)" />
 
 
 
@@ -106,31 +109,49 @@
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>Run a bootstapped KS test on the data</h1>
+    <h1>Model ccdf function for collective model. Stores results in
+given array (y)</h1>
     
-    <div class="hidden name"><code>calc_ks_boot.Rd</code></div>
+    <div class="hidden name"><code>ccdf_model_collective.Rd</code></div>
     </div>
 
     <div class="ref-description">
-    <p>Calulctate the ks test stat and p value for a given model</p>
+    <p>Model ccdf function for collective model. Stores results in
+given array (y)</p>
     </div>
 
-    <pre class="usage"><span class='fu'>calc_ks_boot</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>param_est</span>, <span class='va'>model_type</span><span class='op'>)</span></pre>
+    <pre class="usage"><span class='fu'>ccdf_model_collective</span><span class='op'>(</span><span class='va'>x</span>, <span class='va'>y</span>, <span class='va'>p</span>, <span class='va'>bs</span>, <span class='va'>br</span>, <span class='va'>as</span>, <span class='va'>ar</span><span class='op'>)</span></pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
     <colgroup><col class="name" /><col class="desc" /></colgroup>
     <tr>
       <th>x</th>
-      <td><p>doubleArray Foraging distance data</p></td>
+      <td><p>NumericVector foraging distances</p></td>
     </tr>
     <tr>
-      <th>param_est</th>
-      <td><p>doubleArray The parameter estimates for a model</p></td>
+      <th>y</th>
+      <td><p>NumericVector storage array for the results</p></td>
     </tr>
     <tr>
-      <th>model_type</th>
-      <td><p>characterArray the name of the model ran</p></td>
+      <th>p</th>
+      <td><p>double Proportion of scouts (0&lt;=p&lt;=1)</p></td>
+    </tr>
+    <tr>
+      <th>bs</th>
+      <td><p>double Scout rate</p></td>
+    </tr>
+    <tr>
+      <th>br</th>
+      <td><p>double Recruit rate</p></td>
+    </tr>
+    <tr>
+      <th>as</th>
+      <td><p>double scout alpha</p></td>
+    </tr>
+    <tr>
+      <th>ar</th>
+      <td><p>double recruit alpha</p></td>
     </tr>
     </table>
 

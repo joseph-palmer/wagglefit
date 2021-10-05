@@ -6,8 +6,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>fit either the scout and recruit superposition model or the scout model to
-data — fit • wagglefit</title>
+<title>fit either the collective or individual model to data — fit • wagglefit</title>
 
 
 <!-- jquery -->
@@ -40,8 +39,7 @@ data — fit • wagglefit</title>
 
 
 
-<meta property="og:title" content="fit either the scout and recruit superposition model or the scout model to
-data — fit" />
+<meta property="og:title" content="fit either the collective or individual model to data — fit" />
 <meta property="og:description" content="Fits specified model to the data given using MLE." />
 
 
@@ -108,8 +106,7 @@ data — fit" />
 <div class="row">
   <div class="col-md-9 contents">
     <div class="page-header">
-    <h1>fit either the scout and recruit superposition model or the scout model to
-data</h1>
+    <h1>fit either the collective or individual model to data</h1>
     
     <div class="hidden name"><code>fit.Rd</code></div>
     </div>
@@ -120,7 +117,7 @@ data</h1>
 
     <pre class="usage"><span class='fu'>fit</span><span class='op'>(</span>
   <span class='va'>distance</span>,
-  model <span class='op'>=</span> <span class='st'>"all"</span>,
+  model <span class='op'>=</span> <span class='st'>"collective"</span>,
   upper <span class='op'>=</span> <span class='fl'>5</span>,
   bounds <span class='op'>=</span> <span class='cn'>NULL</span>,
   iteration <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='fl'>1</span>, <span class='fl'>1</span><span class='op'>)</span>,
@@ -138,7 +135,8 @@ data</h1>
     </tr>
     <tr>
       <th>model</th>
-      <td><p>characterArray The model to run (collective or individual)</p></td>
+      <td><p>characterArray The model to run (collective or individual).
+Defaults to collective.</p></td>
     </tr>
     <tr>
       <th>upper</th>
@@ -146,8 +144,8 @@ data</h1>
     </tr>
     <tr>
       <th>bounds</th>
-      <td><p>named list user supplied bounds. Defaults to NULL, i.e. bounds
-automatically generated</p></td>
+      <td><p>named list user supplied bounds. Defaults to NULL. If null the
+bounds are automatically generated.</p></td>
     </tr>
     <tr>
       <th>iteration</th>
