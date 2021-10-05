@@ -2,6 +2,8 @@
 ## Joseph Palmer
 ---
 
+## Set up data and environment
+
 ```{r, include = FALSE}
 devtools::load_all()
 library(showtext)
@@ -39,19 +41,24 @@ urban_lu <- read.csv(file = "analysis/data/urban-landuse.csv")
 rural_lu <- read.csv(file = "analysis/data/agri-rural-landuse.csv")
 
 # put proportion of scouts into landuse data
-urban_lu_long <- sitedata %>%
+urban_lu <- sitedata %>%
   select(site, p) %>%
-  inner_join(urban_lu) %>%
+  inner_join(urban_lu)
+
+urban_lu_long <- urban_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 
-rural_lu_long <- sitedata %>%
+rural_lu <- sitedata %>%
   select(site, p) %>%
-  inner_join(rural_lu) %>%
+  inner_join(rural_lu)
+rural_lu_long <- rural_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 ```
 
 Now we have everything in, lests do a basic plotting to see what the relationships between each landuse type and the proportion of scouts looks like.
 
+
+## Basic analysis
 
 For rural we can see that for most catagories there isn't much of a relationship, however, from a basic linear model the proportion of scouts seems to increase with arable and decrease with more built up areas.
 
@@ -79,4 +86,13 @@ urban_lu_long %>%
   theme(
     text = element_text(size = 8)
   )
+
+```
+
+
+## Princple Component Analysis
+
+```{r}
+
+prcomp(urban_lu[, 3:length(names(urban_lu))])
 ```
