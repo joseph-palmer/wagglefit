@@ -20,19 +20,13 @@ be the data the parameters were fit to.}
 \item{var}{characterArray The name of the variable you want to examine the
 likelihood space for.}
 
+\item{params}{The parameters of the model to be checked in isolation.}
+
 \item{n}{integer The number of points to sample, defaults to 1000.}
 
 \item{upper}{integer The upper bound}
 
-\item{p}{double The proportion of scouts.}
-
-\item{bs}{double The scout rate.}
-
-\item{as}{double The scout alpha.}
-
-\item{br}{double The recruit rate.}
-
-\item{ar}{double The recruit alpha.}
+\item{bounds}{list User supplied list of upper and lower bounds.}
 }
 \value{
 tibble The varied parameter and associated likelihood and

@@ -118,22 +118,18 @@ calc_ks_boot <- function(x, param_est, model_type) {
 #' be the data the parameters were fit to.
 #' @param var characterArray The name of the variable you want to examine the
 #' likelihood space for.
-#' @param p double The proportion of scouts.
-#' @param bs double The scout rate.
-#' @param as double The scout alpha.
-#' @param br double The recruit rate.
-#' @param ar double The recruit alpha.
+#' @param params The parameters of the model to be checked in isolation.
 #' @param n integer The number of points to sample, defaults to 1000.
 #' @param upper integer The upper bound
+#' @param bounds list User supplied list of upper and lower bounds.
 #' @return tibble The varied parameter and associated likelihood and
 #' log-likelihood scores.
 #' @importFrom tibble tibble
 #' @importFrom purrr map_dbl
 #' @concept utility
 #'
-calc_var_likelihood_collective <- function(
-  data, var, params, n = 1000, upper = 5, bounds = NULL
-  ) {
+calc_var_likelihood_collective <- function(data, var, params, n = 1000,
+                                           upper = 5, bounds = NULL) {
   p <- params[[1]]
   bs <- params[[2]]
   br <- params[[3]]
@@ -141,7 +137,7 @@ calc_var_likelihood_collective <- function(
   ar <- params[[5]]
 
   if (is.null(bounds)) {
-    bnds <- get_bounds_all(upper)
+    bnds <- get_bounds_collective(upper)
   } else {
     bnds <- bounds
   }
@@ -176,13 +172,12 @@ calc_var_likelihood_collective <- function(
 #' @importFrom purrr map_dbl
 #' @concept utility
 #'
-calc_var_likelihood_individual <- function(
-  data, var, params, n = 1000, upper = 5, bounds = NULL
-  ) {
+calc_var_likelihood_individual <- function(data, var, params, n = 1000,
+                                           upper = 5, bounds = NULL) {
   bs <- params[[1]]
   as <- params[[2]]
   if (is.null(bounds)) {
-    bnds <- get_bounds_all(upper)
+    bnds <- get_bounds_collective(upper)
   } else {
     bnds <- bounds
   }
@@ -219,7 +214,7 @@ calc_var_likelihood_individual <- function(
 #' @concept utility
 #'
 map_likelihood_space <- function(data, params, model_name = "collective",
-                                n = 1000, upper = 5, bounds = NULL) {
+                                 n = 1000, upper = 5, bounds = NULL) {
   use_params <- list(
     "individual" = c("bs", "as"),
     "collective" = c("p", "bs", "br", "as", "ar")

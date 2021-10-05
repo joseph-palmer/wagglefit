@@ -24,6 +24,8 @@ be the data the parameters were fit to.}
 \item{n}{integer The number of points to sample, defaults to 1000.}
 
 \item{upper}{integer The upper bound}
+
+\item{bounds}{list User supplied list of upper and lower bounds.}
 }
 \value{
 ggplotObj The likelihood plot for each parameter.
