@@ -42,6 +42,7 @@ test_make_base_plot <- function(x) {
 
 test_make_full_plot <- function(x, model_result_list) {
   plt <- make_full_plot(x, model_result_list)
+  dev.off()
   expected_xlab <- "Foraging distance (Km)"
   expected_ylab <- "Ln cumulative probability"
   test_that("make_full_plot returns a ggplot object with the correct labels", {
