@@ -23,12 +23,6 @@ likelihood space for.}
 \item{n}{integer The number of points to sample, defaults to 1000.}
 
 \item{upper}{integer The upper bound}
-
-\item{p}{double The proportion of scouts.}
-
-\item{bs}{double The scout rate.}
-
-\item{as}{double The scout alpha.}
 }
 \value{
 tibble The varied parameter and associated likelihood and

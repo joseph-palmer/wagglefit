@@ -141,7 +141,7 @@ calc_var_likelihood_collective <- function(
   ar <- params[[5]]
 
   if (is.null(bounds)) {
-    bnds <- generate_bounds_all(upper)
+    bnds <- get_bounds_all(upper)
   } else {
     bnds <- bounds
   }
@@ -169,15 +169,7 @@ calc_var_likelihood_collective <- function(
 #' likelihood space for that parameter. This uses the bounds defined for that
 #' parameter and gets the specified number of values to show the likelihood
 #' space.
-#' @param data doubleArray The data to check the parameters against. This should
-#' be the data the parameters were fit to.
-#' @param var characterArray The name of the variable you want to examine the
-#' likelihood space for.
-#' @param p double The proportion of scouts.
-#' @param bs double The scout rate.
-#' @param as double The scout alpha.
-#' @param n integer The number of points to sample, defaults to 1000.
-#' @param upper integer The upper bound
+#' @inheritParams calc_var_likelihood_collective
 #' @return tibble The varied parameter and associated likelihood and
 #' log-likelihood scores.
 #' @importFrom tibble tibble
@@ -190,7 +182,7 @@ calc_var_likelihood_individual <- function(
   bs <- params[[1]]
   as <- params[[2]]
   if (is.null(bounds)) {
-    bnds <- generate_bounds_all(upper)
+    bnds <- get_bounds_all(upper)
   } else {
     bnds <- bounds
   }
@@ -216,7 +208,7 @@ calc_var_likelihood_individual <- function(
 #' idea here is that once you have optimised your parameters you pass them in
 #' here with the data and it shows the likelihood smace of each one wrt. the
 #' others fixed at their optima.
-#' @inheritParams calc_var_likelihood
+#' @inheritParams calc_var_likelihood_collective
 #' @param params named list or tibble of optimised parameter values
 #' @param model_name character array The name of the model to evaluate
 #' @return ggplotObj The likelihood plot for each parameter.

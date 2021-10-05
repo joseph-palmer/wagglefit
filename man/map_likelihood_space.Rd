@@ -14,9 +14,16 @@ map_likelihood_space(
 )
 }
 \arguments{
+\item{data}{doubleArray The data to check the parameters against. This should
+be the data the parameters were fit to.}
+
 \item{params}{named list or tibble of optimised parameter values}
 
 \item{model_name}{character array The name of the model to evaluate}
+
+\item{n}{integer The number of points to sample, defaults to 1000.}
+
+\item{upper}{integer The upper bound}
 }
 \value{
 ggplotObj The likelihood plot for each parameter.
