@@ -65,10 +65,10 @@ For rural we can see that for most catagories there isn't much of a relationship
 ```{r}
 
 rural_lu_long %>%
-  ggplot(aes(x = p, y = values)) +
+  ggplot(aes(x = values, y = p)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~landuse, ncol = 2) +
+  facet_wrap(~landuse, ncol = 2, scales="free") +
   theme(
     text = element_text(size = 8)
   )
@@ -79,10 +79,10 @@ for urban we don't really see much at all. There is a slight increase the propor
 ```{r}
 
 urban_lu_long %>%
-  ggplot(aes(x = p, y = values)) +
+  ggplot(aes(x = values, y = p)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~landuse, ncol = 2) +
+  facet_wrap(~landuse, ncol = 2, scales="free") +
   theme(
     text = element_text(size = 8)
   )
