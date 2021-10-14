@@ -22,6 +22,14 @@ theme_set(
       text = element_text(size = 8)
     )
 )
+
+library(tidyr)
+library(dplyr)
+library(ggbiplot)
+library(energy)
+library(betareg)
+
+
 ```
 
 First we load in the data and make the tables required. I.e. site land type information along with the estimates proportion of scouts from the model fits in `fit_models.Rmd`.
@@ -68,7 +76,7 @@ rural_lu_long %>%
   ggplot(aes(x = values, y = p)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~landuse, ncol = 2, scales="free") +
+  facet_wrap(~landuse, ncol = 2, scales = "free") +
   theme(
     text = element_text(size = 8)
   )
@@ -82,7 +90,7 @@ urban_lu_long %>%
   ggplot(aes(x = values, y = p)) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(~landuse, ncol = 2, scales="free") +
+  facet_wrap(~landuse, ncol = 2, scales = "free") +
   theme(
     text = element_text(size = 8)
   )
@@ -92,7 +100,151 @@ urban_lu_long %>%
 
 ## Princple Component Analysis
 
+These previous graphs shows us that some variables seem to correlate with our estimated proportions of scouts, however, there are many different landscape types which likely co-occur together in a given site. It is therefore necessary to reduce the dimentionality of the dataset by conducting a principle Component analysis (PCA). This allows us to see which variables in the two environments most explain the variance. We can then take the major components and examine their relationship with our estimated proportion of scouts.
+
 ```{r}
 
-prcomp(urban_lu[, 3:length(names(urban_lu))])
+u_pca_data <- urban_lu[, 3:length(names(urban_lu))]
+
+# First, check the data follows a multivariative normal, p>0.05
+unormres <- u_pca_data %>%
+  mvnorm.etest(R = 100)
+
+# run PCA
+upca <- prcomp(
+  u_pca_data, center = TRUE, scale = TRUE
+)
+
+# extract the sd, loadings and scores of the data
+sd <- upca$sdev
+loadings <- upca$rotation
+rownames(loadings) <- colnames(u_pca_data)
+scores <- upca$x
+
+# calculate the variance and percentage of overall variances directly
+var <- sd^2
+varpercent <- var / sum(var) * 100
+
+# make a scree plot
+dev.new()
+barplot(
+  varpercent, xlab = "PC",
+  ylab = "Percent Variance",
+  names.arg = 1:length(varpercent), las = 1,
+  ylim = c(0, max(varpercent)),
+  col = "gray")
+
+abline(h = 1 / ncol(u_pca_data) * 100, col = "red")
+
 ```
+
+
+The largest drop in the scree plot occurs between PC1 and PC2 (46 - 22% of the variance). The red line indicates the expected variance if each PC contributed equally to the variance. Here, PCs 1, 2 and 3 all contribute more than their expected and the remaining pcs contribute increasingly less than expected. The results indicate we should include the first three Principle Components in our interpretation. These three PCs combine to explain 83% of the variance.
+
+We now need to know how our variables (landuse types) contribute to each of the PCs. This is given by the loadings, with a positive loading suggesting the variable is positively correlated with the PC and a negative loading indicating a negative correlation with the PC.
+
+A large (negative or positive) loading indicates a large effect on the PC. The job now is to determine the lagest loadings. One way to do this is to see which ones are larger than the average if all variables contributed equally to a given PC.
+
+
+```{r}
+
+ggbiplot(upca)
+
+loadings[, 1:3]
+sqrt(1 / ncol(u_pca_data)) # cutoff for top loadings
+
+```
+
+The table shows that continous central, dense and sparse residential, amenity grassland and water most contribute to PC1. For PC2 the main contributors are railway, woodland and water. For PC3, the main variables are sparse residential, parks, allotments and cemeteries and woodland.
+
+Now we have identified the principle components which explain the majority of the data, along with the varibales which contribute to these PCs, we now need to see how these PCs predict the proportion of scouts we estimated from our model fitting. To do this we use Princple Component Regression (PCR). In each PCA column we have the coefficients of a linear combination of the land use types which make up the PC (and we derived the most important of these above). In a PCR, these values are used as independent variables in a regression on to some other variable. Here, we will use this to compare against the proportion of scouts accross our sites.
+
+```{r}
+
+n <- length(urban_lu$p)
+y <- (urban_lu$p * (n - 1) + 0.5) / n # transform for zero or 1 inflated data
+mydata <- cbind(y, data.frame(upca$x))
+colnames(mydata)[1] <- "tranformed.prop.scouts"
+cor(mydata)[, 1]
+
+mydata.mod <- betareg(tranformed.prop.scouts ~ ., data = mydata)
+summary(mydata.mod)
+
+asoriginal <- upca$rotation %*% mydata.mod$coefficients$mean[-1]
+asoriginal
+
+```
+
+
+```{r}
+n <- length(urban_lu$p)
+y <- (urban_lu$p * (n - 1) + 0.5) / n # transform for zero or 1 inflated data
+
+df <- cbind(y, upca$x) %>%
+  as.data.frame()
+
+# run beta regression with each PC
+mod <- betareg(
+  y ~ PC1 + PC2 + PC3,
+  data = df
+)
+
+# display results
+summary(mod)
+
+fitted(mod)
+
+plot(upca$x[, 1], y)
+
+library(pls)
+
+data <- urban_lu
+data$p_transform <- y
+
+pcr.model <- plsr(p_transform ~ ., data = data[, 3:11], scale = TRUE, validation = "CV")
+
+summary(pcr.model)
+
+
+library(plsRbeta)
+
+model <- plsRbeta(p_transform ~ ., data = data[, 3:11], nt = 7, model = "pls-beta")
+
+model
+
+model$pp
+
+```
+
+```{r}
+
+# First, check the data follows a multivariative normal, p>0.05
+rnormres <- rural_lu[, 3:10] %>%
+  mvnorm.etest(R = 100)
+
+rpca <- prcomp(
+  rural_lu[, 3:length(names(rural_lu))], center = TRUE, scale = TRUE
+)
+
+print(summary(rpca))
+ggbiplot(rpca)
+
+rpca_var_explained <- tibble(
+  landscape = names(rural_lu[, 3:length(names(rural_lu))]),
+  prop_variance_explained = rpca$sdev^2 / sum(rpca$sdev^2)
+)
+
+
+rural_lu_long %>%
+  filter(landuse %in% rpca_var_explained[1:3,1][[1]]) %>%
+  ggplot(aes(x = values, y = p)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  facet_wrap(~landuse, ncol = 2, scales = "free") +
+  theme(
+    text = element_text(size = 8)
+  )
+
+```
+
+In the agri-rural environment the results show that the first PCA (woodland) explains 29% of the variation, the second PCA (non-agricultural unmanaged green space) explains 23% of the variance and the third PCA (non-agricultural managed green space) explains 19% of the variance. Combined, the first 2 PCs explain 52% of the variance, whilst the top three explain 71% of the variance.

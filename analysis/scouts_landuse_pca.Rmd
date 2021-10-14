@@ -1,0 +1,342 @@
+---
+title: Analysing the proportion of scouts estimated in different environments
+subtitle: A work in progress
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+---
+
+```{r, include=FALSE}
+devtools::load_all()
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(size = 8)
+    )
+)
+
+library(tidyr)
+library(dplyr)
+library(ggfortify)
+library(energy)
+library(betareg)
+library(plsRbeta)
+
+```
+
+# Background and outline
+
+Now we have used our model to estimate the proportion of scouts used by hives in different locations, it would be interesting to evaluate what effect (if any) the different land-use types have on the proportion scouts. The simplest way to do this would be to perform a regression between the proportion of scouts and the proportion of land-use type across the different sites. However, many land-use types are inherently correlated, for example dense and sparse residential terrain. Consequently, this analysis requires the use of a multivariate statistic. There are many to choose from but the two most common methods are the Principle Component Analysis (PCA) (followed by a regression) and Partial Least Squares (PLS).
+
+A PCA regression is done between the main axis of variation in land-use and a response variable. First a PCA is carried out on different factors to produce a linear combination of coefficients that explain the most variation in the data. These factors can then be linearly combined in a regression on a response variable. For our study we are interested in how land-use influences proportion of scouts. We would therefore remove the proportion of scouts from the data to start with and perform a PCA on different land-use types to see which combinations best explain the variation. We would then use these combinations of factors as the coefficients for a regression of the proportion of scouts. Alternatively, a PLS is a single step process as unlike the PCA the response variable, in our case proportion of scouts, is not removed from the data. Instead the PLS finds the factors which most contribute to the variation within the response variable, rather than the variation within the land-use types.
+
+In essence, a PCA allows us to test if the main axis of land-use variation between sites is related to the proportion of scouts, where as a PLS is suited to questions about what land-use types most influence the variation in the proportion of scouts (Scott & Crone, 2021).
+
+It appears that our question is geared more towards a PLS rather than PCA as we are most interested in what factors most relate to the proportion of scouts, however, both approaches are suitable. A key consideration, however, has to be that our response variable is a proportion and thus lies on the interval $[0, 1]$. This makes it unsuitable for a standard linear regression and instead we need to use a beta regression. For PLS there is a dedicated R package for conducting PLS on proportional data (plsRbeta), however, for a PCA I am not aware of an equivalent package. This could be as simple as performing a PCA and passing the corresponding PCAs to a beta regression, however, within a PCA, the eigenvalues derived describe a linear combination of factors and so I am not sure is this is directly relatable.
+
+Here, I will work through trying to evaluate the effect of land-use type on the proportion of scouts using both a PCA and PLS method. I begin with the urban data set which I will format with the proportion of scout data.
+
+# Principle Component Analysis
+
+```{r}
+# load results of model fit (code to generate found in fit_models.Rmd)
+sitedata <- readRDS("results/site_fit_results.Rda")
+
+# filter for best model
+sitedata <- sitedata %>%
+  group_by(site) %>%
+  slice(which.min(AIC))
+
+# Load land use data taken (taken from Samuelson et al. 2021)
+urban_lu <- read.csv(file = "data/urban-landuse.csv")
+rural_lu <- read.csv(file = "data/agri-rural-landuse.csv")
+
+# put proportion of scouts into landuse data
+urban_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(urban_lu)
+urban_lu_long <- urban_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+rural_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(rural_lu)
+rural_lu_long <- rural_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+```
+
+Before doing a PCA it is important to check the data follows a multivariate normal distribution:
+
+```{r}
+urban.pcadata <- urban_lu[, 3:length(names(urban_lu))]
+# First, check the data follows a multivariative normal, p>0.05
+unormres <- urban.pcadata %>%
+  mvnorm.etest(R = 100)
+print(unormres)
+```
+
+As $p > 0.05$ we fail to reject the null hypothesis that the data follows a multivariate normal distribution.
+
+Lets first start with a PCA and then come to the PLS later for comparison.
+
+```{r}
+# run PCA
+upca <- prcomp(
+  urban.pcadata,
+  center = TRUE, scale. = TRUE
+)
+print(upca)
+print(summary(upca))
+
+autoplot(upca, data = as.data.frame(urban_lu), colour = "p") +
+  scale_color_gradient(low = "green", high = "red")
+```
+
+The plot above shows PC1 against PC2 coloured by the proportion of scouts for that data row (green being 0 to red being 1). This suggests there isn't much of a relationship with the first two PCs and the proportion of scouts (however, I am not sure I am ploting this correctly as their are 8 PCs but 10 rows of data...)
+
+The PCA results contain a number of results, notably the standard deviations and loadings (noted by this package as rotation) of each PC. The standard deviations can be squared to get the variance which can then be used to obtain the percentage variance each PC explains. These can then be used to make a scree plot to show the percentage variance each PC explains. In addition, each PC can then be compared to the amount of variance they would explain if each PC contributed equally to the variance. This can help in choosing which PCs most contribute to the data.
+
+```{r}
+# extract the sd, loadings and scores of the data
+sd <- upca$sdev
+loadings <- upca$rotation
+rownames(loadings) <- colnames(urban.pcadata)
+scores <- upca$x
+
+# calculate the variance and percentage of overall variances directly
+var <- sd^2
+varpercent <- var / sum(var) * 100
+
+# make a scree plot
+dev.new()
+barplot(
+  varpercent,
+  xlab = "PC",
+  ylab = "Percent Variance",
+  names.arg = 1:length(varpercent), las = 1,
+  ylim = c(0, max(varpercent)),
+  col = "gray"
+)
+
+abline(h = 1 / ncol(urban.pcadata) * 100, col = "red")
+```
+
+
+The Scree plot here indicates PCs 1, 2 and 3 most contribute to the variance in the data. The loadings can now be evaluated for each of these PCs to identify how each land-use type contributes to the variance in each PC. Again, we can use the expected variance from each land-use if they all equally contributed to find a cut-off.
+
+```{r}
+
+print(loadings[, 1:3])
+sqrt(1 / ncol(urban.pcadata)) # cutoff for top loadings
+```
+
+In each column, values which are larger than 0.35 or smaller than -0.35 (the expected variance under a hypothesis of equal variance contributions) can be said to be the main contributors to that PC.
+
+The table shows that continuous central, dense residential and water correlates negatively with PC1, whilst sparse residential and amenity grassland correlates positively with PC1. For PC2 the main contributors are railway, woodland and water, all of which have negative relationships. For PC3, the main variables are sparse residential and railway having a negative correlation with PC3, whilst parks, allotments and cemeteries and woodland all have positive correlations.
+
+## Principle Component Regression
+
+Now the PCA is complete we need to relate these major axis of variation (PC1, 2 and 3) to the proportion of scouts. As stated, we cant use a linear model here as the response variable is a proportion, instead we must use a beta regression on the proportion of scouts. These values currently sit on the interval $(0, 1])$ and so must be transformed to lie on the interval $(0, 1)$ via the equation:
+
+$$
+y = \frac{x (n-1) + s}{n}
+$$
+
+where $n$ represents the number of data points in $x$ and $s$ represents a constant between 0 and 1. Here, $s$ acts like a Bayesian prior and so we choose $0.5$ to represent an uninformed prior (Smithson & Verkuilen, 2006).
+
+Here I will fit the beta regression to the first 3 PCs which collectively explain 83% of the data.
+
+```{r}
+
+n <- length(urban_lu$p)
+y <- (urban_lu$p * (n - 1) + 0.5) / n # transform 1 inflated data
+mydata <- cbind(y, data.frame(upca$x))
+colnames(mydata)[1] <- "transformed.prop.scouts"
+cor(mydata)[, 1]
+
+mydata.mod <- betareg(
+  transformed.prop.scouts ~ .,
+  data = mydata
+)
+summary(mydata.mod)
+```
+
+The results of the regression shows the intercept is significantly different to 0, and all the PCs are significantly different to the intercept. The $R^2$ suggests 97% of the variation in the proportion of scouts is explained by our full model.
+
+But, we worked out before that ideal number of principle components is 3 so lets see what the first three look like:
+
+
+```{r}
+
+mydata.mod.3 <- betareg(
+  transformed.prop.scouts ~ PC1+PC2+PC3,
+  data = mydata
+)
+summary(mydata.mod.3)
+
+```
+
+Here, the intercept is significantly different to 0, but only PC3 is significantly different to the intercept, with the combined coefficients explaining 47% of the variation in the response variable. If we examine PC3 on its own we see that it accounts for 38% of the variation in the proportion of scouts.
+
+
+```{r}
+
+mydata.mod.p3 <- betareg(
+  transformed.prop.scouts ~ PC3,
+  data = mydata
+)
+summary(mydata.mod.p3)
+
+```
+
+
+What this analyis seems to suggest is that PC3, whilst explaining 15% of the variation in landuse types, explains 38% of the variation in the proportion of scouts. Whilst PCs 1 and 2 explain higher variances in the landuse data, they explain much less the variation in the response variable.
+
+** Some thoughts**
+
+As I understand it, PCs 1 and 2 collectively explain 68% of the variation in land-use types between sites (45 % PC1 + 22% PC2) whilst PC3 explains only 15% of the variation in land-use types. However, when using these PCs to describe the variation in the proportion of scouts, PC3 explains 38% of the variation, whilst all the other PCs describe much less. I would expect the $R^2$ value to increase as more PCs are added to the model, not for it to spike in the middle. I am Unsure why this happens but one explanation could be that the PCs explain the variation in the data not the proportion of scouts and so only when relating it back to the proportion of scouts do we see that the main axis of variation does not correlate well with the proportion of scouts, however, the variation described by PC3 does correlate with it. With a beta regression the coefficients need to be transformed to get them in terms of the original values. This is done through the following function (https://stats.stackexchange.com/questions/120472/how-to-interpret-coefficients-of-a-beta-regression-model-with-logit-link):
+
+$$
+x = \frac{exp(coefficient)}{1+exp(coefficient)}
+$$
+
+using this function to retrieve the proportional increase, or decrease, in $y$ for every unit change in $x$ (as the model is log-linked), every 1 unit change in PC3 corresponds to an 65% increase in the proportion of scouts (I think, this is tricky to understand fully). A unit change in PC3 is difficult to understand as this change will not be linear in the parameters. I.e. all the contributing factors could change or only one could change.
+
+I struggle to understand what this means in the real world. Sparse residential and railway have a negative correlation with PC3, suggesting that when these factors are lower the proportion of scouts is higher. Conversely, parks, allotments and cemeteries and woodland all have a positive correlation with PC3, suggesting when these attributes are higher, there are a higher number of scouts.
+
+These results potentially highlight a problem with using the PCA approach as the thing we are interested in, how these factors influence proportion of scouts, are kept separate during the PCA. The results from this analysis, if done correctly and I haven't made any mistakes ( big if!), indicates that the main axis of variation in these landscapes does not correlate with the proportion of scouts. However, one of the principle components identified does correlate with a proportion of scouts. The first 3 Principle components together explain 83% of the variation in the data (the land-use coverage across the different sites) and explain 47% of the variation in the proportion of scouts.
+
+Perhaps a PLS will make more sense as this more aligns with the question of what land-use type best explain the variation in the proportion of scouts.
+
+## PCR using GML instead of beta regression
+
+Instead of using a beta distribution I will try using a GML with a logit linker and quasibinomial family. This, however, doesn't feel right because this family is for count valued proportions (e.g. male to female ratio). Whilst the proportion of scouts is technically an integer proportion (scouts vs non-scouts) it is a continuous estimate derived from a model and so may not be suitable for this kind of analysis.
+
+```{r}
+
+mydata <- cbind(urban_lu$p, data.frame(upca$x))
+colnames(mydata)[1] <- "prop.scouts"
+cor(mydata)[, 1]
+
+glm.mod <- glm(
+  prop.scouts ~ .,
+  data = mydata,
+  family = quasibinomial(logit)
+)
+summary(glm.mod)
+
+```
+
+This suggests the intercept is significantly different to 0 and that PC2 provides a significant fit over the other PCs (I think).
+
+# Partial Least Squares
+
+```{r}
+
+urban.pcadata$p_transform <- y
+
+model <- plsRbeta(
+  p_transform ~ .,
+  data = urban.pcadata,
+  nt = ncol(urban.pcadata) - 2,
+  model = "pls-beta"
+)
+
+print(model)
+```
+
+Instead of showing the variation each PC explains in the land-use types, the PLS shows the variation in the proportion of scouts explained by each PC. The $R^2$ values therefore shows us the cumulative amount of variation in the proportion of scouts explained by adding more and more PCs. Here, rather than by defining an expected variance each would contribute too as we did for the PCA, we can look for where the $R^2$ slows down in increasing. The AIC and BIC also indicates where the cut of of how many PCs should be considered is. In this case, it looks like the cut off should be at PC3. Unlike the PCA regression, PLS doesn't produce p values. Instead a goodness of fit measure is given by the $R^2$ values and parsimony is assessed through the AIC criteria.
+
+So from this the first three principle components explain 88% of the variation in the proportion of scouts. These principle components can be characterised as follows:
+
+```{r}
+model$pp[, 1:3]
+sqrt(1 / (ncol(urban.pcadata) - 1))
+
+```
+
+A larger proportion of scouts is most described by a combination of continuous central with dense residential areas, a lack of amenity grassland and a large amount of water. This combination of factors explains ~61% of the variance in the proportion of scouts. Having sparse residential areas with plenty of parks, allotments and cemeteries, amenity grasslands, woodland and not much water increases some of the variation in the proportion of scouts. The third PCA combines with a high degree of continuous central land, not dense but not sparse residential land (does that even make sense?), very little in the way of amenity grassland and parks, lots of railways and water to describe some more variation in the proportion of scouts.
+
+The other thing to note i that Cross validation is often needed to determine which PCs to keep hold of.
+
+```{r}
+
+bbb <- PLS_beta_kfoldcv_formula(
+  p_transform ~., data = urban.pcadata, nt = ncol(urban.pcadata) - 2,
+  model = "pls-beta", verbose = FALSE
+)
+
+kfolds2CVinfos_beta(bbb)
+
+```
+
+The results (The $Q^2$ ended ones) indicate Comp 3 is the best cut off.
+
+## Standard PLSR
+
+Here I will run a standard PLS regression with the response variable transformed according to the arcsine transformation.
+
+Here, we want the Root mean squared error (RMSE) to be the lowest.
+
+```{r}
+library(pls)
+
+usedat <- urban_lu
+usedat$p_transform <- asin(sqrt(usedat$p))
+
+qqnorm(usedat$p_transform)
+qqline(usedat$p_transform, col = "steelblue", lwd = 2)
+
+pls.model <- plsr(
+  p_transform ~ .,
+  data = usedat[, 3:ncol(usedat)],
+  scale = TRUE,
+  validation = "CV"
+)
+
+pls.model
+
+summary(pls.model)
+
+selectNcomp(
+  pls.model, method = "randomization", plot = TRUE
+)
+
+
+```
+
+
+First thing to note is that the Q-Q plots don't look fully normal.
+
+Following this we can see that the RMSE increases with additional PCs and that adding PCs makes the fit even worse. Combinded these results suggests the model provides a worse fit than a horizontal straight line. E.g. the best model is a null model. So there is no effect of landuse type of the proportion of scouts in the urban environment.
+
+I can't get my head around this. How can it have a worse fit than a null model to the proportion of scouts, yet simultaneously explain 87% of the variation in the proportion of scouts?
+
+
+# Conclusion
+
+The PLS with beta regression gives the most sensical answers in that it finds PCs which expain the largest variance in the proportion of scouts. The issue is I can't tell if these are significant or really interperate them as well as the others. The documentation for the package is very obtuse and whilst I can grasp how the model works in theory, I can't understand how their results relate those you would get with a simple linear response variable.
+
+The PCA followed by the beta regression sort of makes sense in that I can desceribe it as the third main axis of variation in landuse type correlates with the the proportion of scouts / explains the most variation in the proportion of scouts. This would suggests it is a few factors witin a landscape driving the proportion of scouts without driving the overall landuse classification. This could be that their is not correlation and that their is no axis of variation in landuse type which explains the proportion of scouts more than a null model.
+
+The idea that there is no significant association betwen landuse type and proportion of scouts is supported by the fitting of the quasibinomial glm and the PLS on the transformed proportion of scouts data. However, both of theese methods may not be appropriate: A. because the glm is geared more towards inetger proportions and B. Because transformed proportions still don't look all that normal (see qqplots above)
+
+# Refs
+
+Scott, E.R., Crone, E.E., 2021. Using the right tool for the job: the difference between unsupervised and supervised analyses of multivariate ecological data. Oecologia 196, 13–25.. doi:10.1007/s00442-020-04848-w
+
+Smithson, M. & Verkuilen, J. A better lemon squeezer? Maximum-likelihood regression with beta-distributed dependent variables. Psychol. Methods 11, 54–71 (2006). DOI: 10.1037/1082-989X.11.1.54
