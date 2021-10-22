@@ -1,0 +1,909 @@
+---
+title: Analysing the effect of land-use type on honeybee foraging distances
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+
+---
+
+```{r preamble, include=FALSE}
+devtools::load_all()
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(size = 18)
+    )
+)
+
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(ggfortify)
+library(lmtest)
+library(tibble)
+library(plsRglm)
+```
+
+# TLDR
+
+Land-use type appears to have a significant interaction with the average foraging distance of a colony. This relationship is only apparent when we subset the data to a season level and shows landscapes which are typically nutrient rich require travelling short distances than those which are typically nutrient poor.
+
+# Overview
+
+From Samuelson *et al*. (2021) we know that honeybees in agri-rural environments travel further when foraging than their urban counterparts. This is also evident in the data when comparing the foraging distances. As we have land-use data for these different sites it would be interesting to know what land-use types most correlate / influence the average foraging distances for a colony. To do this, I perform a regression between the average foraging distance in a given site and the principle axis of variation in land-use type across the different sites in both the urban and agri-rural environment. Please note that the term average here refers to a measure of central tendency and not exclusively the mean. In addition to evaluating to what extent the principle axis of land-use variation influences the average foraging distance of the site, I also identify the principle components which best describe the variation in average foraging distance and evaluate their relationship in both the urban and agri-rural environment. In addition to performing this on the urban and agri-rural sites, I also evaluate the relationship between land-use type and average foraging distance with the data subset by year and season.
+
+As a start, lets first look at the foraging distances within each site.
+
+```{r, foraging_distance_dist, message = FALSE, warning = FALSE}
+# get the data
+# Load land use data taken (taken from Samuelson et al. 2021)
+urban_lu <- read.csv(file = "data/urban-landuse.csv")
+rural_lu <- read.csv(file = "data/agri-rural-landuse.csv")
+
+# foraging distance data
+df <- read.csv("data/FullHBForagingData.csv")
+
+ggplot(df, aes(x = ForagingDistance_km), fill = LU) +
+  geom_histogram(binwidth = 1, colour = "black") +
+  facet_wrap(~site)
+```
+
+In all cases the distributions are right skewed suggesting the median should be used instead of the mean as a measure of central tendency of the data.
+
+```{r, median_foraging_distance_comparison, message = FALSE, warning = FALSE}
+# calculate median foraging distances for each site
+df.median.fd <- df %>%
+  group_by(LU, site) %>%
+  summarise(Avg.foraging.distance = median(ForagingDistance_km))
+
+# add land-use types to the foraging data
+rural.df <- df.median.fd %>%
+  filter(LU == "Rural") %>%
+  inner_join(rural_lu)
+
+urban.df <- df.median.fd %>%
+  filter(LU == "Urban") %>%
+  inner_join(urban_lu)
+
+# plot median foraging distances for each environment
+df.median.fd %>%
+  ggplot(aes(x = LU, y = Avg.foraging.distance)) +
+  geom_boxplot() +
+  geom_point() +
+  ylab("Median foraging distance (km)") +
+  xlab("Environment")
+```
+
+From a rough eyeball the hives in the agri-rural sites do appear to be foraging on average much further than those in the urban sites. I will now evaluate the land-use factors (if any) which may influence foraging distances in the urban and agri-rural sites, starting with urban.
+
+# Urban
+
+## PCA
+
+```{r, urban_pca, message = FALSE, warning = FALSE}
+urban.pcadata <- urban.df[, 4:ncol(urban.df)]
+
+# run PCA
+upca <- prcomp(
+  urban.pcadata,
+  center = TRUE, scale. = TRUE
+)
+print(upca)
+print(summary(upca))
+
+# extract the sd, loadings and scores of the data
+sd <- upca$sdev
+loadings <- upca$rotation
+rownames(loadings) <- colnames(urban.pcadata)
+scores <- upca$x
+
+# calculate the variance and percentage of overall variances directly
+var <- sd^2
+varpercent <- var / sum(var) * 100
+
+# make a scree plot
+ggplot(
+  data.frame(PC = seq(1, 8), varpercent = varpercent),
+  aes(x = PC, y = varpercent)
+) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 1 / ncol(urban.pcadata) * 100, col = "red") +
+  ylab("% Variance")
+```
+
+The red line on the plot indicates the expected variance each PC should contribute if they all contributed equally. PCs 1, 2 and 3 explain ~83% of the variance in the data. The loadings can now be evaluated for each of these PCs to identify how each land-use type contributes to the variance in each PC. Again, we can use the expected variance from each land-use if they all equally contributed to find a cut-off.
+
+```{r, urban_pca_loadings, message = FALSE, warning = FALSE}
+print(loadings[, 1:3])
+sqrt(1 / ncol(urban.pcadata)) # cut off for top loadings
+```
+
+The expected variance each should contribute is around 0.35 and so any values smaller than -0.35 and larger than 0.35 can be said to be contributing more than expected to the variance than under a null model and are thus the main contributors to that PC.
+
+The table shows that continuous central, dense residential and water correlates negatively with PC1, whilst sparse residential and amenity grassland correlates positively with PC1. For PC2 the main contributors are railway, woodland and water, all of which have negative relationships. For PC3, the main variables are sparse residential and railway having a negative correlation with PC3, whilst parks, allotments and cemeteries and woodland all have positive correlations.
+
+These PCs all show the factors that most explain the variance within land-use types across our study sites. To see how this influences the average foraging distance I will now perform a regression of these Principle components.
+
+## PCA + regression
+
+```{r, urban_pca_regression, warning = FALSE, message = FALSE}
+
+mydata <- cbind(
+  Avg.foraging.distance = urban.df$Avg.foraging.distance, data.frame(upca$x)
+)
+
+mydata.mod.3 <- lm(
+  Avg.foraging.distance ~ PC1 + PC2 + PC3,
+  data = mydata
+)
+summary(mydata.mod.3)
+
+newdat <- data_frame(
+  PC1 = seq(-5, 4, 0.1),
+  PC2 = seq(-5, 4, 0.1),
+  PC3 = seq(-5, 4, 0.1),
+)
+
+newdat$fit <- predict(mydata.mod.3, newdat, type = "response")
+
+plotdata <- mydata
+
+ggplot(data = plotdata, aes(x = PC1 + PC2 + PC3, y = Avg.foraging.distance)) +
+  geom_point() +
+  geom_line(data = newdat, aes(x = PC1 + PC2 + PC3, y = fit)) +
+  xlim(-6, 4)
+
+```
+
+Whilst the intercept is significantly different to 0 their is no significant relationship between the average foraging distance and the main axis of variation in land-use type.
+
+## PLS
+
+Using a PLS we can evaluate what land-use types most explain the variation in the average foraging distances across the urban sites.
+
+```{r urban_pls, warning = FALSE, message = FALSE}
+
+urban.plsdata <- urban.df[, 3:ncol(urban.df)]
+
+model <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = urban.plsdata,
+  nt = ncol(urban.plsdata) - 1,
+  verbose = FALSE
+)
+
+model
+```
+
+The PLS results indicate the first 4 PCs explain 54% of the variation in the average foraging distance. The four PCs are characterised as follows:
+
+```{r, urban_pls_loadings, message = FALSE, warning = FALSE}
+
+print(model$pp[, 1:4])
+sqrt(1 / (ncol(urban.plsdata) - 1))
+```
+
+Values greater than 0.35 or less -0.35 can be said to be contributing more towards the variance than would be expected under a null model. PC1 shows a positive correlation with continuous central, railway and water, and a negative correlation with sparse residential and amenity grassland. PC2 shows a positive correlation sparse residential and amenity grassland and a negative correlation with water and dense residential. PC3 shows a positive correlation with continuous central, parks allotments and cemeteries, and a negative correlation with railway. PC4 describes a positive correlation with amenity grassland, railway and woodland, and a negative relationship with sparse residential.
+
+We can pull out the coefficients to see what this relationship looks like graphically.
+
+```{r, urban_pls_fit4, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model$dataY,
+  model$tt
+)
+
+plsmodel <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2 + Comp_3 + Comp_4,
+  plsdata
+)
+
+summary(plsmodel)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+  Comp_4 = seq(-50, 140, 0.1)
+)
+
+newdat$fit <- predict(plsmodel, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1 + Comp_2 + Comp_3 + Comp_4, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1 + Comp_2 + Comp_3 + Comp_4, y = fit)
+  ) +
+  xlim(min(-4.5), max(3)) +
+  ylim(0, 3.5)
+```
+
+Although the fit is much better than with the PCA and the intercept is significantly different to 0, there is no significant relationship between the PCs and the median foraging distances reported across the different sites. This suggests the land-use types we have recorded do not explain foraging distances in the urban environment.
+
+Could do some kind of GLM maybe instead?
+
+# Agri-rural
+
+## PCA
+
+```{r, agri-rural_pca, warning = FALSE, message = FALSE}
+rural.pcadata <- rural.df[, 4:ncol(rural.df)]
+
+# run PCA
+rpca <- prcomp(
+  rural.pcadata,
+  center = TRUE, scale. = TRUE
+)
+print(rpca)
+print(summary(rpca))
+
+# extract the sd, loadings and scores of the data
+sd <- rpca$sdev
+loadings <- rpca$rotation
+rownames(loadings) <- colnames(rural.pcadata)
+scores <- rpca$x
+
+# calculate the variance and percentage of overall variances directly
+var <- sd^2
+varpercent <- var / sum(var) * 100
+
+# make a scree plot
+ggplot(
+  data.frame(PC = seq(1, 10), varpercent = varpercent),
+  aes(x = PC, y = varpercent)
+) +
+  geom_bar(stat = "identity") +
+  geom_hline(yintercept = 1 / ncol(rural.pcadata) * 100, col = "red") +
+  ylab("% Variance")
+```
+
+The red line on the plot indicates the expected variance each PC should contribute if they all contributed equally. PCs 1, 2, 3 and 4 explain ~83% of the variance in the data. The loadings can now be evaluated for each of these PCs to identify how each land-use type contributes to the variance in each PC. Again, we can use the expected variance from each land-use if they all equally contributed to find a cut-off.
+
+```{r, agri-rural_pca_loadings, message = FALSE, warning = FALSE}
+print(loadings[, 1:3])
+sqrt(1 / ncol(rural.pcadata)) # cut off for top loadings
+```
+
+The expected variance each should contribute is around 0.32 and so any values smaller than -0.32 and larger than 0.32 can be said to be contributing more than expected to the variance than under a null model and are thus the main contributors to that PC.
+
+The table shows that PC1 correlates positively with arable land and negatively with woodland, Non agricultural managed green space, other agricultural, fruit and water. PC2 correlates positively with Non-agricultural managed green space, other agricultural and OSR, whilst correlating negatively with pasture. PC3 correlates negatively with woodland and OSR, whilst correlating positively with Non agricultural unmanaged and managed green spaces and built up areas. Finally, PC4 correlates negatively with arable land, fruit and water, whilst correlating positively with built up areas.
+
+These PCs all show the factors that most explain the variance within land-use types across our study sites. To see how this influences the proportion of scouts I will now do a beta regression of these Principle components.
+
+## PCA + regression
+
+```{r, agri-rural_pca_regression, warning = FALSE, message = FALSE}
+
+mydata <- cbind(
+  Avg.foraging.distance = rural.df$Avg.foraging.distance, data.frame(rpca$x)
+)
+
+mydata.mod.3 <- lm(
+  Avg.foraging.distance ~ PC1 + PC2 + PC3 + PC4,
+  data = mydata
+)
+summary(mydata.mod.3)
+
+
+newdat <- data_frame(
+  PC1 = seq(-5, 4, 0.1),
+  PC2 = seq(-5, 4, 0.1),
+  PC3 = seq(-5, 4, 0.1),
+  PC4 = seq(-5, 4, 0.1),
+)
+
+newdat$fit <- predict(mydata.mod.3, newdat, type = "response")
+
+plotdata <- mydata
+
+ggplot(
+  data = plotdata,
+  aes(x = PC1 + PC2 + PC3 + PC4, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(data = newdat, aes(x = PC1 + PC2 + PC3 + PC4, y = fit)) +
+  xlim(min(-6), max(6))
+```
+
+Whilst the intercept is significantly different to 0 their is no significant relationship between the average foraging distance and the main axis of variation in land-use type.
+
+## PLS
+
+Using a PLS we can evaluate what land-use types most explain the variation in the average foraging distances across the urban sites.
+
+```{r, agri-rural_pls, warning = FALSE, message = FALSE}
+
+rural.plsdata <- rural.df[, 3:ncol(rural.df)]
+
+model <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = rural.plsdata,
+  nt = ncol(rural.plsdata) - 1,
+  verbose = FALSE
+)
+
+model
+```
+
+The PLS results indicate the first 3 PCs explain 86% of the variation in the average foraging distance. The three PCs are characterised as follows:
+
+```{r, agri-rural_pls_loadings, message = FALSE, warning = FALSE}
+print(model$pp[, 1:3])
+sqrt(1 / (ncol(rural.plsdata) - 1))
+```
+
+Values greater than 0.32 or less -0.32 can be said to be contributing more towards the variance than would be expected under a null model. PC1 correlates positively with arable and OSR, and negatively with pasture and built up areas. PC2 correlates positively with pasture and water, but negatively with woodland, non-agricultural managed green space, other agricultural land, OSR and built up areas. PC3 correlates positively with Non agricultural unmanaged green space, other agricultural and built up areas, and negatively with arable land and fruit.
+
+We can pull out the coefficients to see what this relationship looks like graphically.
+
+```{r, agri-rural_pls_pc_fits, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model$dataY,
+  model$tt
+)
+
+plsmodel <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2 + Comp_3,
+  plsdata
+)
+
+summary(plsmodel)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1 + Comp_2 + Comp_3, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1 + Comp_2 + Comp_3, y = fit)
+  ) +
+  xlim(min(-2.5), max(4)) +
+  ylim(0, 4.5)
+```
+
+In addition to the intercept being significantly different to 0, PC1 is significantly different to the intercept, with every one unit increase in PC1 corresponding to an increase of 410 meters. The other PCs do not significantly influence this association.
+
+Plotting PC1 on its own against the average foraging distance maintains a significant relationship.
+
+```{r, agri-rural_pls_pc1_fits, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model$dataY,
+  model$tt
+)
+
+plsmodel.pc1 <- lm(
+  Avg.foraging.distance ~ Comp_1,
+  plsdata
+)
+
+summary(plsmodel.pc1)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1, y = fit)
+  ) +
+  xlim(min(-2), max(3)) +
+  ylim(0, 4.5)
+```
+
+Just to verify this we can perform a LRT.
+
+```{r, agri-rural_pls_lrt, message = FALSE, warning = FALSE}
+plsmodel.pc1_pc2 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2,
+  plsdata
+)
+
+lrtest(plsmodel.pc1, plsmodel.pc1_pc2, plsmodel)
+```
+
+PC1+PC2+PC3 explains the data better than just PC1 on its own, despite these additional PCs not showing a significant relationship (although the p is not far from 0.05). The model suggests a combination of these PCs explains ~86% of the variation in average foraging distance.
+
+# Discussion
+
+For the urban sites there does not seem to be any effect of land-use on the median foraging distances reported by honey-bees. Whilst using a PLS regression provides a better fit than the PCA + regression, a significant effect is not identified. In the Agri-rural sites the PCA + regression did not identify any significant relationships between the main axis of land-use variation and the median foraging distance. However, the PLS regression identified a three PCs, accounting for 86% of the variation in average foraging distance, had a significant positive relationship with the average foraging distance. Of these only the first PC (explaining ~64% of the variance) was significantly different to the intercept, with every one unit increase in PC1 accounting for an increase in foraging distance of ~410 meters. This PC correlates positively with arable and OSR lands, and negatively correlated with pasture and built up areas.
+
+One potential issue with this analysis could be that land-use types change in floral availability depending on the season. For example, gardens and parks may have more planted flowers in Spring than Summer. It is therefore prudent to investigate if season might influence foraging distance and so may influence any effects of land-use type on average foraging distance.
+
+# Analysis over time
+
+Unlike in the analysis of the proportion of scouts, where the model estimates are limited by the need for a significant number of data points, we can calculate an average foraging distance at practically any time scale. To break down the data, I will now repeat the PLS fitting for rural and urban sites for each years season to identify if any effect of land-use can be identified at this scale.
+
+```{r, foraging-distance-over-time, message = FALSE, warning = FALSE}
+# add season column
+df <- df %>%
+  mutate(
+    season = ifelse(
+      Month %in% seq(1, 3),
+      "Winter",
+      ifelse(
+        Month %in% seq(4, 6),
+        "Spring",
+        ifelse(
+          Month %in% seq(7, 9),
+          "Summer",
+          "Autumn"
+        )
+      )
+    )
+  )
+
+# calculate mean foraging distances for each site
+df.median.season.fd <- df %>%
+  group_by(LU, site, Year, season) %>%
+  summarise(Avg.foraging.distance = median(ForagingDistance_km))
+
+# add land-use types to the foraging data
+rural.df <- df.median.season.fd %>%
+  filter(LU == "Rural") %>%
+  inner_join(rural_lu, on = site)
+
+urban.df <- df.median.season.fd %>%
+  filter(LU == "Urban") %>%
+  inner_join(urban_lu, on = site)
+
+# plot mean foraging distances for each environment
+df.median.season.fd %>%
+  ggplot(aes(x = LU, y = Avg.foraging.distance)) +
+  geom_boxplot() +
+  geom_point() +
+  ylab("Median foraging distance (km)") +
+  xlab("Environment") +
+  facet_wrap(~ Year + season)
+```
+
+The trend of further foraging in agri-rural environments is consistent at the season level, however, between landscape type there doesn't appear to be much of a difference. Agrirural foraging distances in spring have a similar spread as to those in summer and the same appears to be the case for urban also.
+```{r, foraging-diatance-site-season, message = FALSE, warning = FALSE}
+df.median.season.fd %>%
+  ggplot(aes(x = site, y = Avg.foraging.distance, fill = season)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  ylab("Median foraging distance (km)") +
+  xlab("Site") +
+  facet_wrap(~LU, ncol = 1, scale = "free")
+
+```
+
+When we break this down by site we see some differences, but their doesn't seem to be that much in it (however, this is missing confidence intervals).
+
+Lets do a PLS on each one to see if any landscape factors emerge once we control for seasons. There only a few data points for 2016 so I will not include this and instead focus on 2017.
+
+## Urban by season
+
+### Spring 2017
+```{r urban_spring_pls, message = FALSE, warning = FALSE}
+
+# subset data by season and year and prepare for the model
+urban.df$year_season <- paste(urban.df$season, urban.df$Year, sep = "_")
+seasonal.foraging.df <- purrr::map(
+  unique(urban.df$year_season),
+  ~ {
+    urban.df %>%
+      filter(year_season == .x) %>%
+      ungroup() %>%
+      select(-LU, -site, -Year, -season, -year_season)
+  }
+)
+names(seasonal.foraging.df) <- unique(urban.df$year_season)
+
+
+# run model on spring 2017
+model.spring.2017 <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = seasonal.foraging.df$Spring_2017,
+  nt = ncol(seasonal.foraging.df$Spring_2017) - 1,
+  verbose = FALSE
+)
+
+print(model.spring.2017)
+```
+
+In spring 2017 PCs 1 to 3 collectively explain 80% of the variation in foraging distances across the sites.
+
+```{r, urban_spring_p3, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.spring.2017$dataY,
+  model.spring.2017$tt
+)
+
+plsmodel.pc1_3 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2 + Comp_3,
+  plsdata
+)
+
+summary(plsmodel.pc1_3)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1_3, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1 + Comp_2 + Comp_3, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1 + Comp_2 + Comp_3, y = fit)
+  ) +
+  xlim(min(-4), max(4)) +
+  ylim(0, 4)
+```
+
+PC1 looks like the only one significant so I will isolate this now.
+
+```{r, urban_spring_p1, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.spring.2017$dataY,
+  model.spring.2017$tt
+)
+
+plsmodel.pc1 <- lm(
+  Avg.foraging.distance ~ Comp_1,
+  plsdata
+)
+
+summary(plsmodel.pc1)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1, y = fit)
+  ) +
+  xlim(min(-2), max(2)) +
+  ylim(0, 4)
+
+plsmodel.pc1_2 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2,
+  plsdata
+)
+
+lrtest(plsmodel.pc1, plsmodel.pc1_2, plsmodel.pc1_3)
+```
+
+Its close but PC1 on its own appears to be the best model from the LRT.
+
+Here we get a significant positive relationship between PC1 and the foraging distance of urban honeybees. For every 1 unit increase in PC1, foraging distance increase by ~300m. This PC correlates positively with continuos central land and railway whilst correlating negatively with parks allotments and cemeteries and woodland.
+
+```{r, urban_spring_loadings, message = FALSE, warning = FALSE}
+print(model.spring.2017$pp[, 1])
+sqrt(1 / (ncol(urban.plsdata) - 1))
+```
+
+### Summer 2017
+
+```{r, urban_summer_pls, message = FALSE, warning = FALSE}
+# run model on summer 2017
+model.summer.2017 <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = seasonal.foraging.df$Summer_2017,
+  nt = ncol(seasonal.foraging.df$Summer_2017) - 1,
+  verbose = FALSE
+)
+
+print(model.summer.2017)
+```
+
+PC1 accounts for ~41% of the variance in average foraging distance. Adding more PCs doesn't do a lot to this, will all eight PCs explaining only 50% of the variance.
+
+```{r, urban_summer_pc1, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.summer.2017$dataY,
+  model.summer.2017$tt
+)
+
+plsmodel.pc1 <- lm(
+  Avg.foraging.distance ~ Comp_1,
+  plsdata
+)
+
+summary(plsmodel.pc1)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1, y = fit)
+  ) +
+  xlim(min(-2), max(3)) +
+  ylim(0, 4)
+```
+
+Despite only showing a weak relationship ($R^2 = 0.41$) this is non the less significant, with every one unit increase in PC1 corresponding to an increase of ~250 meters in foraging distance.
+
+This PC correlates positively with continuos central land, parks allotments and cemeteries whilst correlating negatively with railway and amenity grassland.
+
+```{r, urban_summer_loadings, message = FALSE, warning = FALSE}
+print(model.summer.2017$pp[, 1])
+sqrt(1 / (ncol(urban.plsdata) - 1))
+```
+
+## Agri-rural by season
+
+### Spring 2017
+```{r, ar_spring_pls, message = FALSE, warning = FALSE}
+
+# subset data by season and year and prepare for the model
+rural.df$year_season <- paste(rural.df$season, rural.df$Year, sep = "_")
+seasonal.foraging.df <- purrr::map(
+  unique(rural.df$year_season),
+  ~ {
+    rural.df %>%
+      filter(year_season == .x) %>%
+      ungroup() %>%
+      select(-LU, -site, -Year, -season, -year_season)
+  }
+)
+names(seasonal.foraging.df) <- unique(rural.df$year_season)
+
+# run model on spring 2017
+model.spring.2017 <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = seasonal.foraging.df$Spring_2017,
+  nt = ncol(seasonal.foraging.df$Spring_2017) - 1,
+  verbose = FALSE
+)
+
+print(model.spring.2017)
+```
+
+The first 2 PCs explain ~88% of the variation in the average foraging distance.
+
+```{r, ar_spring_pc2, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.spring.2017$dataY,
+  model.spring.2017$tt
+)
+
+plsmodel.pc1_2 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2,
+  plsdata
+)
+
+summary(plsmodel.pc1_2)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1_2, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1 + Comp_2, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1 + Comp_2, y = fit)
+  ) +
+  xlim(min(-3), max(4)) +
+  ylim(0, 4.5)
+```
+
+The intercept is significantly different to 0 but only PC1 looks significant. Lets isolate it to have a look.
+
+```{r, ar_spring_pc1, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.spring.2017$dataY,
+  model.spring.2017$tt
+)
+
+plsmodel.pc1 <- lm(
+  Avg.foraging.distance ~ Comp_1,
+  plsdata
+)
+
+summary(plsmodel.pc1)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1, y = fit)
+  ) +
+  xlim(min(-2), max(2)) +
+  ylim(0, 4.5)
+
+lrtest(plsmodel.pc1, plsmodel.pc1_2)
+```
+
+PC1 on its own provides the best fit and explains ~83% of the variation in average foraging distance. There is a significant positive relationship where by every one unit increase in PC1 increases the foraging distance by ~640 meters. This PC is characterised by a positive correlation with arable land and Non.agricultural unmanaged green space and a negative correlation with pasture and built up areas.
+
+```{r, ar_spring_loadings, message = FALSE, warning = FALSE}
+print(model.spring.2017$pp[, 1])
+sqrt(1 / (ncol(rural.plsdata) - 1))
+```
+
+### Summer 2017
+
+```{r, ar_summer_pls, message = FALSE, warning = FALSE}
+# run model on summer 2017
+model.summer.2017 <- plsRglm(
+  Avg.foraging.distance ~ .,
+  data = seasonal.foraging.df$Summer_2017,
+  nt = ncol(seasonal.foraging.df$Summer_2017) - 1,
+  verbose = FALSE
+)
+
+print(model.summer.2017)
+
+```
+
+The first three PCs collectively explain ~71% of the variation in average foraging distances.
+
+```{r, ar_summer_pc3, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.summer.2017$dataY,
+  model.summer.2017$tt
+)
+
+plsmodel.pc1_3 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2 + Comp_3,
+  plsdata
+)
+
+summary(plsmodel.pc1_3)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1_3, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1 + Comp_2 + Comp_3, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1 + Comp_2 + Comp_3, y = fit)
+  ) +
+  xlim(min(-5), max(5)) +
+  ylim(0, 4.5)
+```
+
+Both the intercept and PC1 looks significant so I will isolate them.
+
+
+```{r, ar_summer_pc1, message = FALSE, warning = FALSE}
+plsdata <- data.frame(
+  Avg.foraging.distance = model.summer.2017$dataY,
+  model.summer.2017$tt
+)
+
+plsmodel.pc1 <- lm(
+  Avg.foraging.distance ~ Comp_1,
+  plsdata
+)
+
+summary(plsmodel.pc1)
+
+newdat <- data_frame(
+  Comp_1 = seq(-50, 140, 0.1),
+  Comp_2 = seq(-50, 140, 0.1),
+  Comp_3 = seq(-50, 140, 0.1),
+)
+
+newdat$fit <- predict(plsmodel.pc1, newdat, type = "response")
+
+plotdata <- plsdata
+
+ggplot(
+  data = plotdata,
+  aes(x = Comp_1, y = Avg.foraging.distance)
+) +
+  geom_point() +
+  geom_line(
+    data = newdat, aes(x = Comp_1, y = fit)
+  ) +
+  xlim(min(-2), max(3)) +
+  ylim(0, 4.5)
+
+plsmodel.pc1_2 <- lm(
+  Avg.foraging.distance ~ Comp_1 + Comp_2,
+  plsdata
+)
+
+lrtest(plsmodel.pc1, plsmodel.pc1_2, plsmodel.pc1_3)
+```
+
+PC1 on its own looks to be the best model, explaining ~48% of the variation with a positive relationship. Every one unit increase in PC1 increasing foraging distance by ~331 meters. This PC is characterised by a positive correlation with arable land and a negative correlation with woodland, non-agricultural unmanaged green space, built up areas and water.
+
+```{r, ar_summer_loadings, message = FALSE, warning = FALSE}
+print(model.summer.2017$pp[, 1])
+sqrt(1 / (ncol(rural.plsdata) - 1))
+```
+
+# Discussion
+
+Median foraging distance do not seem to differ much between summer and spring for urban and agri-rural hives. Even between sites the difference looks to be minimal. Nevertheless, at this scale for both the urban and agri-rural sites there is a singificant relationship between land-use type and the average foraging distance.
+
+In the urban environment in spring, average foraging distance correlates positively with a single PC, which is described by a positive correlation with continuos central land and railway whilst correlating negatively with parks allotments and cemeteries and woodland. So in landscape with more continous central land and railways (nutrient poor environments) average foraging distance increases, presumably because foragers must travel further to find suitable forage. However, in sites with more parks, allotments and cemeteries and woodland (nutrient rich areas) foragers do not have to travel as far to find enough food. In the summer season, land-use appears to have less of an influence and explains a much lower portion of the variance. Nevertheless, a single PC explaining ~40% of the variance correrlates positively with average foraging distance, but with a shallower slope (0.25 vs 3). This PO correlates positively with continuos central land, parks allotments and cemeteries whilst correlating negatively with railway and amenity grassland. Interestingly, this is the opposite of the spring scenario. This is possibly due to a gap in forage avaliability during this time in parks and allotments, forcing foragers to travel further.
+
+In the agri-rural environment in spring, a single PC was found to explain 83% of the variation in the average foraging distance and had a singificant positive correlation with a steap slope (0.61). This PC correlated positively with arable land and Non.agricultural unmanaged green space and a negative correlation with pasture and built up areas. This makes sense as pasture and built up areas are typically nutrient poor, forcing foragers further to better grounds, whilst arable land and Non.agricultural unmanaged green space appear to provide enough quality forage. Just as with the urban sites, in summer land-use types explain less variation in average foraging distances. A single PC explains ~48% of the variation with a singificant if all beint smaller slope than in spring. This PC, as in the urban case, looks largely like a mirror of the dominant PC in spring. Again, this is possibly due to a gap in forage avaliability during this time in parks and allotments, forcing foragers to travel further.
