@@ -32,7 +32,6 @@ theme_set(
 library(tidyr)
 library(dplyr)
 library(ggfortify)
-library(energy)
 library(betareg)
 library(plsRbeta)
 library(lmtest)
@@ -655,3 +654,69 @@ The PLS identifies three PCs which combined explain 77% of the variation in the 
 * One thing it would be nice to do, but which I have not figured out how to do, is to see how much od the data the PLS PCs explain. With the PCA we obtain the variance a PC explains in the data: i.e. the variance in land-use types within our data ($R^2_x$). A regression after then tells us how much of the variance in the proportion of scouts that particular PC explains ($R^2_y$). The PLS optimise a PC to describe as much of the variation in the proportion of scouts as possible ($R^2_y$) but it would be also nice to know how much of the variation in land-use type ($R^2_x$) that PC explains.
 
 * It would be nice to add confidence intervals to the model fit plots. Unsure how to do this with a beta regression and not all that sure it is that important?
+
+# Combining the data
+
+```{r}
+
+joined <- bind_rows(rural_lu, urban_lu)
+joined[is.na(joined)] <- 0
+
+joined.pcdata <- joined[, 3:length(joined)]
+
+n <- length(joined$p)
+y <- (joined$p * (n - 1) + 0.5) / n
+joined.pcdata$p_transform <- y
+
+model <- plsRbeta(
+  p_transform ~ .,
+  data = joined.pcdata,
+  nt = ncol(joined.pcdata) - 1,
+  model = "pls-beta"
+)
+
+print(model)
+
+plsdata <- data.frame(
+  prop.scouts = model$dataY,
+  model$tt
+)
+
+plsbetamodel <- betareg(
+  prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
+    plsdata
+)
+
+summary(plsbetamodel)
+
+newdat <- data_frame(
+  Comp_.1 = seq(-50, 140, 0.1),
+  Comp_.2 = seq(-50, 140, 0.1),
+  Comp_.3 = seq(-50, 140, 0.1),
+  Comp_.4 = seq(-50, 140, 0.1)
+)
+
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+plotdata <- plsdata
+plotdata$p <- joined$p
+
+plotdata$LU = ""
+plotdata$LU[1:10] = "Rural"
+plotdata$LU[11:20] = "Urban"
+
+ggplot(data = plotdata,
+  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)) +
+  geom_point(aes(colour = LU)) +
+  geom_rug(aes(colour = LU)) +
+  scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
+  geom_line(data = newdat, aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = fit)) +
+  xlim(min(-5.5), max(5.5))
+
+
+ggplot(data = plotdata,
+  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)) +
+  geom_boxplot(aes(group = LU))
+
+
+```
