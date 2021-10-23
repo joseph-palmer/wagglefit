@@ -5,11 +5,6 @@
 
 using namespace Rcpp;
 
-#ifdef RCPP_USE_GLOBAL_ROSTREAM
-Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
-Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
-#endif
-
 // alter_in_place
 void alter_in_place(NumericVector x);
 RcppExport SEXP _wagglefit_alter_in_place(SEXP xSEXP) {

@@ -585,6 +585,8 @@ ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
   geom_point() +
   geom_line(data = newdat, aes(x = Comp_.1, y = fit)) +
   xlim(min(-2.5), max(3.))
+
+ggsave("analysis/results/prop_scout_lu_analysis/rural_pls_p1.png")
 ```
 
 Even with a lack of data, this looks like a pretty good relationship!
@@ -684,7 +686,7 @@ plsdata <- data.frame(
 
 plsbetamodel <- betareg(
   prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
-    plsdata
+  plsdata
 )
 
 summary(plsbetamodel)
@@ -701,12 +703,14 @@ newdat$fit <- predict(plsbetamodel, newdat, type = "response")
 plotdata <- plsdata
 plotdata$p <- joined$p
 
-plotdata$LU = ""
-plotdata$LU[1:10] = "Rural"
-plotdata$LU[11:20] = "Urban"
+plotdata$LU <- ""
+plotdata$LU[1:10] <- "Rural"
+plotdata$LU[11:20] <- "Urban"
 
-ggplot(data = plotdata,
-  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)) +
+ggplot(
+  data = plotdata,
+  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)
+) +
   geom_point(aes(colour = LU)) +
   geom_rug(aes(colour = LU)) +
   scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
@@ -714,9 +718,9 @@ ggplot(data = plotdata,
   xlim(min(-5.5), max(5.5))
 
 
-ggplot(data = plotdata,
-  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)) +
+ggplot(
+  data = plotdata,
+  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)
+) +
   geom_boxplot(aes(group = LU))
-
-
 ```

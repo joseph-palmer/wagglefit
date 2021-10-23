@@ -6,7 +6,7 @@
 #' @param x NumericArray
 #' @export
 alter_in_place <- function(x) {
-    invisible(.Call('_wagglefit_alter_in_place', PACKAGE = 'wagglefit', x))
+  invisible(.Call("_wagglefit_alter_in_place", PACKAGE = "wagglefit", x))
 }
 
 #' Model CCDF for scout distribution
@@ -18,7 +18,7 @@ alter_in_place <- function(x) {
 #' @return result double the ccdf for that foraging distance (x)
 #' @export
 scout_ccdf <- function(x, m, bs, as) {
-    .Call('_wagglefit_scout_ccdf', PACKAGE = 'wagglefit', x, m, bs, as)
+  .Call("_wagglefit_scout_ccdf", PACKAGE = "wagglefit", x, m, bs, as)
 }
 
 #' Model CCDF for recruit distribution
@@ -30,7 +30,7 @@ scout_ccdf <- function(x, m, bs, as) {
 #' @return result double the ccdf for that foraging distance (x)
 #' @export
 recruit_ccdf <- function(x, m, br, ar) {
-    .Call('_wagglefit_recruit_ccdf', PACKAGE = 'wagglefit', x, m, br, ar)
+  .Call("_wagglefit_recruit_ccdf", PACKAGE = "wagglefit", x, m, br, ar)
 }
 
 #' Model ccdf function for collective model. Stores results in
@@ -43,7 +43,7 @@ recruit_ccdf <- function(x, m, br, ar) {
 #' @inheritParams recruit_ccdf
 #' @export
 ccdf_model_collective <- function(x, y, p, bs, br, as, ar) {
-    invisible(.Call('_wagglefit_ccdf_model_collective', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
+  invisible(.Call("_wagglefit_ccdf_model_collective", PACKAGE = "wagglefit", x, y, p, bs, br, as, ar))
 }
 
 #' Model ccdf function for individual model. Stores results in given array (y)
@@ -53,7 +53,7 @@ ccdf_model_collective <- function(x, y, p, bs, br, as, ar) {
 #' @inheritParams scout_ccdf
 #' @export
 ccdf_model_individual <- function(x, y, bs, as) {
-    invisible(.Call('_wagglefit_ccdf_model_individual', PACKAGE = 'wagglefit', x, y, bs, as))
+  invisible(.Call("_wagglefit_ccdf_model_individual", PACKAGE = "wagglefit", x, y, bs, as))
 }
 
 #' Get model ccdf for a given model
@@ -67,7 +67,7 @@ ccdf_model_individual <- function(x, y, bs, as) {
 #' @return y NumericVector the ccdf
 #' @export
 model_ccdf <- function(x, params, model = 0L) {
-    .Call('_wagglefit_model_ccdf', PACKAGE = 'wagglefit', x, params, model)
+  .Call("_wagglefit_model_ccdf", PACKAGE = "wagglefit", x, params, model)
 }
 
 #' Model function for scouts
@@ -78,7 +78,7 @@ model_ccdf <- function(x, params, model = 0L) {
 #' @param as double scout alpha
 #' @export
 scout_dist <- function(x, m, bs, as) {
-    .Call('_wagglefit_scout_dist', PACKAGE = 'wagglefit', x, m, bs, as)
+  .Call("_wagglefit_scout_dist", PACKAGE = "wagglefit", x, m, bs, as)
 }
 
 #' Model function for recruits
@@ -88,7 +88,7 @@ scout_dist <- function(x, m, bs, as) {
 #' @inheritParams scout_dist
 #' @export
 recruit_dist <- function(x, m, br, ar) {
-    .Call('_wagglefit_recruit_dist', PACKAGE = 'wagglefit', x, m, br, ar)
+  .Call("_wagglefit_recruit_dist", PACKAGE = "wagglefit", x, m, br, ar)
 }
 
 #' Log-likelihood function for scout and recruit superposition
@@ -100,7 +100,7 @@ recruit_dist <- function(x, m, br, ar) {
 #' @inheritParams recruit_dist
 #' @export
 loglike_model_collective <- function(x, p, bs, br, as, ar) {
-    .Call('_wagglefit_loglike_model_collective', PACKAGE = 'wagglefit', x, p, bs, br, as, ar)
+  .Call("_wagglefit_loglike_model_collective", PACKAGE = "wagglefit", x, p, bs, br, as, ar)
 }
 
 #' Log-likelihood function for individual foraging
@@ -108,7 +108,7 @@ loglike_model_collective <- function(x, p, bs, br, as, ar) {
 #' @inheritParams loglike_model_collective
 #' @export
 loglike_model_individual <- function(x, bs, as) {
-    .Call('_wagglefit_loglike_model_individual', PACKAGE = 'wagglefit', x, bs, as)
+  .Call("_wagglefit_loglike_model_individual", PACKAGE = "wagglefit", x, bs, as)
 }
 
 #' Optimise function for fitting the collective model using NLOPT
@@ -124,7 +124,7 @@ loglike_model_individual <- function(x, bs, as) {
 #' 'scout' respectively,  defaults to 0 ('all')
 #' @export
 optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model = 0L) {
-    .Call('_wagglefit_optimise_model', PACKAGE = 'wagglefit', x, params, lb, ub, verbose, xtol, model)
+  .Call("_wagglefit_optimise_model", PACKAGE = "wagglefit", x, params, lb, ub, verbose, xtol, model)
 }
 
 #' Model pdf function for scout and recruit superposition. Stores results in
@@ -137,7 +137,7 @@ optimise_model <- function(x, params, lb, ub, verbose = FALSE, xtol = 0, model =
 #' @inheritParams recruit_dist
 #' @export
 pdf_model_all <- function(x, y, p, bs, br, as, ar) {
-    invisible(.Call('_wagglefit_pdf_model_all', PACKAGE = 'wagglefit', x, y, p, bs, br, as, ar))
+  invisible(.Call("_wagglefit_pdf_model_all", PACKAGE = "wagglefit", x, y, p, bs, br, as, ar))
 }
 
 #' Model pdf function for scout model. Stores results in given array (y)
@@ -147,7 +147,7 @@ pdf_model_all <- function(x, y, p, bs, br, as, ar) {
 #' @inheritParams scout_dist
 #' @export
 pdf_model_scout <- function(x, y, bs, as) {
-    invisible(.Call('_wagglefit_pdf_model_scout', PACKAGE = 'wagglefit', x, y, bs, as))
+  invisible(.Call("_wagglefit_pdf_model_scout", PACKAGE = "wagglefit", x, y, bs, as))
 }
 
 #' Get model pdf for a given model
@@ -161,6 +161,5 @@ pdf_model_scout <- function(x, y, bs, as) {
 #' @return y NumericVector the ccdf
 #' @export
 model_pdf <- function(x, params, model = 0L) {
-    .Call('_wagglefit_model_pdf', PACKAGE = 'wagglefit', x, params, model)
+  .Call("_wagglefit_model_pdf", PACKAGE = "wagglefit", x, params, model)
 }
-
