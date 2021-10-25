@@ -2,19 +2,20 @@
 title: "Modelling the honeybee waggle dance"
 author: "Joe Palmer"
 date: "25/10/2021"
-output: ioslides_presentation
-widescreen: true
+output:
+  ioslides_presentation:
+    widescreen: true
+    incremental: true
+bibliography: reffs.bib
+
 ---
 
 <style type="text/css">
 .caption {
     font-size: small;
 }
-</style>
-
-<style>
-body {
-    overflow: scroll;
+.refs {
+    font-size: small;
 }
 </style>
 
@@ -42,34 +43,38 @@ library(tidyr)
 library(dplyr)
 ```
 
-## How a collective behaviour works
+## Collective behaviour through self-organisation
 
-- Foraging is a complex task.
-- Social insects have evolved elaborate cooperative strategies to increase foraging success & efficiency.
-- Self organisation pools and weighs individual information to produce an informed collective response
+- Social insects often live in groups of hundreds or even thousands strong
+- Successfully coordinate themselves to work as a cohesive unit
+- Not a directed process, occurs through self-organisation
+- All individuals follow a given set of rules and a collective pattern **emerges**
+- Self organisation pools and weighs individual information to produce an informed collective response [@Sumpter2006,Myerscough2003,Franks2002].
+
+## Honeybee foraging
+
+>- Evolved a unique dance language to provide the distance and direction of a food source to nest-mates
+
+>- Studied intensively to uncover the rules governing dancing [@Seeley1995]
 
 <div style="float: left; width: 49%;">
-![Flocking starlings](https://headguruteacher.files.wordpress.com/2019/11/wales-starling-murmuration.jpg){height=94%, width=94%}
+
+
+![waggle dance](https://thumbs.gfycat.com/WarySlowArizonaalligatorlizard-max-14mb.gif)
 
 </div>
 
 <div style="float: right; width: 49%;">
-![*Lasius niger*](https://www.antwiki.org/wiki/images/thumb/5/54/Lasius_cf._niger%2C_Michal_Kukla_%282%29.JPG/450px-Lasius_cf._niger%2C_Michal_Kukla_%282%29.JPG)
+
+1. Foragers dance in relation to foraging efficiency [@Seeley1986,Seeley1994A].
+2. Foragers use the time taken to find a worker to unload them of nectar when returning from foraging as an indicator of how desperate the colony is for nectar [@Seeley1986].
+3. Recruits don't compare dances [@Seeley1992].
 
 </div>
 
 ## Honeybee foraging
 
-- Evolved a unique dance language to provide the distance and direction of a food source to nest-mates
-- Studied intensively to uncover the rules governing dancing
-
-1. Foragers dance in relation to foraging efficiency.
-2. Foragers use the time taken to find a worker to unload them of nectar when returning from foraging as an indicator of how desperate the colony is for nectar, and factored this into their dancing enthusiasm.
-3. Recruits don't compare dances.
-
-## Honeybee foraging
-
-- Combined, these rules are hypothesised to work like other collective behaviours.
+- Combined, these rules are hypothesised to work as a self-organised process [@Seeley1995].
 
 - Scouts explore the landscape for forage and perform dance runs based on foraging efficiency
 - Recruits, sampling randomly, are biased to the best resources
@@ -80,15 +85,14 @@ library(dplyr)
 - Combine to produce a coherent theory widely accepted to be true
 
 
-**Overall hypothesis has not been empirically validated or tested!**
+- **Overall hypothesis has not been empirically validated or tested!**
 
 ## Why do we need to evaluate this theory?
 
-- Increasing attention on studying the waggle dance as a measure of social Vs collective information.
-- Key question in collective behaviour is what conditions lead to the evolution of sociality and cooperation?
-- Knowing how much the waggle dance is used provides an estimate of how much a colony values social vs personal information.
-- Multiple theoretical and empirical studies have reached conflicting conclusions about the importance of the waggle dance.
-- New methods are needed to better understand the waggle dance and hows its used.
+- Key question in collective behaviour is what conditions lead to the evolution of sociality and cooperation? [@King2007,Sumpter2006,Gordon2016]
+- Knowing how the waggle dance is used indicates how much a colony values social vs personal information [@IAnsonPrice2015].
+- Multiple theoretical [@Dornhaus2006,Beekman2008] and empirical studies [@Gruter2009,Gruter2011,Wray2012,Schurch2014,Price2019] have reached conflicting conclusions about the importance of the waggle dance.
+- New methods are needed to better understand the waggle dance and how it is used.
 
 ## Objective
 
@@ -96,60 +100,11 @@ library(dplyr)
 - Contrast this with an individual based foraging model
 - Evaluate these models on real foraging data
 
-## Constructing the waggle dance model | Profitability function
+## Where to start?
 
-Seeley suggests dancing is regulated by efficiency: $\frac{gain-cost}{cost}$.
-
-- Gain is determined by the nectar quality of the flower, $q$.
-- Cost is determined by the distance to the flower, $x$.
-- Energy gained is therefore $\propto$ $q$, cost increases linearly with $x$.
-- Can therefore refactor efficiency as: $\frac{q}{1+\alpha x} - 1$, where $\alpha$ is the energy spend per unit of distance.
-- Energy spend cannot be negative, so the function must be positive:
-
-$$\sigma(q,x) = [\frac{q}{1+\alpha x}-1]_+$$
-
-### Scout distribution
-
-- Assume scouts search an environment without information and report back the first resource found.
-- Floral resources should be randomly distributed around a hive and thus follow a Poisson distribution.
-- The distance between a central hive and each point should therefore be exponentially distributed, with rate $\lambda_s$.
-- This scout distribution is altered by the profitability function, which translates the distance of the resource to a number of dances reported on the dance floor.
-
-$$\sigma(q, x) \lambda_s e^{-\lambda_s x}$$
-
-### Recruit distribution
-
-- Recruits sample randomly from the dance on the dance floor (scouts + other recruits).
-- Recruits over-represent the best resources, skewing the distribution of dances.
-- The best resource is implicitly a function of distance and should bias towards the closest patches to the colony.
-- The chance of discovering a food source within a radius of $x$ in a circular area is: $e^{-\lambda_r \pi x^2}$, where $\lambda_r$ is the scout discovery rate.
-- The distribution of the nearest food sources that recruits would come for is: $2 \lambda_r \pi x e^{-\lambda_r \pi x^2}$
-
-$$\sigma(q, x) 2 \lambda_r \pi x e^{-\lambda_r \pi x^2}$$
-
-### Putting it all together
-
-<div style="float: left; width: 50%;">
-
-![](results/figures/foraging-model.png){width=95%, height=100%}
-
-</div>
-
-<div style="float: right; width: 50%;">
-
-<center>
-$$\sigma(q, x) ( p \lambda_s e^{-\lambda_s x} + (1-p) 2 \lambda_r \pi x e^{-\lambda_r \pi x^2})$$
-</center>
-
-- The distribution of reported distances is a superposition of recruit and scout distance distributions.
-- $p$ provides a proportional weighting of the number of dances coming from either a scout or recruit strategy.
-
-<p class = caption>
-Model of honeybee foraging. Flowers advertised by scouts are distributed exponentially (A), y axis is the log probability of sampling a value larger than $x$ (same for C and E). These dances are advertised on the dance floor (B) in relation to their profitability, meaning sampling recruits are biased to the more profitable (and closer) resources (C). Recruits also dance for these resources leading to higher recruitment (D) which overall skews the distribution of distances reported on the entire dance floor (E).
-</p>
-
-</div>
-
+- Impossible to track individual behaviour to model data against
+- Does a particular foraging behaviour leave an imprint on the dance-floor?
+- If scouts and recruits forage differently, will this difference reflect in the pattern of waggle dances each group performs?
 
 ## Simulation
 
@@ -157,20 +112,36 @@ Model of honeybee foraging. Flowers advertised by scouts are distributed exponen
 
 We created an Agent Based Simulation of a foraging honey bee colony.
 
-1. Hive exists surrounded by resources which have a quality and distance from the hive. The resources are randomly removed and others added for simulate flower turnover.
-2. A proportion of foragers act as scouts, leave the hive on a randomly determined path and report back the first patch discovered.
-3. The rest act as recruits and sample randomly the pooled dances of scouts and other recruits. Once they have a location they visit that resource and also advertise it.
-4. Scouts and recruits return to their flower but once that patch disappears they must return to searching or following dances respectively.
-
 ---
 
 ![A. Outline of scout foraging. Scouts leave the hive on a random flight path (white lines) and continue until they encounter a resource (flowers in the figure). B. Outline of foraging with recruitment. Scouts continue to identify resources but recruits' sample available dances provided by recruits and other scouts. C. Log inverse frequency distribution of foraging distances reported by scouts. D. Log inverse frequency distribution of foraging distances reported by recruits.](results/figures/simulation.png){width=100%, height=50%}
 
 ---
 
-- **Different foraging strategies leave different patterns in the distribution of foraging distances reported on the dance floor**.
+<center>
+**Different foraging strategies leave different patterns in the distribution of foraging distances reported on the dance floor**.
+</center>
 
-- Logic of the model holds water.
+## Constructing the waggle dance model
+
+- Assume scouts search an environment without information and report back the first resource found. **$\lambda_s e^{-\lambda_s x}$**
+- Recruits sample randomly from the dance floor (scouts + other recruits).
+- Recruits over-represent the best resources, skewing the distribution of dances. **$2 \lambda_r \pi x e^{-\lambda_r \pi x^2}$**
+- Seeley suggests dancing is regulated by efficiency: $\frac{gain-cost}{cost}$.
+- Energy gained is $\propto$ quality $q$, cost increases linearly with distance, $x$.
+- Can therefore refactor efficiency as: $\frac{q}{1+\alpha x} - 1$, where $\alpha$ is the energy spend per unit of distance.
+
+## Constructing the waggle dance model | Putting it all together
+
+<center>
+$$\sigma(q, x) ( p \lambda_s e^{-\lambda_s x} + (1-p) 2 \lambda_r \pi x e^{-\lambda_r \pi x^2})$$
+</center>
+
+<br>
+
+>- The distribution of reported distances is a superposition of recruit and scout distance distributions.
+>- $p$ provides a proportional weighting of the number of dances coming from either a scout or recruit strategy.
+
 
 ## Fit to actual data
 
@@ -178,7 +149,7 @@ We created an Agent Based Simulation of a foraging honey bee colony.
 
 - Waggle dance data was collected and decoded from 10 urban and 10 agri-rural sites over the 2017 season for a total of > 3000 dances (Credit: Ash Samuelson).
 - Fit our full model to the distribution of foraging distances recorded for each site.
-- Also fit a scouts only model ($p$ fixed to 1) to evaluate an individual only foraging strategy.
+- Also fit an individual only model ($p$ fixed to 1) to evaluate an individual only foraging strategy.
 - Model selection used to determine which strategy was more likely.
 - Model fit used to determine if our model offered a good explanation of the data.
 
@@ -218,18 +189,37 @@ Model fits to foraging distance distributions decoded from waggle dances in site
 - Environmental factors are thought to influence the use of the waggle dance and social information more broadly.
 - Intensely studied in honeybees using theoretical and empirical studies.
 - Empirical studies rely on hive disorientation
+- Tells us if a colony does well with or without the dance in a given environment
+- Can't tell us if a colony actually **responds** to the environment by altering their foraging strategies
 
-- Tells us if a colony does well with or without a dance in a given environment
-- Can't tell us if a colony actually responds to the environment by altering their foraging strategies
-
-- Our model provides a new way of approaching this question.
+- Our model provides a new way of evaluating how external factors might inlfunece the use of the waggle dance.
 - Fitting our model to data gives us a proportion of scout dances $p$, providing an estimate of what the foragers are doing (working alone or following others) based on what they report.
 
 ---
 
-- In addition to understanding what conditions gave rise to the evolution of social foraging, there is significant attention on understanding how anthropogenic activities are impacting social insects.
-- Urbanisation and expanding Agricultural practices represent two of the biggest land-use changes.
-- How are these landscapes influencing how the waggle dance is being used?
+>- In addition to understanding what conditions gave rise to the evolution of social foraging, there is significant attention on understanding how anthropogenic activities are impacting social insects.
+>- Urbanisation and expanding Agricultural practices represent two of the biggest land-use changes imposed by humans.
+>- Understanding what effect this has on the use of social information is an important question.
+
+<div style="float: left; width: 50%;">
+
+![](https://www.pbctoday.co.uk/news/wp-content/uploads/2019/11/thumbnail_image010-300x200.jpg){width=95%, height=95%}
+
+<p class = caption>
+Urbanisation.
+</p>
+
+</div>
+
+<div style="float: right; width: 50%;">
+
+![](https://upload.wikimedia.org/wikipedia/commons/b/b8/Claas_Tucano_430.jpg){width=84%, height=84%}
+
+<p class = caption>
+Agricultural expansion
+</p>
+
+</div>
 
 ---
 
@@ -260,22 +250,20 @@ ggplot(sitedata.lu, aes(y = p, x = LU)) +
 
 ## Influence of land-use type on the proportion of scouts
 
-- The foraging land around each site was classified by their different land-use types (Credit: Ash Samuelson)
-
-- Urban: continuous central, dense residential, sparse residential, parks allotments cemeteries, amenity.grassland, Railway, woodland, and water.
-
-- Agri-rural: woodland, Non agricultural unmanaged green space, Non, agricultural managed green space, arable, pasture, other agricultural, fruit, Oil Seed Rape, built up area, and water.
-
 *Is there a relationship between land-use type and proportion of scouts?*
+
+- The foraging land around each site was classified by their different land-use types (Credit: Ash Samuelson)
+- Urban: continuous central, dense residential, sparse residential, parks allotments cemeteries, amenity.grassland, Railway, woodland, and water.
+- Agri-rural: woodland, Non agricultural unmanaged green space, Non, agricultural managed green space, arable, pasture, other agricultural, fruit, Oil Seed Rape, built up area, and water.
 
 ## Partial Least Squares analysis (PLS)
 
 <div style="float: left; width: 50%;">
 
-- Similar to a Principle Component Analysis (PCA).
-- PCA finds the major axis of variation in the data and relates this to a response variable.
-- PLS finds the major axis of variation in the response variable.
-- Allows you to evaluate what land-use types most influence the variation in the proportion of scouts.
+>- Similar to a Principle Component Analysis (PCA).
+>- PCA finds the major axis of variation in the data and relates this to a response variable.
+>- PLS finds the major axis of variation in the response variable.
+>- Allows you to evaluate what land-use types most influence the variation in the proportion of scouts.
 
 </div>
 
@@ -289,8 +277,8 @@ ggplot(sitedata.lu, aes(y = p, x = LU)) +
 
 <div style="float: left; width: 45%;">
 
-- A single PC explained ~60% of the variation in the proportion of scouts.
-- There is significant positive relationship between PC1 and the proportion of scouts (Beta regression: R$^2$ = 0.60, df = 3, p < 0.05).
+>- A single PC explained ~60% of the variation in the proportion of scouts.
+>- There is significant positive relationship between PC1 and the proportion of scouts (Beta regression: R$^2$ = 0.60, df = 3, p < 0.05).
 
 </div>
 
@@ -318,16 +306,15 @@ knitr::include_graphics(land.types)
 
 <div style="float: right; width: 75%;">
 
-- PC1 correlates:
-- **positively** with **arable land**
-- **negatively** with **Non agricultural unmanaged green space, built up areas and water**.
+>- PC1 correlates:
+>- **positively** with **arable land**
+>- **negatively** with **Non agricultural unmanaged green space, built up areas and water**.
 
 - Arable land are typically deserts for pollinators
 - Unmanaged green space has space for wild flowers
 - agri-rural built up areas typically have green space in the form of gardens
 - water ways typically have lots of flora on river and pond banks
-
-Suggests when resources are sparse and difficult to find, a colony responds by increasing the proportion of scouts to explore the landscape.
+- Suggests when resources are sparse and difficult to find, a colony responds by increasing the proportion of scouts to explore the landscape.
 
 </div>
 
@@ -335,37 +322,57 @@ Suggests when resources are sparse and difficult to find, a colony responds by i
 
 <div style="float: left; width: 45%;">
 
-- The first three PCs together explain ~88% of the variation in the proportion of scouts.
-- There is significant positive relationship between these PCs and the proportion of scouts (Beta regression: R$^2$ = 0.88, df = 5, p < 0.05).
+>- The first PC explains ~61% of the variation in the proportion of scouts.
+>- There is significant positive relationship between this PC and the proportion of scouts (Beta regression: R$^2$ = 0.61, df = 3, p < 0.05).
 
 </div>
 
 <div style="float: right; width: 50%;">
 
-![Effect of PC1+PC2+PC3 on the proportion of scouts in an urban environment](man/figures/README-urban_pls_3p-1.png){width=95%, height=95%}
+![Effect of PC1 on the proportion of scouts in an urban environment](man/figures/README-urban_pls_p1-1.png){width=95%, height=95%}
 
 </div>
 
 ---
 
-- PC1, explains ~61% of the variance in the proportion of scouts, correlates:
-- **Positively** with continuos central land, dense residential and water.
-- **Negatively** with sparse residential and amenity grassland.
+<div style="float: left; width: 25%;">
 
-- Continuos central land typically has very few resources for pollinators.
-- Dense residential areas have fewer green spaces such as gardens.
-- Urban waterways have fewer plants available.
+```{r, echo=FALSE,out.width="65%", out.height="10%",fig.cap=""}
+land.types <- c(
+  "https://olympia.london/sites/default/files/styles/main_full_width__mobile/public/local-area/High_street_kensington_olympia_Main.jpg?itok=7wzMLoSz",
+  "https://www.telegraph.co.uk/content/dam/property/2016/09/28/1507111_Views_From_The_Barbican_Estate_On_Its_40th_AnniversaryLONDON_ENGLAND_-_JULY_07__A_general_vi_trans_NvBQzQNjv4BqyILZCJqFaBEpuz3ivC4GStDyCNk0iIla_0j06bseVEE.jpg",
+  "https://architizer-prod.imgix.net/media/1478153409182project_london-river-park_07.jpg?fit=max&w=1680&q=60&auto=format&auto=compress&cs=strip",
+  "https://labmonline.co.uk/wp-content/uploads/2020/03/MHCLG-eviction-ban.jpg",
+  "https://i.guim.co.uk/img/media/913e25493e4d9b4cd1d2e7e535639a11765285a3/0_0_4032_3024/master/4032.jpg?width=445&quality=45&auto=format&fit=max&dpr=2&s=ff60726e82d18bb4c8af7e696e74cc7c"
+)
+knitr::include_graphics(land.types)
+```
+
+</div>
+
+<div style="float: right; width: 75%;">
+>- PC1, explains ~61% of the variance in the proportion of scouts, correlates:
+>- **Positively** with continuos central land, dense residential and water.
+>- **Negatively** with sparse residential and amenity grassland.
+
+- Continuos central typically has very few resources for pollinators.
+- Dense residential areas have fewer gardens.
+- Urban waterways have fewer flora.
 - Sparse residential has more area for gardens.
-- Amenity grassland typically managed, but has benefited from recent drives to increase green boarders and 'wild zones'.
+- Amenity grassland have green boarders and space for flowers.
 
-Suggests when resources are sparse and difficult to find, a colony responds by increasing the proportion of scouts to explore the landscape.
+- Suggests when resources are sparse and difficult to find, a colony responds by increasing the proportion of scouts to explore the landscape.
+
+</div>
 
 ## Implications
 
 - Land-use type has a significant impact of the proportion of scouts.
-- Reinforces the idea that the waggle dance is used flexibly in certain environments.
+- Reinforces the idea that the waggle dance is used flexibly.
 - In both Agri-rural and Urban landscapes, resource poor land-use types correlate with an increase in the proportion of scouts.
 - Both the urban and agri-rural analysis suggests anthropogenic activity selects colonies to ignore the waggle dance more.
+- These findings support previous theoretical studies [@Dornhaus2006]
+- Provides new insight into how human activity influences social information use
 
 ## Future directions
 
@@ -373,10 +380,75 @@ Suggests when resources are sparse and difficult to find, a colony responds by i
 - Invest in new technologies such as automatic dance decoding software
 - Generate an automated pipeline to analyse honeybee waggle dance data from our methods.
 
-## Thank you for listening
+## Thank you for listening, Questions?
+
 ### Acknowledgments
-- Vincent Jansen
-- Elli Leadbeater
-- Ash Samuelson
+Vincent Jansen, Elli Leadbeater, Ash Samuelson
 
 ### References
+<div id = "refs" class = "refs columns-2"></div>
+
+---
+
+<div style="float: right; width: 50%;">
+![Collective choice of a food source in ants: Taken from [@Detrain2006]](assets/ant-foraging-fig.jpg){width=100%, height=100%}
+</div>
+
+<div style="float: left; width: 50%;">
+![*Lasius niger*](https://www.antwiki.org/wiki/images/thumb/5/54/Lasius_cf._niger%2C_Michal_Kukla_%282%29.JPG/450px-Lasius_cf._niger%2C_Michal_Kukla_%282%29.JPG)
+
+- Self organisation pools and weighs individual information to produce an informed collective response [@Sumpter2006].
+- A similar principle is also observed in honeybees when searching for a new nest [@Myerscough2003,Franks2002]
+
+</div>
+
+---
+
+1. Hive exists surrounded by resources which have a quality and distance from the hive. The resources are randomly removed and others added for simulate flower turnover.
+2. A proportion of foragers act as scouts, leave the hive on a randomly determined path and report back the first patch discovered.
+3. The rest act as recruits and sample randomly the pooled dances of scouts and other recruits. Once they have a location they visit that resource and also advertise it.
+4. Scouts and recruits return to their flower but once that patch disappears they must return to searching or following dances respectively.
+
+---
+
+## Constructing the waggle dance model | Scout distribution {.build}
+
+- Assume scouts search an environment without information and report back the first resource found.
+- Floral resources should be randomly distributed around a hive and thus follow a Poisson distribution.
+- The distance between a central hive and each point should therefore be exponentially distributed, with rate $\lambda_s$.
+
+<br>
+$$\lambda_s e^{-\lambda_s x}$$
+
+## Constructing the waggle dance model | Recruit distribution {.build}
+
+- Recruits sample randomly from the dance on the dance floor (scouts + other recruits).
+- Recruits over-represent the best resources, skewing the distribution of dances.
+- The best resource is implicitly a function of distance and should bias towards the closest patches to the colony.
+- The chance of discovering a food source within a radius of $x$ in a circular area is: $e^{-\lambda_r \pi x^2}$, where $\lambda_r$ is the recruit discovery rate.
+- The distribution of the nearest food sources that recruits would come for is: $2 \lambda_r \pi x e^{-\lambda_r \pi x^2}$
+
+$$2 \lambda_r \pi x e^{-\lambda_r \pi x^2}$$
+
+## Constructing the waggle dance model | Profitability function {.build}
+
+Seeley suggests dancing is regulated by efficiency: $\frac{gain-cost}{cost}$.
+
+- Gain is determined by the nectar quality of the flower, $q$.
+- Cost is determined by the distance to the flower, $x$.
+- Energy gained is therefore $\propto$ $q$, cost increases linearly with $x$.
+- Can therefore refactor efficiency as: $\frac{q}{1+\alpha x} - 1$, where $\alpha$ is the energy spend per unit of distance.
+- Number of dances cannot be negative, so the function must be positive:
+
+$$\sigma(q,x) = [\frac{q}{1+\alpha x}-1]_+$$
+
+## Constructing the waggle dance model | Putting it all together
+
+<center>
+$$\sigma(q, x) ( p \lambda_s e^{-\lambda_s x} + (1-p) 2 \lambda_r \pi x e^{-\lambda_r \pi x^2})$$
+</center>
+
+<br>
+
+>- The distribution of reported distances is a superposition of recruit and scout distance distributions.
+>- $p$ provides a proportional weighting of the number of dances coming from either a scout or recruit strategy.
