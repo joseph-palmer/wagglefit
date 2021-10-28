@@ -1,5 +1,11 @@
-# Honeybee foraging simulation
-## Joseph Palmer
+---
+title: Honeybee foraging simulation
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
 ---
 
 The code for the honeybee foraging simulation is writen in python and is contained in the `Simulation` directory (specifically `Simulation/Code`). The results of the simulation (as output csv files) are stored in `Results/Results`. Generating the results can be done by running the script `run.py` in `Simulation/Code`. Once you have ran the simulation you can run through this Rmd doc to generate the figures. To run the python code you will need python3 installed, along with the dependencies listed in **init.py?**.

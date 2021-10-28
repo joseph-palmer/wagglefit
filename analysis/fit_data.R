@@ -15,7 +15,7 @@ devtools::load_all()
 #' @export
 #'
 get_data <- function() {
-  full_data_path <- "analysis/data/FullHBForagingData.csv"
+  full_data_path <- "data/FullHBForagingData.csv"
   data <- tibble(read.csv(full_data_path))
   data <- data %>%
     mutate(

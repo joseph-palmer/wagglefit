@@ -11,7 +11,7 @@ output:
 ---
 
 ```{r preamble, include=FALSE}
-devtools::load_all()
+  devtools::load_all()
 library(showtext)
 showtext_auto()
 
@@ -37,7 +37,7 @@ library(plsRbeta)
 library(lmtest)
 ```
 
-```{r get-data, include=FALSE}
+```{r get-data, include=FALSE, message = FALSE, warning = FALSE}
 # load results of model fit (code to generate found in fit_models.Rmd)
 sitedata <- readRDS("results/site_fit_results.Rda")
 
@@ -88,7 +88,7 @@ Here I use both a partial least squares and principle component analysis to inve
 
 First lets look at the data...
 
-```{r check_urban}
+```{r check_urban, message = FALSE, warning = FALSE, error = TRUE}
 
 # check the land-use type values sum to 100%
 testthat::test_that(
@@ -103,7 +103,7 @@ testthat::test_that(
 
 A sanity check on the data shows that the sum of the land-use types for each site doesn't always sum to 100. This was copied over from the data presented in Samuelson *et al*. (2021).
 
-```{r, peek_urban}
+```{r, peek_urban, message = FALSE, warning = FALSE}
 # look at data
 print(urban_lu)
 ```
@@ -112,7 +112,7 @@ Only one site has 100% scouts (CAD) the rest are distributed between 0 and 50%
 
 ## PCA
 
-```{r, urban_pca}
+```{r, urban_pca, message = FALSE, warning = FALSE}
 # extract just the lans-use columns
 urban.pcadata <- urban_lu[, 3:length(names(urban_lu))]
 
@@ -127,7 +127,7 @@ print(summary(upca))
 
 The PCA results contain a number of results, notably the standard deviations and loadings (noted by this package as rotation) of each PC. The standard deviations can be squared to get the variance which can then be used to obtain the percentage variance each PC explains. These are shown in the summary of the PCA model, but deriving them this way allows you to easily make a scree plot to show the percentage variance each PC explains. In addition, each PC can then be compared to the amount of variance they would explain if each PC contributed equally to the variance. This can help in choosing which PCs most contribute to the data.
 
-```{r, urban_pca_scree}
+```{r, urban_pca_scree, message = FALSE, warning = FALSE}
 # extract the sd, loadings and scores of the data
 sd <- upca$sdev
 loadings <- upca$rotation
@@ -150,7 +150,7 @@ ggplot(
 
 The red line on the plot indicates the expected variance each PC should contribute if they all contributed equally. PCs 1, 2 and 3 explain ~83% of the variance in the data. The loadings can now be evaluated for each of these PCs to identify how each land-use type contributes to the variance in each PC. Again, we can use the expected variance from each land-use if they all equally contributed to find a cut-off.
 
-```{r, urban_pca_loadings}
+```{r, urban_pca_loadings, message = FALSE, warning = FALSE}
 print(loadings[, 1:3])
 sqrt(1 / ncol(urban.pcadata)) # cut off for top loadings
 ```
@@ -173,7 +173,7 @@ where $n$ represents the number of data points in $x$ and $s$ represents a const
 
 The X attribute of the data (`upca$x`) is the value of the rotated data (centred and scaled) multiplied by the rotation matrix. This is what we use to run the model on as it is the PCs multiplied by the land-use values.
 
-```{r, urban_p_transform}
+```{r, urban_p_transform, message = FALSE, warning = FALSE}
 n <- length(urban_lu$p)
 y <- (urban_lu$p * (n - 1) + 0.5) / n # transform 1 inflated data
 mydata <- cbind(y, data.frame(upca$x))
@@ -182,7 +182,7 @@ colnames(mydata)[1] <- "transformed.prop.scouts"
 
 Here I will fit the beta regression to the first 3 PCs which collectively explain 83% of the data.
 
-```{r, urban_pca_regression_3p}
+```{r, urban_pca_regression_3p, message = FALSE, warning = FALSE}
 mydata.mod.3 <- betareg(
   transformed.prop.scouts ~ PC1 + PC2 + PC3,
   data = mydata
@@ -208,7 +208,7 @@ ggplot(data = plotdata, aes(x = PC1 + PC2 + PC3, y = p)) +
 
 Here, the intercept is significantly different to 0, but only PC3 is significantly different to the intercept, with the combined coefficients explaining 47% of the variation in the response variable. If we examine PC3 on its own we see that it accounts for 38% of the variation in the proportion of scouts:
 
-```{r, urban_pca_regression_p3}
+```{r, urban_pca_regression_p3, message = FALSE, warning = FALSE}
 mydata.mod.p3 <- betareg(
   transformed.prop.scouts ~ PC3,
   data = mydata
@@ -236,7 +236,7 @@ What this analysis seems to suggest is that PC3, whilst explaining 15% of the va
 
 Which combination of PCs to use, either PC3 on its own or PC1 + PC2 + PC3, or even PC2 + PC3, can be established through a likelihood ratio test.
 
-```{r, urban_pca_regression_lrt}
+```{r, urban_pca_regression_lrt, message = FALSE, warning = FALSE}
 mydata.mod.p1_p2 <- betareg(
   transformed.prop.scouts ~ PC2 + PC3,
   data = mydata
@@ -251,7 +251,7 @@ The LR test confirms that just using PC3 is the best model.
 
 Instead of working out the major axis of variation in land-use across our sites and evaluating how these influence the proportion of scouts, a PLS calculates the principle components which explains the most variation in the proportion of scouts directly.
 
-```{r, urban_pls}
+```{r, urban_pls, message = FALSE, warning = FALSE}
 n <- length(urban_lu$p)
 y <- (urban_lu$p * (n - 1) + 0.5) / n
 urban.pcadata$p_transform <- y
@@ -260,7 +260,8 @@ model <- plsRbeta(
   p_transform ~ .,
   data = urban.pcadata,
   nt = ncol(urban.pcadata) - 2,
-  model = "pls-beta"
+  model = "pls-beta",
+  verbose = FALSE
 )
 print(model)
 ```
@@ -269,7 +270,7 @@ The $R^2$ values shows us the cumulative amount of variation in the proportion o
 
 Before running the variables through the beta regression lets first look at the principle components. The first three principle components explain 88% of the variation in the proportion of scouts. These principle components can be characterised as follows (again using an expected variance under a null model to work out the major contributors):
 
-```{r, urban_pls_loadings}
+```{r, urban_pls_loadings, message = FALSE, warning = FALSE}
 print(model$pp[, 1:3])
 sqrt(1 / (ncol(urban.pcadata) - 1))
 
@@ -282,7 +283,7 @@ A larger proportion of scouts is most described by a combination of continuous c
 
 We can extract the regression statistics out of the model just like we did for the PCA analysis. First I will do this just for PC1 (61% variance explained) and then for PC1 + PC2 + PC3 which explains 88% of the variation in the proportion of scouts.
 
-```{r, urban_pls_p1}
+```{r, urban_pls_p1, message = FALSE, warning = FALSE}
 
 plsdata <- data.frame(
   prop.scouts = model$dataY,
@@ -313,7 +314,7 @@ ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
 
 Relatively nice fit. Seems to be the outlier (site where p = 1 ) pulling the proportions up.
 
-```{r, urban_pls_3p}
+```{r, urban_pls_3p, message = FALSE, warning = FALSE}
 
 plsdata <- data.frame(
   prop.scouts = model$dataY,
@@ -346,7 +347,7 @@ ggplot(data = plotdata, aes(x = Comp_.1 + Comp_.2 + Comp_.3, y = p)) +
 
 Provides an even nicer looking fit, but is of course a more complex model. Again, we turn to the LR test to decide what to keep.
 
-```{r, urban_pls_lrt}
+```{r, urban_pls_lrt, message = FALSE, warning = FALSE}
 plsbetamodel.2 <- betareg(
   prop.scouts ~ Comp_.1 + Comp_.2,
   plsdata
@@ -361,7 +362,7 @@ Although PC1 explains the largest share of the data, including the first three P
 
 Lets first examine the data...
 
-```{r, check_rural}
+```{r, check_rural, message = FALSE, warning = FALSE, error = TRUE}
 
 # check the land-use type values sum to 100%
 testthat::test_that(
@@ -376,7 +377,7 @@ testthat::test_that(
 
 A sanity check on the data shows that the sum of the land-use types for each site doesn't always sum to 100. This was copied over from the data presented in Samuelson *et al*. (2021).
 
-```{r, peek_rural}
+```{r, peek_rural, message = FALSE, warning = FALSE}
 print(rural_lu)
 ```
 
@@ -384,7 +385,7 @@ Much wider spread than in the urban data. Here, two sites have values at 1 (BEl 
 
 ## PCA
 
-```{r, rural_pca_scree}
+```{r, rural_pca_scree, message = FALSE, warning = FALSE}
 # extract just the lans-use columns
 rural.pcadata <- rural_lu[, 3:length(names(rural_lu))]
 
@@ -419,7 +420,7 @@ ggplot(
 
 The red line on the plot indicates the expected variance each PC should contribute if they all contributed equally. PCs 1, 2, 3 and 4 explain ~83% of the variance in the data. The loadings can now be evaluated for each of these PCs to identify how each land-use type contributes to the variance in each PC. Again, we can use the expected variance from each land-use if they all equally contributed to find a cut-off.
 
-```{r, rural_pca_loadings}
+```{r, rural_pca_loadings, message = FALSE, warning = FALSE}
 print(loadings[, 1:4])
 sqrt(1 / ncol(rural.pcadata)) # cut off for top loadings
 ```
@@ -434,7 +435,7 @@ These PCs all show the factors that most explain the variance within land-use ty
 
 This regression is carried out with the same rational as the urban sites.
 
-```{r, rural_transform_p}
+```{r, rural_transform_p, message = FALSE, warning = FALSE}
 n <- length(rural_lu$p)
 y <- (rural_lu$p * (n - 1) + 0.5) / n # transform 1 inflated data
 mydata <- cbind(y, data.frame(rpca$x))
@@ -443,7 +444,7 @@ colnames(mydata)[1] <- "transformed.prop.scouts"
 
 Here I will fit the beta regression to the first 4 PCs which collectively explain 83% of the data.
 
-```{r, rural_pca_4p}
+```{r, rural_pca_4p, message = FALSE, warning = FALSE}
 mydata.mod.4 <- betareg(
   transformed.prop.scouts ~ PC1 + PC2 + PC3 + PC4,
   data = mydata
@@ -470,7 +471,7 @@ ggplot(data = plotdata, aes(x = PC1 + PC2 + PC3 + PC4, y = p)) +
 
 Here, the intercept is not significantly different to 0, but PC1 and PC3 are both significantly different, with the combined coefficients of PCs 1:4 explaining 60% of the variation in the proportion of scouts in a negative correlation. If we examine PC1 on its own se see that is accounts for ~29% of the variation in the proportion of scouts in a positive correlation:
 
-```{r, rural_pca_p1}
+```{r, rural_pca_p1, message = FALSE, warning = FALSE}
 
 mydata.mod.p1 <- betareg(
   transformed.prop.scouts ~ PC1,
@@ -497,7 +498,7 @@ ggplot(data = plotdata, aes(x = PC1, y = p)) +
 
 Examining PC3 on its own suggests it accounts for ~27% of the variation in the proportion of scouts, showing a singificant negative relationship.
 
-```{r, rural_pca_p3}
+```{r, rural_pca_p3, message = FALSE, warning = FALSE}
 mydata.mod.p3 <- betareg(
   transformed.prop.scouts ~ PC3,
   data = mydata
@@ -523,7 +524,7 @@ ggplot(data = plotdata, aes(x = PC3, y = p)) +
 
 This analysis suggests that PCs 1 and 3, which collectively explain ~51% of the variation in the proportion of scouts, explain both a significant postive (PC1) and negative (PC2) relationship with the proportion of scouts, accoutning for ~29% and ~27% of the variance respectively.
 
-```{r, rural_pca_lrt}
+```{r, rural_pca_lrt, message = FALSE, warning = FALSE}
 lrtest(mydata.mod.p1, mydata.mod.4)
 ```
 
@@ -533,7 +534,7 @@ PC1 seems to be the best model compared to the others according to the LR test, 
 
 The rational for the PLS follows that used on the urban data.
 
-```{r, rural_pls}
+```{r, rural_pls, message = FALSE, warning = FALSE}
 n <- length(rural_lu$p)
 y <- (rural_lu$p * (n - 1) + 0.5) / n
 rural.pcadata$p_transform <- y
@@ -542,14 +543,15 @@ model <- plsRbeta(
   p_transform ~ .,
   data = rural.pcadata,
   nt = ncol(rural.pcadata) - 1,
-  model = "pls-beta"
+  model = "pls-beta",
+  verbose = FALSE
 )
 print(model)
 ```
 
 The partial least squares method was only able to extract 8 Principle components. nevertheless, depending on what criteria you use you can place the cutoff in multiple places. Combined, all 8 PCs explain ~83% of the variation in the proportion of scouts. The AIC and BIC scores suggests keeping only the first PC, which explains ~64% of the variation in the proportion of scouts. If looking for the slow down in the rate of increae in $R^2$ you would choose up to PC3, which explains ~77% of the variaton in the proportion of scouts. Lets looks at these first three PCs.
 
-```{r, rural_pls_loadings}
+```{r, rural_pls_loadings, message = FALSE, warning = FALSE}
 model$pp[, 1:3]
 sqrt(1 / (ncol(rural.pcadata) - 1))
 ```
@@ -558,7 +560,7 @@ PC1 (accoutning for ~64% of the variance) correlates positively with arable land
 
 We can extract the regression statistics out of the model just like we did for the PCA analysis. First I will do this just for PC1 (~64% variance explained) and then for PC1 + PC2 + PC3 which explains ~77% of the variation in the proportion of scouts.
 
-```{r, rural_pls_p1}
+```{r, rural_pls_p1, message = FALSE, warning = FALSE}
 
 plsdata <- data.frame(
   prop.scouts = model$dataY,
@@ -585,13 +587,11 @@ ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
   geom_point() +
   geom_line(data = newdat, aes(x = Comp_.1, y = fit)) +
   xlim(min(-2.5), max(3.))
-
-ggsave("analysis/results/prop_scout_lu_analysis/rural_pls_p1.png")
 ```
 
 Even with a lack of data, this looks like a pretty good relationship!
 
-```{r, rural_pls_4p}
+```{r, rural_pls_4p, message = FALSE, warning = FALSE}
 
 plsdata <- data.frame(
   prop.scouts = model$dataY,
@@ -624,7 +624,7 @@ ggplot(data = plotdata, aes(x = Comp_.1 + Comp_.2 + Comp_.3, y = p)) +
 
 Good looking relationship, but what does the LRT say?
 
-```{r, rural_pls_lrt}
+```{r, rural_pls_lrt, message = FALSE, warning = FALSE}
 plsbetamodel.2 <- betareg(
   prop.scouts ~ Comp_.1 + Comp_.2,
   plsdata
@@ -659,7 +659,7 @@ The PLS identifies three PCs which combined explain 77% of the variation in the 
 
 # Combining the data
 
-```{r}
+```{r, combined-pls, message = FALSE, warning = FALSE}
 
 joined <- bind_rows(rural_lu, urban_lu)
 joined[is.na(joined)] <- 0
@@ -674,7 +674,8 @@ model <- plsRbeta(
   p_transform ~ .,
   data = joined.pcdata,
   nt = ncol(joined.pcdata) - 1,
-  model = "pls-beta"
+  model = "pls-beta",
+  verbose = FALSE
 )
 
 print(model)
@@ -686,7 +687,7 @@ plsdata <- data.frame(
 
 plsbetamodel <- betareg(
   prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
-  plsdata
+    plsdata
 )
 
 summary(plsbetamodel)
@@ -703,14 +704,12 @@ newdat$fit <- predict(plsbetamodel, newdat, type = "response")
 plotdata <- plsdata
 plotdata$p <- joined$p
 
-plotdata$LU <- ""
-plotdata$LU[1:10] <- "Rural"
-plotdata$LU[11:20] <- "Urban"
+plotdata$LU = ""
+plotdata$LU[1:10] = "Rural"
+plotdata$LU[11:20] = "Urban"
 
-ggplot(
-  data = plotdata,
-  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)
-) +
+ggplot(data = plotdata,
+  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)) +
   geom_point(aes(colour = LU)) +
   geom_rug(aes(colour = LU)) +
   scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
@@ -718,9 +717,8 @@ ggplot(
   xlim(min(-5.5), max(5.5))
 
 
-ggplot(
-  data = plotdata,
-  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)
-) +
+ggplot(data = plotdata,
+  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)) +
   geom_boxplot(aes(group = LU))
+
 ```

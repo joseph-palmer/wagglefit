@@ -1,10 +1,16 @@
-# Fitting waggle dance models to waggle dance data
-## Joseph Palmer
+---
+title: Fitting waggle dance models to waggle dance data
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
 ---
 
-This document contains code to fit the waggle dance model to each of our 20 different sites. The code here uses the wagglefit package, as well as some additional code stored in `fit_data.R` to help simplify things here.
+This document contains code to fit the waggle dance model to each of our 20 different sites. The code here uses the wagglefit package, as well as some additional code stored in `fit_data.R` to help simplify things here. Each site has its own section, with reused code. The final sections create map plots and summary statistic plots.
 
-```{r, include = FALSE}
+```{r, preamble, include = FALSE}
 devtools::load_all()
 
 knitr::opts_chunk$set(
@@ -23,7 +29,7 @@ theme_set(
 library(cowplot)
 library(dplyr)
 library(tibble)
-source("analysis/fit_data.R")
+source("fit_data.R")
 
 library(showtext)
 showtext_auto()
@@ -115,7 +121,7 @@ Would be a good idea to knit this as a single document / run in R studio on the 
 
 Provides a good fit on the data. All parameters look central and nicely covered.
 
-```{r}
+```{r, BEL, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "BEL"
 
@@ -160,7 +166,7 @@ all_sites[[target_site]]$fit
 
 All parameters look central in the likelihood space and a nice fit is returned.
 
-```{r}
+```{r, BFI, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "BFI"
 
@@ -204,7 +210,7 @@ all_sites[[target_site]]$fit
 
 The individual fit isnt great and the Bs paramater is increasing up to the boundry, indicating it can only really take on a straight line / exponential fit. The parameters for the collective model are fairly central in the likelihood space, the fit looks very good.
 
-```{r}
+```{r, BLO, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "BLO"
 
@@ -250,7 +256,7 @@ Bs and Br go in oposite directions. E.g. Bs approaches 0 whilst Br approaches an
 
 Fit looks good.
 
-```{r}
+```{r, BUR, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "BUR"
 
@@ -296,7 +302,7 @@ The collective model roughly follows the individual model but is able to acheive
 
 $p$ does not approach 1 as one might expect, indicating there is overfitting and so a comparison with an individual model is required.
 
-```{r}
+```{r, CAD, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "CAD"
 
@@ -340,7 +346,7 @@ all_sites[[target_site]]$fit
 
 The collective model provides the most parsimonious and best fit.
 
-```{r}
+```{r, GIL, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "GIL"
 
@@ -384,7 +390,7 @@ all_sites[[target_site]]$fit
 
 The collective model provides the best fit to the data, but the proportion of scouts is high.
 
-```{r}
+```{r, HER, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "HER"
 
@@ -428,7 +434,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides the best fit but falls under the tail and shoulder. The individual model strugles to find a good fit, probably due to the tail.
 
-```{r}
+```{r, HHS, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "HHS"
 
@@ -472,7 +478,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides a very good fit, whilst the individual model fails to find much traction. The proportion of scouts goes very low (~3%) suggesting the majority of the colony are following a small number of scouting individuals.
 
-```{r}
+```{r, HOR, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "HOR"
 
@@ -516,7 +522,7 @@ all_sites[[target_site]]$fit
 
 Again the collective model provides a good fit to the data, however, the individual model fits poorly, reducing to an exponential.
 
-```{r}
+```{r, MAK, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "MAK"
 
@@ -566,7 +572,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides the best fit, however it misses a large section of the shoulder for the tail. The $bs$ parameter wants to go to zero, however when let go bellow 1e-6 the behaviour becomes very erratic and the fit deteriorates.
 
-```{r}
+```{r, MEL, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "MEL"
 
@@ -610,7 +616,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, MPA, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "MPA"
 
@@ -653,7 +659,7 @@ all_sites[[target_site]]$fit
 
 Colletive provides the best fit.
 
-```{r}
+```{r, ROT, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "ROT"
 
@@ -697,7 +703,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, SAU, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "SAU"
 
@@ -740,7 +746,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit but misses a large section of the shoulder.
 
-```{r}
+```{r, SOM, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "SOM"
 
@@ -784,7 +790,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, SRA, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "SRA"
 
@@ -827,7 +833,7 @@ all_sites[[target_site]]$fit
 
 Individual provides the best fit. Again, the proportion of scouts does not move towards 1. I.e. the collective model fails to reduce to the individual in the MLE fit.
 
-```{r}
+```{r, STU, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "STU"
 
@@ -870,7 +876,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, SWP, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "SWP"
 
@@ -913,7 +919,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, YAL, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "YAL"
 
@@ -956,7 +962,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r}
+```{r, ZSL, include=FALSE, message = FALSE, warning = FALSE}
 
 target_site <- "ZSL"
 
@@ -997,14 +1003,14 @@ all_sites[[target_site]]$fit
 
 ## Overall findings
 
-```{r}
+```{r, make-plots, include=FALSE, message = FALSE, warning = FALSE}
 
 # group all site results together
 df <- map(all_sites, 1) %>%
   bind_rows()
 
 # save results
-saveRDS(df, file = "analysis/results/site_fit_results.Rda")
+saveRDS(df, file = "results/site_fit_results.Rda")
 
 # AIC plot
 aic_plot <- df %>%
@@ -1023,7 +1029,7 @@ aic_plot <- df %>%
 
 ggsave(
   plot = aic_plot,
-  filename = "analysis/results/figures/AIC_plot.png",
+  filename = "results/figures/AIC_plot.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1046,7 +1052,7 @@ ks_plot_dist <- df %>%
 
 ggsave(
   plot = ks_plot_dist,
-  filename = "analysis/results/figures/sites_ks.png",
+  filename = "results/figures/sites_ks.png",
   width = 86,
   height = 180,
   units = "mm",
@@ -1055,7 +1061,7 @@ ggsave(
 
 ggsave(
   plot = all_sites$STU$fit,
-  filename = "analysis/results/figures/STU.png",
+  filename = "results/figures/STU.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1064,7 +1070,7 @@ ggsave(
 
 ggsave(
   plot = all_sites$ZSL$fit,
-  filename = "analysis/results/figures/ZSL.png",
+  filename = "results/figures/ZSL.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1078,7 +1084,7 @@ ggsave(
 
 Code to make the individual mal plots. These figures are created standalone but are combined in to facets manually in an image processor.
 
-```{r}
+```{r, map-plots, include=FALSE, message = FALSE, warning = FALSE}
 
 library(ggplot2)
 library(ggrepel)
@@ -1091,7 +1097,7 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 
 
-full_data_path <- "analysis/data/FullHBForagingData.csv"
+full_data_path <- "data/FullHBForagingData.csv"
 data_raw <- tibble(read.csv(full_data_path))
 
 map_data <- data_raw %>%
@@ -1124,7 +1130,7 @@ worldmap <- ne_countries(scale = "large", returnclass = "sf")
 
 # london area
 london <- st_read(
-  "analysis/shapefiles/London_Ward.shp"
+  "shapefiles/London_Ward.shp"
 )
 
 london <- st_transform(
@@ -1219,7 +1225,7 @@ merge_plot
 
 ggsave(
   plot = merge_plot,
-  filename = "analysis/results/figures/site_map.png",
+  filename = "results/figures/site_map.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1245,7 +1251,7 @@ sites_model_plot <- plot_grid(
 
 ggsave(
   plot = sites_model_plot,
-  filename = "analysis/results/figures/sites_model_plot.png",
+  filename = "results/figures/sites_model_plot.png",
   width = 183,
   height = 190,
   units = "mm",
@@ -1254,7 +1260,7 @@ ggsave(
 ```
 
 
-```{r}
+```{r, other-map-plots, include=FALSE, message = FALSE, warning = FALSE}
 # other map plots
 inset <- ggplot() +
   geom_sf(
@@ -1342,7 +1348,7 @@ merge_plot
 
 ggsave(
   plot = merge_plot,
-  filename = "analysis/results/figures/site_map.png",
+  filename = "results/figures/site_map.png",
   width = 183,
   height = 190,
   units = "mm",
@@ -1359,7 +1365,7 @@ sites_model_plot
 
 ggsave(
   plot = sites_model_plot,
-  filename = "analysis/results/figures/results_model_plot.png",
+  filename = "results/figures/results_model_plot.png",
   width = 183,
   height = 190,
   units = "mm",
