@@ -1,8 +1,7 @@
-library(stringr)
 library_calls <- purrr::map(
   list.files("analysis/", pattern = "*.Rmd|.R"),
   ~ {
-    str_match(readLines(paste0("analysis/", .x)), "library\\((.*?)\\)")[,2]
+    stringr::str_match(readLines(paste0("analysis/", .x)), "library\\((.*?)\\)")[,2]
   }
 )
 
