@@ -657,7 +657,11 @@ The PLS identifies three PCs which combined explain 77% of the variation in the 
 
 * It would be nice to add confidence intervals to the model fit plots. Unsure how to do this with a beta regression and not all that sure it is that important?
 
-# Combining the data
+# Figures, results write up and main discussion points for manuscript
+
+input figure stuff here.
+
+# Combining the data (Grant stuff)
 
 ```{r, combined-pls, message = FALSE, warning = FALSE}
 
