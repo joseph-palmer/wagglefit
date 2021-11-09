@@ -11,7 +11,7 @@ output:
 ---
 
 ```{r preamble, include=FALSE}
-  devtools::load_all()
+devtools::load_all()
 library(showtext)
 showtext_auto()
 
@@ -25,16 +25,19 @@ library(ggplot2)
 theme_set(
   theme_classic() +
     theme(
-      text = element_text(size = 18)
+      text = element_text(size = 42)
     )
 )
 
+library(cowplot)
 library(tidyr)
 library(dplyr)
 library(ggfortify)
 library(betareg)
 library(plsRbeta)
 library(lmtest)
+library(kableExtra)
+library(effects)
 ```
 
 ```{r get-data, include=FALSE, message = FALSE, warning = FALSE}
@@ -91,14 +94,14 @@ First lets look at the data...
 ```{r check_urban, message = FALSE, warning = FALSE, error = TRUE}
 
 # check the land-use type values sum to 100%
-testthat::test_that(
-  "land-use type values sum to 100",
-  {
-    expected <- rep(100, 10)
-    ans <- rowSums(urban_lu[, 3:ncol(urban_lu)])
-    testthat::expect_identical(expected, ans)
-  }
-)
+# testthat::test_that(
+#   "land-use type values sum to 100",
+#   {
+#     expected <- rep(100, 10)
+#     ans <- rowSums(urban_lu[, 3:ncol(urban_lu)])
+#     testthat::expect_identical(expected, ans)
+#   }
+# )
 ```
 
 A sanity check on the data shows that the sum of the land-use types for each site doesn't always sum to 100. This was copied over from the data presented in Samuelson *et al*. (2021).
@@ -271,6 +274,11 @@ The $R^2$ values shows us the cumulative amount of variation in the proportion o
 Before running the variables through the beta regression lets first look at the principle components. The first three principle components explain 88% of the variation in the proportion of scouts. These principle components can be characterised as follows (again using an expected variance under a null model to work out the major contributors):
 
 ```{r, urban_pls_loadings, message = FALSE, warning = FALSE}
+urban_loadings <- list(
+  loadings = model$pp[, 1],
+  cutoff = sqrt(1 / (ncol(urban.pcadata) - 1))
+)
+
 print(model$pp[, 1:3])
 sqrt(1 / (ncol(urban.pcadata) - 1))
 
@@ -298,18 +306,41 @@ plsbetamodel <- betareg(
 summary(plsbetamodel)
 
 newdat <- data_frame(
-  Comp_.1 = seq(-50, 140, 0.1),
+  Comp_.1 = seq(
+    min(plsdata$Comp_.1),
+    max(plsdata$Comp_.1),
+    length.out = length(plsdata$Comp_.1)
+  )
 )
 
 newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+urban_fitdata <- as.data.frame(predictorEffects(plsbetamodel))$Comp_.1
 
 plotdata <- plsdata
 plotdata$p <- urban_lu$p
 
 ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
   geom_point() +
+  geom_line(data = urban_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = urban_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+urban.pls <- ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
+  geom_point() +
   geom_line(data = newdat, aes(x = Comp_.1, y = fit)) +
+  xlab("PC 1") +
   xlim(min(-2.5), max(3.5))
+urban.pls
+
+urban_plotdata <- plotdata[, 1:2]
+urban_plotdata$`Land-use` <- "Urban"
+
 ```
 
 Relatively nice fit. Seems to be the outlier (site where p = 1 ) pulling the proportions up.
@@ -552,6 +583,12 @@ print(model)
 The partial least squares method was only able to extract 8 Principle components. nevertheless, depending on what criteria you use you can place the cutoff in multiple places. Combined, all 8 PCs explain ~83% of the variation in the proportion of scouts. The AIC and BIC scores suggests keeping only the first PC, which explains ~64% of the variation in the proportion of scouts. If looking for the slow down in the rate of increae in $R^2$ you would choose up to PC3, which explains ~77% of the variaton in the proportion of scouts. Lets looks at these first three PCs.
 
 ```{r, rural_pls_loadings, message = FALSE, warning = FALSE}
+agrirural_loadings <- list(
+  loadings = model$pp[, 1],
+  cutoff = sqrt(1 / (ncol(rural.pcadata) - 1))
+)
+save(agrirural_loadings, urban_loadings, file = "results/pls-loadings.RData")
+
 model$pp[, 1:3]
 sqrt(1 / (ncol(rural.pcadata) - 1))
 ```
@@ -575,18 +612,39 @@ plsbetamodel <- betareg(
 summary(plsbetamodel)
 
 newdat <- data_frame(
-  Comp_.1 = seq(-50, 140, 0.1),
+  Comp_.1 = seq(
+    min(plsdata$Comp_.1),
+    max(plsdata$Comp_.1),
+    length.out = length(plsdata$Comp_.1)
+  )
 )
 
-newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+newdat$fit <- predict(plsbetamodel, newdat, se.fit = TRUE, type = "response")
+
+rural_fitdata <- as.data.frame(predictorEffects(plsbetamodel))$Comp_.1
 
 plotdata <- plsdata
 plotdata$p <- rural_lu$p
 
 ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
   geom_point() +
+  geom_line(data = rural_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = rural_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+agri.rural.pls <- ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
+  geom_point() +
   geom_line(data = newdat, aes(x = Comp_.1, y = fit)) +
+  xlab("PC 1") +
   xlim(min(-2.5), max(3.))
+agri.rural.pls
+agrirural_plotdata <- plotdata[, 1:2]
+agrirural_plotdata$`Land-use` <- "Agri-rural"
+
 ```
 
 Even with a lack of data, this looks like a pretty good relationship!
@@ -660,6 +718,141 @@ The PLS identifies three PCs which combined explain 77% of the variation in the 
 # Figures, results write up and main discussion points for manuscript
 
 input figure stuff here.
+
+```{r, manuscript-figures, message = FALSE, warning = FALSE}
+
+plotdata <- rbind(urban_plotdata, agrirural_plotdata)
+urban_fitdata$`Land-use` <- "Urban"
+rural_fitdata$`Land-use` <- "Agri-rural"
+fit_data <- rbind(urban_fitdata, rural_fitdata)
+
+landuse_plots <- ggplot(data = plotdata, aes(x = Comp_.1, y = prop.scouts)) +
+  geom_point() +
+  geom_line(data = fit_data, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = fit_data,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  xlab("PC 1") +
+  ylab("Estimated proportion of scouts") +
+  facet_wrap(~`Land-use`, nrow = 1, scales = "free_x")
+
+ggsave(
+  plot = landuse_plots,
+  filename = "results/figures/landuse_plots.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+landuse_plots
+```
+
+```{r, presentation.figures, message = FALSE, warning = FALSE}
+urban_fit <- ggplot(data = urban_plotdata, aes(x = Comp_.1, y = prop.scouts)) +
+  geom_point() +
+  geom_line(data = urban_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = urban_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  xlab("PC 1") +
+  ylab("Estimated proportion of scouts")
+
+agri_rural_fit <- ggplot(data = agrirural_plotdata, aes(x = Comp_.1, y = prop.scouts)) +
+  geom_point() +
+  geom_line(data = rural_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = rural_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  xlab("PC 1") +
+  ylab("Estimated proportion of scouts")
+
+ggsave(
+  plot = urban_fit,
+  filename = "results/figures/urban_fit.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+ggsave(
+  plot = agri_rural_fit,
+  filename = "results/figures/agrirural_fit.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+```
+
+
+```{r}
+
+argi.rural.loadings <- tibble(
+  "Land-use" = names(agrirural_loadings$loadings),
+  "Correlation" = agrirural_loadings$loadings
+)
+
+urban.loadings <- tibble(
+  "Land-use" = names(urban_loadings$loadings),
+  "Correlation" = urban_loadings$loadings
+)
+
+argi.rural.loadings %>%
+  mutate(Correlation = round(Correlation, 3)) %>%
+  mutate(
+    Correlation = cell_spec(
+      Correlation,
+      bold = ifelse(
+        Correlation > agrirural_loadings$cutoff,
+        TRUE,
+        ifelse(
+          Correlation < -agrirural_loadings$cutoff,
+          TRUE,
+          FALSE
+        )
+      )
+    )
+  ) %>%
+  kbl(
+    caption = "Land-use type loadings for the first principle component on the Agri-rural sites",
+    escape = F
+  ) %>%
+  kable_classic(full_width = F)
+
+urban.loadings %>%
+  mutate(Correlation = round(Correlation, 3)) %>%
+   mutate(
+    Correlation = cell_spec(
+      Correlation,
+      bold = ifelse(
+        Correlation > agrirural_loadings$cutoff,
+        TRUE,
+        ifelse(
+          Correlation < -agrirural_loadings$cutoff,
+          TRUE,
+          FALSE
+        )
+      )
+    )
+  ) %>%
+  kbl(
+    caption = "Land-use type loadings for the first principle component on the Urban sites",
+    escape = F
+  ) %>%
+  kable_classic(full_width = F)
+```
 
 # Combining the data (Grant stuff)
 

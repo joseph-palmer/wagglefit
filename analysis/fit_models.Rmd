@@ -23,13 +23,14 @@ library(ggplot2)
 theme_set(
   theme_classic() +
     theme(
-      text = element_text(family = "DejaVuSerif", size = 8)
+      text = element_text(family = "DejaVuSerif", size = 48)
     )
 )
 library(cowplot)
 library(dplyr)
 library(tibble)
 source("fit_data.R")
+library(kableExtra)
 
 library(showtext)
 showtext_auto()
@@ -121,7 +122,7 @@ Would be a good idea to knit this as a single document / run in R studio on the 
 
 Provides a good fit on the data. All parameters look central and nicely covered.
 
-```{r, BEL, include=FALSE, message = FALSE, warning = FALSE}
+```{r, BEL, message = FALSE, warning = FALSE}
 
 target_site <- "BEL"
 
@@ -155,7 +156,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -166,7 +169,7 @@ all_sites[[target_site]]$fit
 
 All parameters look central in the likelihood space and a nice fit is returned.
 
-```{r, BFI, include=FALSE, message = FALSE, warning = FALSE}
+```{r, BFI, message = FALSE, warning = FALSE}
 
 target_site <- "BFI"
 
@@ -200,7 +203,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -210,7 +215,7 @@ all_sites[[target_site]]$fit
 
 The individual fit isnt great and the Bs paramater is increasing up to the boundry, indicating it can only really take on a straight line / exponential fit. The parameters for the collective model are fairly central in the likelihood space, the fit looks very good.
 
-```{r, BLO, include=FALSE, message = FALSE, warning = FALSE}
+```{r, BLO, message = FALSE, warning = FALSE}
 
 target_site <- "BLO"
 
@@ -244,7 +249,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -256,7 +263,7 @@ Bs and Br go in oposite directions. E.g. Bs approaches 0 whilst Br approaches an
 
 Fit looks good.
 
-```{r, BUR, include=FALSE, message = FALSE, warning = FALSE}
+```{r, BUR, message = FALSE, warning = FALSE}
 
 target_site <- "BUR"
 
@@ -290,7 +297,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -302,7 +311,7 @@ The collective model roughly follows the individual model but is able to acheive
 
 $p$ does not approach 1 as one might expect, indicating there is overfitting and so a comparison with an individual model is required.
 
-```{r, CAD, include=FALSE, message = FALSE, warning = FALSE}
+```{r, CAD, message = FALSE, warning = FALSE}
 
 target_site <- "CAD"
 
@@ -336,7 +345,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -346,7 +357,7 @@ all_sites[[target_site]]$fit
 
 The collective model provides the most parsimonious and best fit.
 
-```{r, GIL, include=FALSE, message = FALSE, warning = FALSE}
+```{r, GIL, message = FALSE, warning = FALSE}
 
 target_site <- "GIL"
 
@@ -380,7 +391,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -390,7 +403,7 @@ all_sites[[target_site]]$fit
 
 The collective model provides the best fit to the data, but the proportion of scouts is high.
 
-```{r, HER, include=FALSE, message = FALSE, warning = FALSE}
+```{r, HER, message = FALSE, warning = FALSE}
 
 target_site <- "HER"
 
@@ -424,7 +437,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -434,7 +449,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides the best fit but falls under the tail and shoulder. The individual model strugles to find a good fit, probably due to the tail.
 
-```{r, HHS, include=FALSE, message = FALSE, warning = FALSE}
+```{r, HHS, message = FALSE, warning = FALSE}
 
 target_site <- "HHS"
 
@@ -468,7 +483,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -478,7 +495,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides a very good fit, whilst the individual model fails to find much traction. The proportion of scouts goes very low (~3%) suggesting the majority of the colony are following a small number of scouting individuals.
 
-```{r, HOR, include=FALSE, message = FALSE, warning = FALSE}
+```{r, HOR, message = FALSE, warning = FALSE}
 
 target_site <- "HOR"
 
@@ -512,7 +529,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -522,7 +541,7 @@ all_sites[[target_site]]$fit
 
 Again the collective model provides a good fit to the data, however, the individual model fits poorly, reducing to an exponential.
 
-```{r, MAK, include=FALSE, message = FALSE, warning = FALSE}
+```{r, MAK, message = FALSE, warning = FALSE}
 
 target_site <- "MAK"
 
@@ -562,7 +581,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -572,7 +593,7 @@ all_sites[[target_site]]$fit
 
 Collective model provides the best fit, however it misses a large section of the shoulder for the tail. The $bs$ parameter wants to go to zero, however when let go bellow 1e-6 the behaviour becomes very erratic and the fit deteriorates.
 
-```{r, MEL, include=FALSE, message = FALSE, warning = FALSE}
+```{r, MEL, message = FALSE, warning = FALSE}
 
 target_site <- "MEL"
 
@@ -606,7 +627,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -616,7 +639,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, MPA, include=FALSE, message = FALSE, warning = FALSE}
+```{r, MPA, message = FALSE, warning = FALSE}
 
 target_site <- "MPA"
 
@@ -650,7 +673,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -659,7 +684,7 @@ all_sites[[target_site]]$fit
 
 Colletive provides the best fit.
 
-```{r, ROT, include=FALSE, message = FALSE, warning = FALSE}
+```{r, ROT, message = FALSE, warning = FALSE}
 
 target_site <- "ROT"
 
@@ -693,7 +718,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -703,7 +730,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, SAU, include=FALSE, message = FALSE, warning = FALSE}
+```{r, SAU, message = FALSE, warning = FALSE}
 
 target_site <- "SAU"
 
@@ -737,7 +764,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -746,7 +775,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit but misses a large section of the shoulder.
 
-```{r, SOM, include=FALSE, message = FALSE, warning = FALSE}
+```{r, SOM, message = FALSE, warning = FALSE}
 
 target_site <- "SOM"
 
@@ -781,7 +810,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -790,7 +821,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, SRA, include=FALSE, message = FALSE, warning = FALSE}
+```{r, SRA, message = FALSE, warning = FALSE}
 
 target_site <- "SRA"
 
@@ -824,7 +855,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -833,7 +866,7 @@ all_sites[[target_site]]$fit
 
 Individual provides the best fit. Again, the proportion of scouts does not move towards 1. I.e. the collective model fails to reduce to the individual in the MLE fit.
 
-```{r, STU, include=FALSE, message = FALSE, warning = FALSE}
+```{r, STU, message = FALSE, warning = FALSE}
 
 target_site <- "STU"
 
@@ -867,7 +900,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -876,7 +911,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, SWP, include=FALSE, message = FALSE, warning = FALSE}
+```{r, SWP, message = FALSE, warning = FALSE}
 
 target_site <- "SWP"
 
@@ -910,7 +945,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -919,7 +956,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, YAL, include=FALSE, message = FALSE, warning = FALSE}
+```{r, YAL, message = FALSE, warning = FALSE}
 
 target_site <- "YAL"
 
@@ -953,7 +990,9 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
@@ -962,7 +1001,7 @@ all_sites[[target_site]]$fit
 
 Collective provides the best fit.
 
-```{r, ZSL, include=FALSE, message = FALSE, warning = FALSE}
+```{r, ZSL, message = FALSE, warning = FALSE}
 
 target_site <- "ZSL"
 
@@ -996,14 +1035,16 @@ all_sites[[target_site]] <- run_wagglefit_analysis(
   target_site, data, collective_bounds, individual_bounds, subplot_coords
 )
 
-all_sites[[target_site]]
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
 
 all_sites[[target_site]]$fit
 ```
 
 ## Overall findings
 
-```{r, make-plots, include=FALSE, message = FALSE, warning = FALSE}
+```{r, make-plots, message = FALSE, warning = FALSE}
 
 # group all site results together
 df <- map(all_sites, 1) %>%
@@ -1084,7 +1125,7 @@ ggsave(
 
 Code to make the individual mal plots. These figures are created standalone but are combined in to facets manually in an image processor.
 
-```{r, map-plots, include=FALSE, message = FALSE, warning = FALSE}
+```{r, map-plots, message = FALSE, warning = FALSE}
 
 library(ggplot2)
 library(ggrepel)
@@ -1155,19 +1196,23 @@ inset <- ggplot() +
   ) +
   geom_point(
     data = map_data,
-    aes(x = lon, y = lat, shape = model, colour = col), size = 1.5
+    aes(x = lon, y = lat, shape = model, colour = model), size = 1.5
   ) +
   geom_text(
     data = selected_sites, aes(x = lon, y = lat, label = label),
-    nudge_x = c(0, -0.07), nudge_y = c(0.05, 0.05)
+    nudge_x = c(0, -0.07), nudge_y = c(0.05, 0.05), size = 8
   ) +
   annotation_north_arrow(
     location = "tr", which_north = "true",
     style = north_arrow_fancy_orienteering,
-    height = unit(10, "mm"),
-    width = unit(10, "mm")
+    height = unit(15, "mm"),
+    width = unit(15, "mm"),
+    text_cex = 1.5
   ) +
-  annotation_scale(location = "br") +
+  annotation_scale(
+    location = "br",
+    text_cex = 1.5
+  ) +
   scale_shape_manual(values = c(1, 2)) +
   scale_colour_manual(values = c("black", "red")) +
   theme_nothing() +
@@ -1175,8 +1220,7 @@ inset <- ggplot() +
   scale_y_continuous(expand = c(0, 0)) +
   labs(x = NULL, y = NULL) +
   theme(
-    panel.border = element_rect(color = "black", fill = NA, size = .5),
-    text = element_text(size = 82)
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
   )
 
 inset
@@ -1245,8 +1289,8 @@ merge_plot_2 <- inset +
 merge_plot_2
 
 sites_model_plot <- plot_grid(
-  merge_plot_2, aic_plot, all_sites$STU$fit, all_sites$ZSL$fit,
-  labels = c("A", "B", "C", "D")
+  merge_plot_2, ks_plot_dist, all_sites$STU$fit, all_sites$ZSL$fit,
+  labels = c("A", "B", "C", "D"), label_size = 24
 )
 
 ggsave(
@@ -1257,10 +1301,39 @@ ggsave(
   units = "mm",
   dpi = 300
 )
+
+model_sites_fits <- plot_grid(
+  merge_plot_2, ks_plot_dist,
+  labels = c("A", "B"), label_size = 24
+)
+
+ggsave(
+  plot = model_sites_fits,
+  filename = "results/figures/model_sites_fits.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+stu_zsl_fit <- plot_grid(
+  all_sites$STU$fit, all_sites$ZSL$fit,
+  labels = c("A", "B"), label_size = 24
+)
+
+ggsave(
+  plot = stu_zsl_fit,
+  filename = "results/figures/stu_zsl_fit.svg",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 100
+)
+
 ```
 
 
-```{r, other-map-plots, include=FALSE, message = FALSE, warning = FALSE}
+```{r, eval = FALSE, other-map-plots, message = FALSE, warning = FALSE}
 # other map plots
 inset <- ggplot() +
   geom_sf(
@@ -1332,8 +1405,6 @@ base <- ggplot(data = worldmap) +
   theme(
     panel.border = element_rect(color = "black", fill = NA, size = .5)
   )
-
-base
 
 merge_plot <- base +
   annotation_custom(
