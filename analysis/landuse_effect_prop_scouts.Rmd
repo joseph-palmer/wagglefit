@@ -340,7 +340,6 @@ urban.pls
 
 urban_plotdata <- plotdata[, 1:2]
 urban_plotdata$`Land-use` <- "Urban"
-
 ```
 
 Relatively nice fit. Seems to be the outlier (site where p = 1 ) pulling the proportions up.
@@ -644,7 +643,6 @@ agri.rural.pls <- ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
 agri.rural.pls
 agrirural_plotdata <- plotdata[, 1:2]
 agrirural_plotdata$`Land-use` <- "Agri-rural"
-
 ```
 
 Even with a lack of data, this looks like a pretty good relationship!
@@ -793,7 +791,69 @@ ggsave(
   units = "mm",
   dpi = 300
 )
+```
 
+## Land-use maps
+
+```{r, agrirural_landuse_maps, message = FALSE, warning = FALSE}
+library(sf)
+library(sp)
+library(ggspatial)
+
+# make fit map with agrirural landuses
+agrirural_plotdata$site <- rural_lu$site
+agrirural_plotdata$prop_scouts <- rural_lu$p
+ar_sortedpropscouts <- arrange(agrirural_plotdata, prop_scouts)
+ar_marked <- ar_sortedpropscouts[
+  c(1, nrow(ar_sortedpropscouts) / 2, nrow(ar_sortedpropscouts)),
+]
+
+# make model fit graph of pc1 against prop scouts and mark the sites with the
+# lowest, middle and highest proportion of scouts
+ar_fit <- ggplot(
+  data = ar_sortedpropscouts, aes(x = Comp_.1, y = prop_scouts)
+) +
+  geom_point() +
+  geom_point(
+    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, colour = "red")
+  ) +
+  geom_text(
+    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
+    nudge_x = c(0, 0), nudge_y = c(-0.05, -0.05), size = 8
+  ) +
+  geom_line(data = rural_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = rural_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  theme(legend.position = "none") +
+  xlab("PC 1") +
+  ylab("Estimated proportion of scouts")
+
+# make the maps for each of the sites selected in the previous step
+site_shape_data <- list()
+for (i in seq_len(3)) {
+  path <- paste0(
+    "shapefiles/agri-rural/",
+    ar_marked[i, "site"], "/", ar_marked[i, "site"],
+    ".shp"
+  )
+  df <- st_read(path) %>%
+    st_transform(
+      CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+    )
+  site_shape_data[[ar_marked[i, "site"]]] <- df
+}
+
+
+site_shape_data$STU$descriptio
+
+ggplot() +
+  geom_sf(
+    data = site_shape_data$STU
+  )
 ```
 
 
@@ -833,7 +893,7 @@ argi.rural.loadings %>%
 
 urban.loadings %>%
   mutate(Correlation = round(Correlation, 3)) %>%
-   mutate(
+  mutate(
     Correlation = cell_spec(
       Correlation,
       bold = ifelse(
@@ -884,7 +944,7 @@ plsdata <- data.frame(
 
 plsbetamodel <- betareg(
   prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
-    plsdata
+  plsdata
 )
 
 summary(plsbetamodel)
@@ -901,12 +961,14 @@ newdat$fit <- predict(plsbetamodel, newdat, type = "response")
 plotdata <- plsdata
 plotdata$p <- joined$p
 
-plotdata$LU = ""
-plotdata$LU[1:10] = "Rural"
-plotdata$LU[11:20] = "Urban"
+plotdata$LU <- ""
+plotdata$LU[1:10] <- "Rural"
+plotdata$LU[11:20] <- "Urban"
 
-ggplot(data = plotdata,
-  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)) +
+ggplot(
+  data = plotdata,
+  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)
+) +
   geom_point(aes(colour = LU)) +
   geom_rug(aes(colour = LU)) +
   scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
@@ -914,8 +976,9 @@ ggplot(data = plotdata,
   xlim(min(-5.5), max(5.5))
 
 
-ggplot(data = plotdata,
-  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)) +
+ggplot(
+  data = plotdata,
+  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)
+) +
   geom_boxplot(aes(group = LU))
-
 ```
