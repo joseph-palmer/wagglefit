@@ -22,12 +22,12 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 library(ggplot2)
-theme_set(
-  theme_classic() +
-    theme(
-      text = element_text(size = 42)
-    )
-)
+# theme_set(
+#   theme_classic() +
+#     theme(
+#       text = element_text(size = rel(42))
+#     )
+# )
 
 library(cowplot)
 library(tidyr)
@@ -795,6 +795,9 @@ ggsave(
 
 ## Land-use maps
 
+Here I create figures which show the relationship between PC1 and the proportion of scouts as well as land-use maps of sites long the gradient which are coloured by the land-use types identified as most singificant in the PLS (PC1).
+
+### Agri-rural
 ```{r, agrirural_landuse_maps, message = FALSE, warning = FALSE}
 library(sf)
 library(sp)
@@ -804,23 +807,16 @@ library(ggspatial)
 agrirural_plotdata$site <- rural_lu$site
 agrirural_plotdata$prop_scouts <- rural_lu$p
 ar_sortedpropscouts <- arrange(agrirural_plotdata, prop_scouts)
-ar_marked <- ar_sortedpropscouts[
-  c(1, nrow(ar_sortedpropscouts) / 2, nrow(ar_sortedpropscouts)),
-]
 
-# make model fit graph of pc1 against prop scouts and mark the sites with the
-# lowest, middle and highest proportion of scouts
+# select sites to draw attention to, those sitting on the trend
+ar_marked <- ar_sortedpropscouts %>%
+  filter(site %in% c("MEL", "SOM", "BEL"))
+
+# make model fit graph of pc1 against prop scouts and mark the sites
 ar_fit <- ggplot(
   data = ar_sortedpropscouts, aes(x = Comp_.1, y = prop_scouts)
 ) +
   geom_point() +
-  geom_point(
-    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, colour = "red")
-  ) +
-  geom_text(
-    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
-    nudge_x = c(0, 0), nudge_y = c(-0.05, -0.05), size = 8
-  ) +
   geom_line(data = rural_fitdata, aes(x = Comp_.1, y = fit)) +
   geom_ribbon(
     data = rural_fitdata,
@@ -828,12 +824,21 @@ ar_fit <- ggplot(
     alpha = 0.2,
     fill = "deepskyblue"
   ) +
+  geom_point(
+    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, colour = "red")
+  ) +
+  geom_text(
+    data = ar_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
+    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(3)
+  ) +
+  theme_classic() +
   theme(legend.position = "none") +
   xlab("PC 1") +
   ylab("Estimated proportion of scouts")
 
 # make the maps for each of the sites selected in the previous step
 site_shape_data <- list()
+site_plots <- list()
 for (i in seq_len(3)) {
   path <- paste0(
     "shapefiles/agri-rural/",
@@ -845,18 +850,269 @@ for (i in seq_len(3)) {
       CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     )
   site_shape_data[[ar_marked[i, "site"]]] <- df
+  site_plots[[ar_marked[i, "site"]]] <- ggplot() +
+    geom_sf(
+      data = df,
+      aes(fill = descriptio)
+    ) +
+    theme_void()
+}
+
+# make loadings plot
+argi.rural.loadings <- tibble(
+  "Landuse" = names(agrirural_loadings$loadings),
+  "Correlation" = agrirural_loadings$loadings
+) %>%
+  mutate(
+    significant = ifelse(
+      Correlation > agrirural_loadings$cutoff,
+      Landuse,
+      ifelse(
+        Correlation < -agrirural_loadings$cutoff,
+        Landuse,
+        "Other"
+      )
+    )
+  ) %>%
+  mutate(
+    Landuse = ifelse(
+      Landuse == "Non.agricultural.managed.green.space",
+      "NAMGS",
+      ifelse(
+        Landuse == "Non.agricultural.unmanaged.green.space",
+        "NAUMGS",
+        Landuse
+      )
+    )
+  )
+
+loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
+  geom_point(aes(colour = significant), size = rel(3)) +
+  geom_segment(aes(
+    x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
+  )) +
+  geom_text(
+    aes(x = Landuse, y = Correlation, label = Landuse),
+    hjust = 0.25,
+    nudge_y = c(0, 0), nudge_x = c(0.5, 0.5), size = rel(3)
+  ) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_rect(
+    aes(
+      ymin = -agrirural_loadings$cutoff,
+      ymax = agrirural_loadings$cutoff,
+      xmin = 0, xmax = Inf
+    ),
+    alpha = 0.01
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "arable" = "red3", "built.up.area" = "orange3",
+      "Non.agricultural.unmanaged.green.space" = "seagreen3",
+      "water" = "cornflowerblue", other = "grey"
+    )
+  ) +
+  ylim(-0.6, 0.6)
+
+loading_plot
+
+# combine plots into facet
+
+# first the maps in a column of three
+sitelumaps <- plot_grid(
+  site_plots[[3]] + theme(legend.position = "none"),
+  site_plots[[2]] + theme(legend.position = "none"),
+  site_plots[[1]] + theme(legend.position = "none"),
+  ncol = 1,
+  align = "v",
+  labels = c(
+    names(site_plots)[3], names(site_plots)[2], names(site_plots)[1]
+  )
+)
+
+# now the model fit and pls results in a plot of two
+mfitpls <- plot_grid(
+  ar_fit + theme(plot.margin = unit(c(0., 0., 1., 0.), "cm")),
+  loading_plot,
+  ncol = 1,
+  align = "v",
+  labels = c(
+    "A", "B"
+  )
+)
+
+# all together
+
+comb <- plot_grid(
+  mfitpls, sitelumaps,
+  nrow = 1, scale = 0.9, align = "h"
+)
+
+comb
+```
+
+### Urban
+
+```{r, agrirural_landuse_maps, message = FALSE, warning = FALSE}
+
+# make fit map with agrirural landuses
+urban_plotdata$site <- urban_lu$site
+urban_plotdata$prop_scouts <- urban_lu$p
+u_sortedpropscouts <- arrange(urban_plotdata, prop_scouts)
+u_marked <- u_sortedpropscouts %>%
+  filter(site %in% c("HOR", "SWP", "CAD"))
+
+# make model fit graph of pc1 against prop scouts and mark the sites with the
+# lowest, middle and highest proportion of scouts
+u_fit <- ggplot(
+  data = u_sortedpropscouts, aes(x = Comp_.1, y = prop_scouts)
+) +
+  geom_point() +
+  geom_point(
+    data = u_marked, aes(x = Comp_.1, y = prop_scouts, colour = "red")
+  ) +
+  geom_text(
+    data = u_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
+    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(3)
+  ) +
+  geom_line(data = urban_fitdata, aes(x = Comp_.1, y = fit)) +
+  geom_ribbon(
+    data = urban_fitdata,
+    aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  xlab("PC 1") +
+  ylab("Estimated proportion of scouts")
+
+# make the maps for each of the sites selected in the previous step
+site_shape_data <- list()
+site_plots <- list()
+for (i in seq_len(3)) {
+  path <- paste0(
+    "shapefiles/urban/",
+    u_marked[i, "site"], "/", u_marked[i, "site"],
+    ".shp"
+  )
+  df <- st_read(path) %>%
+    st_transform(
+      CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+    )
+  site_shape_data[[u_marked[i, "site"]]] <- df
+  site_plots[[u_marked[i, "site"]]] <- ggplot() +
+    geom_sf(
+      data = df,
+      aes(fill = descriptio)
+    ) +
+    theme_void()
 }
 
 
-site_shape_data$STU$descriptio
-
-ggplot() +
-  geom_sf(
-    data = site_shape_data$STU
+# make loadings plot
+urban.loadings <- tibble(
+  "Landuse" = names(urban_loadings$loadings),
+  "Correlation" = urban_loadings$loadings
+) %>%
+  mutate(
+    significant = ifelse(
+      Correlation > urban_loadings$cutoff,
+      Landuse,
+      ifelse(
+        Correlation < -urban_loadings$cutoff,
+        Landuse,
+        "Other"
+      )
+    )
   )
+
+loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
+  geom_point(aes(colour = significant), size = rel(3)) +
+  geom_segment(aes(
+    x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
+  )) +
+  geom_text(
+    aes(x = Landuse, y = Correlation, label = Landuse),
+    hjust = 0.25,
+    nudge_y = c(-0, -0), nudge_x = c(0.5, 0.5), size = rel(3)
+  ) +
+  geom_rect(
+    aes(
+      ymin = -agrirural_loadings$cutoff,
+      ymax = agrirural_loadings$cutoff,
+      xmin = 0, xmax = Inf
+    ),
+    alpha = 0.01
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "continuous..central" = "red3", "dense.residential" = "orange3",
+      "sparse.residential" = "purple3", "amenity.grassland" = "seagreen3",
+      "water" = "cornflowerblue", other = "grey"
+    )
+  ) +
+  scale_y_continuous(breaks = seq(-.9, .9, by = 0.4), limits = c(-1, 1))
+
+loading_plot
+
+# combine plots into facet
+
+# first the maps in a column of three
+sitelumaps <- plot_grid(
+  site_plots[[3]] + theme(legend.position = "none"),
+  site_plots[[2]] + theme(legend.position = "none"),
+  site_plots[[1]] + theme(legend.position = "none"),
+  ncol = 1,
+  align = "v",
+  labels = c(
+    names(site_plots)[3], names(site_plots)[2], names(site_plots)[1]
+  )
+)
+
+# now the model fit and pls results in a plot of two
+mfitpls <- plot_grid(
+  u_fit + theme(plot.margin = unit(c(0., 0., 1., 0.), "cm")),
+  loading_plot,
+  ncol = 1,
+  align = "v",
+  labels = c(
+    "A", "B"
+  )
+)
+
+# all together
+
+comb <- plot_grid(
+  mfitpls, sitelumaps,
+  nrow = 1, scale = 0.9, align = "h"
+)
+
+comb
 ```
 
 
+# Loadings
 ```{r}
 
 argi.rural.loadings <- tibble(
@@ -886,7 +1142,8 @@ argi.rural.loadings %>%
     )
   ) %>%
   kbl(
-    caption = "Land-use type loadings for the first principle component on the Agri-rural sites",
+    caption = "Land-use type loadings for the first principle component on the
+    Agri-rural sites",
     escape = F
   ) %>%
   kable_classic(full_width = F)
@@ -908,7 +1165,8 @@ urban.loadings %>%
     )
   ) %>%
   kbl(
-    caption = "Land-use type loadings for the first principle component on the Urban sites",
+    caption = "Land-use type loadings for the first principle component on the
+     Urban sites",
     escape = F
   ) %>%
   kable_classic(full_width = F)
