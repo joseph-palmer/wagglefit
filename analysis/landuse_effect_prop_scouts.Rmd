@@ -22,12 +22,9 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 library(ggplot2)
-# theme_set(
-#   theme_classic() +
-#     theme(
-#       text = element_text(size = rel(42))
-#     )
-# )
+theme_set(
+  theme_classic()
+)
 
 library(cowplot)
 library(tidyr)
@@ -394,15 +391,15 @@ Lets first examine the data...
 
 ```{r, check_rural, message = FALSE, warning = FALSE, error = TRUE}
 
-# check the land-use type values sum to 100%
-testthat::test_that(
-  "land-use type values sum to 100",
-  {
-    expected <- rep(100, 10)
-    ans <- rowSums(rural_lu[, 3:ncol(rural_lu)])
-    testthat::expect_identical(expected, ans)
-  }
-)
+# # check the land-use type values sum to 100%
+# testthat::test_that(
+#   "land-use type values sum to 100",
+#   {
+#     expected <- rep(100, 10)
+#     ans <- rowSums(rural_lu[, 3:ncol(rural_lu)])
+#     testthat::expect_identical(expected, ans)
+#   }
+# )
 ```
 
 A sanity check on the data shows that the sum of the land-use types for each site doesn't always sum to 100. This was copied over from the data presented in Samuelson *et al*. (2021).
@@ -803,6 +800,11 @@ library(sf)
 library(sp)
 library(ggspatial)
 
+# load land-use conversion table
+luconversions <- read.csv("data/LUCategoryConversion.csv")
+agrirural_luconversions <- luconversions %>%
+  filter(LU == "agri-rural")
+
 # make fit map with agrirural landuses
 agrirural_plotdata$site <- rural_lu$site
 agrirural_plotdata$prop_scouts <- rural_lu$p
@@ -837,7 +839,7 @@ ar_fit <- ggplot(
   ylab("Estimated proportion of scouts")
 
 # make the maps for each of the sites selected in the previous step
-site_shape_data <- list()
+site_shape_data_ar <- list()
 site_plots <- list()
 for (i in seq_len(3)) {
   path <- paste0(
@@ -849,13 +851,26 @@ for (i in seq_len(3)) {
     st_transform(
       CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     )
-  site_shape_data[[ar_marked[i, "site"]]] <- df
+  # add major LU categories
+  df_merged <- df %>%
+    mutate(descriptio = toupper(descriptio)) %>%
+    full_join(agrirural_luconversions, by = c("descriptio" = "code"))
+  site_shape_data_ar[[ar_marked[i, "site"]]] <- df_merged
   site_plots[[ar_marked[i, "site"]]] <- ggplot() +
     geom_sf(
-      data = df,
-      aes(fill = descriptio)
+      data = df_merged,
+      aes(fill = category)
     ) +
-    theme_void()
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "arable" = "#EE6677", "built-up area" = "#CCBB44",
+        "Non-agricultural unmanaged green space" = "#228833",
+        "water" = "#4477AA", "pasture" = "#BBBBBB", "woodland" = "#BBBBBB",
+        "Non-agricultural managed green space" = "#BBBBBB", "fruit" = "#BBBBBB",
+        "OSR" = "#BBBBBB", "other agricultural" = "#BBBBBB"
+      )
+    )
 }
 
 # make loadings plot
@@ -918,14 +933,12 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
   ) +
   scale_colour_manual(
     values = c(
-      "arable" = "red3", "built.up.area" = "orange3",
-      "Non.agricultural.unmanaged.green.space" = "seagreen3",
-      "water" = "cornflowerblue", other = "grey"
+      "arable" = "#EE6677", "built.up.area" = "#CCBB44",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
     )
   ) +
   ylim(-0.6, 0.6)
-
-loading_plot
 
 # combine plots into facet
 
@@ -943,7 +956,7 @@ sitelumaps <- plot_grid(
 
 # now the model fit and pls results in a plot of two
 mfitpls <- plot_grid(
-  ar_fit + theme(plot.margin = unit(c(0., 0., 1., 0.), "cm")),
+  ar_fit + theme(plot.margin = unit(c(0., 0., 0.2, 0.), "cm")),
   loading_plot,
   ncol = 1,
   align = "v",
@@ -953,18 +966,77 @@ mfitpls <- plot_grid(
 )
 
 # all together
-
 comb <- plot_grid(
   mfitpls, sitelumaps,
-  nrow = 1, scale = 0.9, align = "h"
+  nrow = 1, scale = 0.9, align = "h",
+  rel_widths = c(1, .5)
+)
+
+# MAPS BELLOW PLOT
+# first the maps in a column of three
+sitelumaps <- plot_grid(
+  site_plots[[1]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  site_plots[[2]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  site_plots[[3]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  nrow = 1,
+  align = "h",
+  labels = c(
+    names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
+  )
+)
+
+mfitpls <- plot_grid(
+  ar_fit + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
+  sitelumaps,
+  ncol = 1,
+  align = "v",
+  rel_heights = c(1, .5),
+  labels = c(
+    "A", ""
+  )
+)
+
+mfitpls_top <- plot_grid(
+  sitelumaps + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
+  ar_fit + theme(plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")),
+  ncol = 1,
+  align = "v",
+  rel_heights = c(.5, 1),
+  labels = c(
+    "", "A"
+  )
+)
+
+
+# all together
+comb <- plot_grid(
+  mfitpls_top, loading_plot,
+  nrow = 1, align = "b",
+  rel_widths = c(1, .4),
+  labels = c("", "B", "")
 )
 
 comb
+
 ```
 
 ### Urban
 
 ```{r, agrirural_landuse_maps, message = FALSE, warning = FALSE}
+
+# load land-use conversion table
+luconversions <- read.csv("data/LUCategoryConversion.csv")
+urban_luconversions <- luconversions %>%
+  filter(LU == "urban")
 
 # make fit map with agrirural landuses
 urban_plotdata$site <- urban_lu$site
@@ -999,7 +1071,7 @@ u_fit <- ggplot(
   ylab("Estimated proportion of scouts")
 
 # make the maps for each of the sites selected in the previous step
-site_shape_data <- list()
+site_shape_data_u <- list()
 site_plots <- list()
 for (i in seq_len(3)) {
   path <- paste0(
@@ -1011,13 +1083,25 @@ for (i in seq_len(3)) {
     st_transform(
       CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
     )
-  site_shape_data[[u_marked[i, "site"]]] <- df
+  # add major LU categories
+  df_merged <- df %>%
+    mutate(descriptio = toupper(descriptio)) %>%
+    full_join(urban_luconversions, by = c("descriptio" = "code"))
+  site_shape_data_u[[u_marked[i, "site"]]] <- df_merged
   site_plots[[u_marked[i, "site"]]] <- ggplot() +
     geom_sf(
-      data = df,
-      aes(fill = descriptio)
+      data = df_merged,
+      aes(fill = category)
     ) +
-    theme_void()
+    theme_void() +
+    scale_fill_manual(
+      values = c(
+        "continuous central" = "#EE6677", "dense residential" = "#AA3377",
+        "sparse residential" = "#CCBB44", "amenity grassland" = "#228833",
+        "water" = "#4477AA", "parks allotments cemeteries" = "#BBBBBB",
+        "Railway" = "#BBBBBB", "woodland" = "#BBBBBB"
+      )
+    )
 }
 
 
@@ -1048,6 +1132,9 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
     hjust = 0.25,
     nudge_y = c(-0, -0), nudge_x = c(0.5, 0.5), size = rel(3)
   ) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
   geom_rect(
     aes(
       ymin = -agrirural_loadings$cutoff,
@@ -1067,14 +1154,12 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
   ) +
   scale_colour_manual(
     values = c(
-      "continuous..central" = "red3", "dense.residential" = "orange3",
-      "sparse.residential" = "purple3", "amenity.grassland" = "seagreen3",
-      "water" = "cornflowerblue", other = "grey"
+      "continuous.central" = "#EE6677", "dense.residential" = "#AA3377",
+      "sparse.residential" = "#CCBB44", "amenity.grassland" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
     )
   ) +
   scale_y_continuous(breaks = seq(-.9, .9, by = 0.4), limits = c(-1, 1))
-
-loading_plot
 
 # combine plots into facet
 
@@ -1108,7 +1193,61 @@ comb <- plot_grid(
   nrow = 1, scale = 0.9, align = "h"
 )
 
+# MAPS BELLOW PLOT
+# first the maps in a column of three
+sitelumaps <- plot_grid(
+  site_plots[[1]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  site_plots[[2]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  site_plots[[3]] + theme(
+    legend.position = "none",
+    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+  ),
+  nrow = 1,
+  align = "h",
+  labels = c(
+    names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
+  )
+)
+
+mfitpls <- plot_grid(
+  u_fit + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
+  sitelumaps,
+  ncol = 1,
+  align = "v",
+  rel_heights = c(1, .4),
+  labels = c(
+    "A", ""
+  )
+)
+
+# all together
+comb <- plot_grid(
+  mfitpls, loading_plot,
+  nrow = 1, align = "h",
+  rel_widths = c(1, .8),
+  labels = c("", "B", "")
+)
+
 comb
+
+```
+
+
+```{r}
+
+vals <- c()
+for (l in c(site_shape_data_ar, site_shape_data_u)) {
+   vals <- c(vals, unique(as.vector(l$descriptio)))
+}
+
+unique(vals)
+
 ```
 
 
