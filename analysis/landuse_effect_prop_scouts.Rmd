@@ -800,6 +800,8 @@ library(sf)
 library(sp)
 library(ggspatial)
 
+textsize <- 8
+
 # load land-use conversion table
 luconversions <- read.csv("data/LUCategoryConversion.csv")
 agrirural_luconversions <- luconversions %>%
@@ -831,10 +833,10 @@ ar_fit <- ggplot(
   ) +
   geom_text(
     data = ar_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
-    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(3)
+    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(textsize)
   ) +
   theme_classic() +
-  theme(legend.position = "none") +
+  theme(legend.position = "none", text = element_text(size=rel(textsize-2))) +
   xlab("PC 1") +
   ylab("Estimated proportion of scouts")
 
@@ -864,7 +866,7 @@ for (i in seq_len(3)) {
     theme_void() +
     scale_fill_manual(
       values = c(
-        "arable" = "#EE6677", "built-up area" = "#CCBB44",
+        "arable" = "#CCBB44", "built-up area" = "#EE6677",
         "Non-agricultural unmanaged green space" = "#228833",
         "water" = "#4477AA", "pasture" = "#BBBBBB", "woodland" = "#BBBBBB",
         "Non-agricultural managed green space" = "#BBBBBB", "fruit" = "#BBBBBB",
@@ -902,14 +904,14 @@ argi.rural.loadings <- tibble(
   )
 
 loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
-  geom_point(aes(colour = significant), size = rel(3)) +
+  geom_point(aes(colour = significant), size = rel(textsize)) +
   geom_segment(aes(
     x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
   )) +
   geom_text(
     aes(x = Landuse, y = Correlation, label = Landuse),
     hjust = 0.25,
-    nudge_y = c(0, 0), nudge_x = c(0.5, 0.5), size = rel(3)
+    nudge_y = c(0, 0), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
   geom_hline(
     yintercept = 0, color = "black"
@@ -929,11 +931,12 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    legend.position = "None"
+    legend.position = "None",
+    text = element_text(size=rel(textsize-2))
   ) +
   scale_colour_manual(
     values = c(
-      "arable" = "#EE6677", "built.up.area" = "#CCBB44",
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
       "Non.agricultural.unmanaged.green.space" = "#228833",
       "water" = "#4477AA", other = "#BBBBBB"
     )
@@ -942,90 +945,60 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
 
 # combine plots into facet
 
-# first the maps in a column of three
-sitelumaps <- plot_grid(
-  site_plots[[3]] + theme(legend.position = "none"),
-  site_plots[[2]] + theme(legend.position = "none"),
-  site_plots[[1]] + theme(legend.position = "none"),
-  ncol = 1,
-  align = "v",
-  labels = c(
-    names(site_plots)[3], names(site_plots)[2], names(site_plots)[1]
-  )
-)
-
-# now the model fit and pls results in a plot of two
-mfitpls <- plot_grid(
-  ar_fit + theme(plot.margin = unit(c(0., 0., 0.2, 0.), "cm")),
-  loading_plot,
-  ncol = 1,
-  align = "v",
-  labels = c(
-    "A", "B"
-  )
-)
-
-# all together
-comb <- plot_grid(
-  mfitpls, sitelumaps,
-  nrow = 1, scale = 0.9, align = "h",
-  rel_widths = c(1, .5)
-)
-
 # MAPS BELLOW PLOT
 # first the maps in a column of three
 sitelumaps <- plot_grid(
   site_plots[[1]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   site_plots[[2]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   site_plots[[3]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   nrow = 1,
   align = "h",
   labels = c(
     names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
-  )
+  ),
+  label_size = rel(textsize*5)
 )
 
 mfitpls <- plot_grid(
   ar_fit + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
   sitelumaps,
   ncol = 1,
-  align = "v",
+  align = "l",
   rel_heights = c(1, .5),
   labels = c(
     "A", ""
-  )
+  ),
+  label_size = rel(textsize*5)
 )
-
-mfitpls_top <- plot_grid(
-  sitelumaps + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
-  ar_fit + theme(plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "cm")),
-  ncol = 1,
-  align = "v",
-  rel_heights = c(.5, 1),
-  labels = c(
-    "", "A"
-  )
-)
-
 
 # all together
 comb <- plot_grid(
-  mfitpls_top, loading_plot,
-  nrow = 1, align = "b",
+  mfitpls, loading_plot,
+  nrow = 1, align = "h",
   rel_widths = c(1, .4),
-  labels = c("", "B", "")
+  labels = c("", "B", ""),
+  label_size = rel(textsize*5)
 )
 
 comb
+
+ggsave(
+  plot = comb,
+  filename = "results/figures/lu_prop_scouts_agrirural.png",
+  width = 183,
+  height = 183,
+  units = "mm",
+  dpi = 300
+)
 
 ```
 
@@ -1056,7 +1029,7 @@ u_fit <- ggplot(
   ) +
   geom_text(
     data = u_marked, aes(x = Comp_.1, y = prop_scouts, label = site),
-    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(3)
+    nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(textsize)
   ) +
   geom_line(data = urban_fitdata, aes(x = Comp_.1, y = fit)) +
   geom_ribbon(
@@ -1066,7 +1039,7 @@ u_fit <- ggplot(
     fill = "deepskyblue"
   ) +
   theme_classic() +
-  theme(legend.position = "none") +
+  theme(legend.position = "none", text = element_text(size=rel(textsize-2))) +
   xlab("PC 1") +
   ylab("Estimated proportion of scouts")
 
@@ -1123,14 +1096,14 @@ urban.loadings <- tibble(
   )
 
 loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
-  geom_point(aes(colour = significant), size = rel(3)) +
+  geom_point(aes(colour = significant), size = rel(textsize)) +
   geom_segment(aes(
     x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
   )) +
   geom_text(
     aes(x = Landuse, y = Correlation, label = Landuse),
-    hjust = 0.25,
-    nudge_y = c(-0, -0), nudge_x = c(0.5, 0.5), size = rel(3)
+    hjust = 0.55,
+    nudge_y = c(-0, -0), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
   geom_hline(
     yintercept = 0, color = "black"
@@ -1150,7 +1123,8 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
     axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    legend.position = "None"
+    legend.position = "None",
+    text = element_text(size=rel(textsize-2))
   ) +
   scale_colour_manual(
     values = c(
@@ -1159,82 +1133,64 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
       "water" = "#4477AA", other = "#BBBBBB"
     )
   ) +
-  scale_y_continuous(breaks = seq(-.9, .9, by = 0.4), limits = c(-1, 1))
+  scale_y_continuous(breaks = seq(-1, 1, by = 0.4), limits = c(-1, 1))
 
 # combine plots into facet
-
-# first the maps in a column of three
-sitelumaps <- plot_grid(
-  site_plots[[3]] + theme(legend.position = "none"),
-  site_plots[[2]] + theme(legend.position = "none"),
-  site_plots[[1]] + theme(legend.position = "none"),
-  ncol = 1,
-  align = "v",
-  labels = c(
-    names(site_plots)[3], names(site_plots)[2], names(site_plots)[1]
-  )
-)
-
-# now the model fit and pls results in a plot of two
-mfitpls <- plot_grid(
-  u_fit + theme(plot.margin = unit(c(0., 0., 1., 0.), "cm")),
-  loading_plot,
-  ncol = 1,
-  align = "v",
-  labels = c(
-    "A", "B"
-  )
-)
-
-# all together
-
-comb <- plot_grid(
-  mfitpls, sitelumaps,
-  nrow = 1, scale = 0.9, align = "h"
-)
 
 # MAPS BELLOW PLOT
 # first the maps in a column of three
 sitelumaps <- plot_grid(
   site_plots[[1]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   site_plots[[2]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   site_plots[[3]] + theme(
     legend.position = "none",
-    plot.margin = unit(c(0.1, 0.2, -1.2, 0.2), "cm")
+    plot.margin = unit(c(0., 0., -1.2, 0.), "cm")
   ),
   nrow = 1,
   align = "h",
   labels = c(
     names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
-  )
+  ),
+  label_size = rel(textsize*5)
 )
 
 mfitpls <- plot_grid(
   u_fit + theme(plot.margin = unit(c(0.2, 0.2, 1.2, 0.2), "cm")),
   sitelumaps,
   ncol = 1,
-  align = "v",
-  rel_heights = c(1, .4),
+  align = "l",
+  rel_heights = c(1, .5),
   labels = c(
     "A", ""
-  )
+  ),
+  label_size = rel(textsize*5)
 )
 
 # all together
 comb <- plot_grid(
   mfitpls, loading_plot,
   nrow = 1, align = "h",
-  rel_widths = c(1, .8),
-  labels = c("", "B", "")
+  rel_widths = c(1, .45),
+  labels = c("", "B", ""),
+  label_size = rel(textsize*5)
 )
 
 comb
+
+ggsave(
+  plot = comb,
+  filename = "results/figures/lu_prop_scouts_urban.png",
+  width = 183,
+  height = 183,
+  units = "mm",
+  dpi = 300
+)
 
 ```
 
