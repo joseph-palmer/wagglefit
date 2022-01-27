@@ -1209,6 +1209,15 @@ ggsave(
   dpi = 300
 )
 
+ggsave(
+  plot = comb,
+  filename = "results/figures/lu_prop_scouts_urban.svg",
+  width = 183,
+  height = 183,
+  units = "mm",
+  dpi = 300
+)
+
 ```
 
 

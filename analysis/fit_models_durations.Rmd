@@ -1338,6 +1338,15 @@ ggsave(
   dpi = 300
 )
 
+ggsave(
+  plot = sites_model_plot,
+  filename = "results/figures/sites_model_plot.svg",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
 model_sites_fits <- plot_grid(
   merge_plot_2, ks_plot_dist,
   labels = c("A", "B"), label_size = 24
