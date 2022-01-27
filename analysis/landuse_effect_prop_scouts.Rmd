@@ -812,9 +812,11 @@ agrirural_plotdata$site <- rural_lu$site
 agrirural_plotdata$prop_scouts <- rural_lu$p
 ar_sortedpropscouts <- arrange(agrirural_plotdata, prop_scouts)
 
+print(ar_sortedpropscouts)
+
 # select sites to draw attention to, those sitting on the trend
 ar_marked <- ar_sortedpropscouts %>%
-  filter(site %in% c("MEL", "SOM", "BEL"))
+  filter(site %in% c("MEL", "ROT", "BEL"))
 
 # make model fit graph of pc1 against prop scouts and mark the sites
 ar_fit <- ggplot(
@@ -911,7 +913,7 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
   geom_text(
     aes(x = Landuse, y = Correlation, label = Landuse),
     hjust = 0.25,
-    nudge_y = c(0, 0), nudge_x = c(0.5, 0.5), size = rel(textsize)
+    nudge_y = c(0, -0.05), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
   geom_hline(
     yintercept = 0, color = "black"
@@ -1000,11 +1002,20 @@ ggsave(
   dpi = 300
 )
 
+ggsave(
+  plot = comb,
+  filename = "results/figures/lu_prop_scouts_agrirural.svg",
+  width = 183,
+  height = 183,
+  units = "mm",
+  dpi = 300
+)
+
 ```
 
 ### Urban
 
-```{r, agrirural_landuse_maps, message = FALSE, warning = FALSE}
+```{r, urban_landuse_maps, message = FALSE, warning = FALSE}
 
 # load land-use conversion table
 luconversions <- read.csv("data/LUCategoryConversion.csv")
@@ -1015,8 +1026,11 @@ urban_luconversions <- luconversions %>%
 urban_plotdata$site <- urban_lu$site
 urban_plotdata$prop_scouts <- urban_lu$p
 u_sortedpropscouts <- arrange(urban_plotdata, prop_scouts)
+
+print(u_sortedpropscouts)
+
 u_marked <- u_sortedpropscouts %>%
-  filter(site %in% c("HOR", "SWP", "CAD"))
+  filter(site %in% c("HHS", "MPA", "CAD"))
 
 # make model fit graph of pc1 against prop scouts and mark the sites with the
 # lowest, middle and highest proportion of scouts
@@ -1069,10 +1083,10 @@ for (i in seq_len(3)) {
     theme_void() +
     scale_fill_manual(
       values = c(
-        "continuous central" = "#EE6677", "dense residential" = "#AA3377",
-        "sparse residential" = "#CCBB44", "amenity grassland" = "#228833",
-        "water" = "#4477AA", "parks allotments cemeteries" = "#BBBBBB",
-        "Railway" = "#BBBBBB", "woodland" = "#BBBBBB"
+        "continuous central" = "#BBBBBB", "dense residential" = "#BBBBBB",
+        "sparse residential" = "#EE6677", "amenity grassland" = "#BBBBBB",
+        "water" = "#BBBBBB", "parks allotments cemeteries" = "#228833",
+        "Railway" = "#CCBB44", "woodland" = "#BBBBBB"
       )
     )
 }
@@ -1102,16 +1116,18 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
   )) +
   geom_text(
     aes(x = Landuse, y = Correlation, label = Landuse),
-    hjust = 0.55,
-    nudge_y = c(-0, -0), nudge_x = c(0.5, 0.5), size = rel(textsize)
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.3), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
+  theme(text = element_text(size = 10)) +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
   geom_rect(
     aes(
-      ymin = -agrirural_loadings$cutoff,
-      ymax = agrirural_loadings$cutoff,
+      ymin = -urban_loadings$cutoff,
+      ymax = urban_loadings$cutoff,
       xmin = 0, xmax = Inf
     ),
     alpha = 0.01
@@ -1128,9 +1144,10 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
   ) +
   scale_colour_manual(
     values = c(
-      "continuous.central" = "#EE6677", "dense.residential" = "#AA3377",
-      "sparse.residential" = "#CCBB44", "amenity.grassland" = "#228833",
-      "water" = "#4477AA", other = "#BBBBBB"
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#BBBBBB", other = "#BBBBBB"
     )
   ) +
   scale_y_continuous(breaks = seq(-1, 1, by = 0.4), limits = c(-1, 1))

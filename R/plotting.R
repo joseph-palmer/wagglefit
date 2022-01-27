@@ -70,12 +70,12 @@ make_base_plot <- function(x, logit = TRUE) {
     plt <- inverse_ccdf(x) %>%
       ggplot(aes(x = .data$sd, y = log(.data$prob))) +
       geom_point() +
-      labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+      labs(x = "Waggle run duration (seconds)", y = "Ln cumulative probability")
   } else {
     plt <- inverse_ccdf(x) %>%
       ggplot(aes(x = .data$sd, y = .data$prob)) +
       geom_point() +
-      labs(x = "Foraging distance (Km)", y = "Ln cumulative probability")
+      labs(x = "Waggle run duration (seconds)", y = "Ln cumulative probability")
   }
   return(plt)
 }

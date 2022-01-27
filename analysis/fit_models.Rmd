@@ -118,6 +118,34 @@ In this document I have fit the collective and individual model to each site. So
 Would be a good idea to knit this as a single document / run in R studio on the laptop.
 
 
+```{r}
+
+calc_dist_actual <- function(duration) {
+  m = 1.38
+  b = 0. #0.17
+  distance = (duration-b) / m
+  # distance = (1/m)*duration-(b/m)
+  return(distance)
+}
+
+data <- read.csv("data/FullHBForagingData.csv")
+
+head(data)
+
+data$newforaging_distance <- calc_dist_actual(data$duration.seconds)
+
+head(data)
+
+par(mfrow = c(2, 2))
+hist(data$duration.seconds)
+hist(data$ForagingDistance_km)
+hist(data$newforaging_distance)
+
+min(data$newforaging_distance)
+min(data$duration.seconds)
+
+```
+
 ### BEL
 
 Provides a good fit on the data. All parameters look central and nicely covered.
