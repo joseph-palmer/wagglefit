@@ -1,0 +1,476 @@
+---
+title: Analysing the effect of land-use type on the proportion of scouts - a *jackknife approach*
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+
+---
+
+```{r preamble, include=FALSE}
+devtools::load_all()
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic()
+)
+
+library(cowplot)
+library(tidyr)
+library(dplyr)
+library(ggfortify)
+library(betareg)
+library(plsRbeta)
+library(lmtest)
+library(kableExtra)
+library(effects)
+```
+
+```{r get-data, include=FALSE, message = FALSE, warning = FALSE}
+# load results of model fit (code to generate found in fit_models.Rmd)
+sitedata <- readRDS("results/site_fit_results.Rda")
+
+# filter for best model
+sitedata <- sitedata %>%
+  group_by(site) %>%
+  slice(which.min(AIC))
+
+# Load land use data taken (taken from Samuelson et al. 2021)
+urban_lu <- read.csv(file = "data/urban-landuse.csv")
+rural_lu <- read.csv(file = "data/agri-rural-landuse.csv")
+
+# put proportion of scouts into landuse data
+urban_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(urban_lu)
+urban_lu_long <- urban_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+rural_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(rural_lu)
+rural_lu_long <- rural_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+```
+
+Here, I will run a jackknifed PLS regression to identify how land-use type influences the proportion of scouts estimated from our model. The purpose of the jackknife is to assess how sensitive the results of the PLS are to a given sample and allow for a more robust assessment of any relationship that is minimally skewed by particular sites.
+
+The jackknife will proceed as follows:
+
+A PLS will be be first ran on the full dataset, and then subsets of the data with a single site, $n_i$, removed. Running the PLS on this data yields loadings and the $x$ values for a beta regression to explore the relationship between the primary axis of land-use variation and the proportion of scouts.
+
+Here the land-use categories stay the same, but a single row (site and associated proportion of scouts) is removed. The PLS is then carried out on the remaining data. This results in a loading value for each land-use type and a beta regressor for each site. Once the replicates for $n-1$ data points have been collected (that is, once we have loadings and regressors for the data with each site individually removed) we the plot the distribution of the loading values for each land-use type as a box plot to see how they vary in relation to the included sites. We also then take all the regressor values and calculate the median of these values for each site. These medians are then compared against the proportion of scouts in a beta regression and the results Bonferroni corrected.
+
+---
+
+Alternatively, the beta regression slope for each iteration in the jackknife could be used to estimate an overall mean and standard error that could be used to determine significance.
+
+Maybe a plot of the slope coefficients against $p$ might also show if the removal of a single site greatly influences the results of the analysis.
+
+---
+
+```{r, jackknife_functions, message=FALSE, warning=FALSE}
+run_betareg <- function(model) {
+  # requires global assignment for predictorEffects to find it
+  plsdata <<- data.frame(
+    prop.scouts = model$dataY,
+    model$tt
+  )
+
+  plsbetamodel <- betareg(
+    prop.scouts ~ Comp_.1,
+    plsdata
+  )
+  print(summary(plsbetamodel))
+  newdat <- data_frame(
+    Comp_.1 = seq(
+      min(plsdata$Comp_.1),
+      max(plsdata$Comp_.1),
+      length.out = length(plsdata$Comp_.1)
+    )
+  )
+  newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+  # get effects
+  fitdata <- as.data.frame(predictorEffects(plsbetamodel))$Comp_.1
+  plotdata <- plsdata
+  plotdata$p <- plsdata$prop.scouts
+
+  # make plot
+  plt <- ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
+    geom_point() +
+    geom_line(data = fitdata, aes(x = Comp_.1, y = fit)) +
+    geom_ribbon(
+      data = fitdata,
+      aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
+      alpha = 0.2,
+      fill = "deepskyblue"
+    )
+  print(plt)
+  readline(prompt = "Continue?")
+}
+
+run_pls <- function(data) {
+  model_pls <- plsRbeta(
+    p_transform ~ .,
+    data = data,
+    nt = ncol(data) - 1,
+    model = "pls-beta",
+    verbose = FALSE
+  )
+  # run_betareg(model_pls)
+  plsdata <- data.frame(
+    prop.scouts = model_pls$dataY,
+    pc1 = model_pls$tt[, 1]
+  )
+  plsbetamodel <- betareg(
+    prop.scouts ~ pc1,
+    plsdata
+  )
+  pls_loadings <- model_pls$pp[, 1]
+  # get beta regression data
+  plsdata <- data.frame(
+    prop.scouts = model_pls$dataY,
+    model_pls$tt
+  )
+  returnlist <- list(
+    "loadings" = pls_loadings, "plsdata" = plsdata[, 1:2],
+    "coef" = coef(plsbetamodel)[[2]]
+  )
+  return(returnlist)
+}
+```
+
+## Urban
+
+```{r, urban_pls, message = FALSE, warning = FALSE}
+
+# set up data for pls
+urban.pcadata <- urban_lu[, 3:length(names(urban_lu))]
+sites <- urban_lu$site
+urban_cuttoff <- sqrt(1 / (ncol(urban.pcadata) - 1))
+n <- length(urban_lu$p)
+y <- (urban_lu$p * (n - 1) + 0.5) / n
+urban.pcadata$p_transform <- y
+
+# create empty lists to store jackknifed results in
+jkloadings <- list()
+jkplsdata <- list()
+jkcoefs <- list()
+
+# jackknife the pls analysis
+for (i in c(0, seq_len(nrow(urban.pcadata)))) {
+  data <- urban.pcadata
+  removed <- 0
+  usesites <- "None"
+  if (i > 0) {
+    data <- data[-i, ]
+    removed <- urban.pcadata[i, ncol(urban.pcadata)][[1]]
+    usesites <- sites[-i]
+  }
+  result <- run_pls(data)
+  loadings <- result[["loadings"]]
+  plsdata <- result[["plsdata"]]
+  coef <- result[["coef"]]
+  landuse_type <- names(loadings)
+
+  resloadings <- tibble(landuse_type, loadings)
+  resloadings$p_removed <- removed
+  jkloadings[[paste(i)]] <- resloadings
+
+  resplsdata <- plsdata
+  resplsdata$p_removed <- removed
+  resplsdata$site <- usesites
+  jkplsdata[[paste(i)]] <- resplsdata
+  coefres <- tibble(coef, removed, usesites)
+  jkcoefs[[paste(i)]] <- coefres
+}
+
+# process loadings
+urban_jk_loadings <- do.call(bind_rows, jkloadings)
+
+# plot loadings
+urban_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+ggplot(data = urban_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_boxplot() +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#BBBBBB", other = "#BBBBBB"
+    )
+  )
+
+
+# process plsdata for model fit on the median or mean response from JK PLS
+urban_jk_pls <- do.call(bind_rows, jkplsdata)
+n <- 10
+urban_jk_pls$p <- (2 * n * urban_jk_pls$prop.scouts - 1) / (2 * (n - 1)) # convert to p
+
+forjoin <- urban_lu %>%
+  select(site, p)
+
+urban_median_pls_data <- urban_jk_pls %>%
+  group_by(site) %>%
+  summarise(pc1 = median(Comp_.1, na.rm = TRUE)) %>%
+  right_join(forjoin, by = "site") %>%
+  mutate(prop.scouts = (p * (n - 1) + 0.5) / n)
+
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  urban_median_pls_data
+)
+
+# show pls summary
+print(summary(plsbetamodel))
+
+# set up plot of pls average fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(urban_median_pls_data$pc1),
+    max(urban_median_pls_data$pc1),
+    length.out = length(urban_median_pls_data$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+urban_median_pls_data$p <- (2 * n * urban_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of average pls fit
+plt <- ggplot(data = urban_median_pls_data, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+print(plt)
+
+# Show distribution of all response from the JK PLS
+ggplot(data = urban_jk_pls, aes(
+  x = Comp_.1, y = as.factor(p)
+)) +
+  geom_violin(outlier.shape = NA) +
+  stat_summary(fun = median, geom = "point", colour = "red")
+
+# show coef calculated with peticular prop scouts removed from analysis
+urban_jk_coef <- do.call(bind_rows, jkcoefs)
+ggplot(urban_jk_coef[2:nrow(urban_jk_coef), ], aes(x = removed, y = coef)) +
+  geom_point() +
+  geom_hline(
+    yintercept = mean(urban_jk_coef$coef), color = "red"
+  ) +
+  geom_hline(
+    yintercept = urban_jk_coef[1, 1][[1]], color = "blue"
+  ) +
+  geom_hline(
+    yintercept = median(urban_jk_coef$coef), color = "green"
+  )
+```
+
+
+
+## Agri-rural PLS
+
+```{r, rural_pls, message = FALSE, warning = FALSE}
+
+# set up data for pls
+rural.pcadata <- rural_lu[, 3:length(names(rural_lu))]
+sites <- rural_lu$site
+rural_cuttoff <- sqrt(1 / (ncol(rural.pcadata) - 1))
+n <- length(rural_lu$p)
+y <- (rural_lu$p * (n - 1) + 0.5) / n
+rural.pcadata$p_transform <- y
+
+# create empty lists to store jackknifed results in
+jkloadings <- list()
+jkplsdata <- list()
+jkcoefs <- list()
+
+# jackknife the pls analysis
+for (i in c(0, seq_len(nrow(rural.pcadata)))) {
+  data <- rural.pcadata
+  removed <- 0
+  usesites <- "None"
+  if (i > 0) {
+    data <- data[-i, ]
+    removed <- rural.pcadata[i, ncol(rural.pcadata)][[1]]
+    usesites <- sites[-i]
+  }
+  result <- run_pls(data)
+  loadings <- result[["loadings"]]
+  plsdata <- result[["plsdata"]]
+  coef <- result[["coef"]]
+  landuse_type <- names(loadings)
+
+  resloadings <- tibble(landuse_type, loadings)
+  resloadings$p_removed <- removed
+  jkloadings[[paste(i)]] <- resloadings
+
+  resplsdata <- plsdata
+  resplsdata$p_removed <- removed
+  resplsdata$site <- usesites
+  jkplsdata[[paste(i)]] <- resplsdata
+  coefres <- tibble(coef, removed, usesites)
+  jkcoefs[[paste(i)]] <- coefres
+}
+
+# process loadings
+rural_jk_loadings <- do.call(bind_rows, jkloadings)
+
+# plot loadings
+rural_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+ggplot(data = rural_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_boxplot() +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+
+# process plsdata for model fit on the median or mean response from JK PLS
+rural_jk_pls <- do.call(bind_rows, jkplsdata)
+n <- 10
+rural_jk_pls$p <- (2 * n * rural_jk_pls$prop.scouts - 1) / (2 * (n - 1)) # convert to p
+
+forjoin <- rural_lu %>%
+  select(site, p)
+
+rural_median_pls_data <- rural_jk_pls %>%
+  group_by(site) %>%
+  summarise(pc1 = median(Comp_.1, na.rm = TRUE)) %>%
+  right_join(forjoin, by = "site") %>%
+  mutate(prop.scouts = (p * (n - 1) + 0.5) / n)
+
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  rural_median_pls_data
+)
+
+# show pls summary
+print(summary(plsbetamodel))
+
+# set up plot of pls average fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(rural_median_pls_data$pc1),
+    max(rural_median_pls_data$pc1),
+    length.out = length(rural_median_pls_data$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+rural_median_pls_data$p <- (2 * n * rural_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of average pls fit
+plt <- ggplot(data = rural_median_pls_data, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+print(plt)
+
+# Show distribution of all response from the JK PLS
+ggplot(data = rural_jk_pls, aes(
+  x = Comp_.1, y = as.factor(p)
+)) +
+  geom_violin(outlier.shape = NA) +
+  stat_summary(fun = median, geom = "point", colour = "red")
+
+# show coef calculated with peticular prop scouts removed from analysis
+rural_jk_coef <- do.call(bind_rows, jkcoefs)
+ggplot(rural_jk_coef[2:nrow(rural_jk_coef), ], aes(x = removed, y = coef)) +
+  geom_point() +
+  geom_hline(
+    yintercept = mean(rural_jk_coef$coef), color = "red"
+  ) +
+  geom_hline(
+    yintercept = rural_jk_coef[1, 1][[1]], color = "blue"
+  ) +
+  geom_hline(
+    yintercept = median(rural_jk_coef$coef), color = "green"
+  )
+```
