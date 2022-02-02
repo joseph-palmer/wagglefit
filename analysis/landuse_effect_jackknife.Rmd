@@ -37,7 +37,7 @@ library(kableExtra)
 library(effects)
 ```
 
-```{r get-data, include=FALSE, message = FALSE, warning = FALSE}
+```{r get-data, include=FALSE, message = FALSE, error = FALSE, warning = FALSE}
 # load results of model fit (code to generate found in fit_models.Rmd)
 sitedata <- readRDS("results/site_fit_results.Rda")
 
@@ -64,61 +64,47 @@ rural_lu_long <- rural_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 ```
 
-Here, I will run a jackknifed PLS regression to identify how land-use type influences the proportion of scouts estimated from our model. The purpose of the jackknife is to assess how sensitive the results of the PLS are to a given sample and allow for a more robust assessment of any relationship that is minimally skewed by particular sites.
+# TLDR:
+
+A jackknife was carried out on the PLS beta regression whereby each site was excluded from the analysis and the fits to the others established. This was done to assess if a single site biased the model and should be treated as an outlier.
+
+In the urban dataset, site CAD, with a proportion of scouts value of 1 bears the hallmarks of an outlier, the removal of which influences the results of the study more than the removal of any other point. No outliers were identified in the agri-rural dataset.
+
+In addition to showing fits with and without outliers for the urban data, for both environments the jackknifed analysis shows how the loadings vary with each site removed and how the model fits look on the average of the PLS beta values from across the jackknifed analyses. These results suggest the agri-rural data is fairly robust to removing individual sites, however, the urban data is less robust, exemplifying the bias introduced by site CAD. The urban results are overall more volatile than the agri-rural.
+
+By doing this analysis I find more coherent results for the urban sites and demonstrate that more data is needed to draw more firm conclusions. The agri-rural data, although only having ten sites, shows a consistent pattern.
+
+In addition, I also plot the loadings to show the amount of area a particular landuse type corresponds to in the total land of all the sites in that environment as a percentage. This allows us to see how much land each land-use type covers. A linear regression between the loadings of PC1 and the amount of land identified shows no significant relationship between the two variables, indicating the amount of land is not influencing the PLS results.
+
+
+# Jackknife analysis to investigate PLS sensitivity to outliers
+
+
+Looking over the results of the PLS it is apparent that in the urban PLS the beta regression analysis appears skewed by a single site, CAD, which has a proportion of scouts much higher than the others. It is important to investigate how outliers are influencing our results, particularly in the urban dataset but also with the agri-rural sites. To do this I present an analysis to see if there are any outliers and what effect these have on the results of the PLS and beta regression.
+
+Although site CAD appears to be an outlier, it is prudent to formally establish outliers in both datasets to ensure no other outliers are missed and ensure statistical rigour. To do this I will perform a jackknifed PLS regression to identify how land-use type influences the proportion of scouts estimated from our model. The purpose of the jackknife is to assess how sensitive the results of the PLS are to a given sample and allow for a more robust assessment of any relationship that is skewed by particular sites.
 
 The jackknife will proceed as follows:
 
 A PLS will be be first ran on the full dataset, and then subsets of the data with a single site, $n_i$, removed. Running the PLS on this data yields loadings and the $x$ values for a beta regression to explore the relationship between the primary axis of land-use variation and the proportion of scouts.
 
-Here the land-use categories stay the same, but a single row (site and associated proportion of scouts) is removed. The PLS is then carried out on the remaining data. This results in a loading value for each land-use type and a beta regressor for each site. Once the replicates for $n-1$ data points have been collected (that is, once we have loadings and regressors for the data with each site individually removed) we the plot the distribution of the loading values for each land-use type as a box plot to see how they vary in relation to the included sites. We also then take all the regressor values and calculate the median of these values for each site. These medians are then compared against the proportion of scouts in a beta regression and the results Bonferroni corrected.
+Here the land-use categories stay the same, but a single row (site and associated proportion of scouts) is removed. The PLS is then carried out on the remaining data. This results in a loading value for each land-use type and a beta regressor for each site. Once the replicates for $n-1$ data points have been collected (that is, once we have loadings and regressors for the data with each site individually removed) I will examine the distribution of slope values identified from the beta regression. I will also the plot the distribution of the loading values for each land-use type as a box plot to see how they vary in relation to the included sites. We also then take all the regressor values and calculate the median of these values for each site. These medians are then compared against the proportion of scouts in a beta regression.
 
----
+```{r, jackknife_functions, message=FALSE, warning=FALSE, echo = FALSE}
 
-Alternatively, the beta regression slope for each iteration in the jackknife could be used to estimate an overall mean and standard error that could be used to determine significance.
-
-Maybe a plot of the slope coefficients against $p$ might also show if the removal of a single site greatly influences the results of the analysis.
-
----
-
-```{r, jackknife_functions, message=FALSE, warning=FALSE}
-run_betareg <- function(model) {
-  # requires global assignment for predictorEffects to find it
-  plsdata <<- data.frame(
-    prop.scouts = model$dataY,
-    model$tt
-  )
-
-  plsbetamodel <- betareg(
-    prop.scouts ~ Comp_.1,
-    plsdata
-  )
-  print(summary(plsbetamodel))
-  newdat <- data_frame(
-    Comp_.1 = seq(
-      min(plsdata$Comp_.1),
-      max(plsdata$Comp_.1),
-      length.out = length(plsdata$Comp_.1)
-    )
-  )
-  newdat$fit <- predict(plsbetamodel, newdat, type = "response")
-
-  # get effects
-  fitdata <- as.data.frame(predictorEffects(plsbetamodel))$Comp_.1
-  plotdata <- plsdata
-  plotdata$p <- plsdata$prop.scouts
-
-  # make plot
-  plt <- ggplot(data = plotdata, aes(x = Comp_.1, y = p)) +
+ggplotRegression <- function(fit) {
+  plt <- ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) +
     geom_point() +
-    geom_line(data = fitdata, aes(x = Comp_.1, y = fit)) +
-    geom_ribbon(
-      data = fitdata,
-      aes(x = Comp_.1, y = fit, ymin = lower, ymax = upper),
-      alpha = 0.2,
-      fill = "deepskyblue"
+    stat_smooth(method = "lm", col = "red") +
+    labs(
+      title = paste(
+        "Adj R2 = ", signif(summary(fit)$adj.r.squared, 5),
+        "Intercept =", signif(fit$coef[[1]], 5),
+        " Slope =", signif(fit$coef[[2]], 5),
+        " P =", signif(summary(fit)$coef[2, 4], 5)
+      )
     )
-  print(plt)
-  readline(prompt = "Continue?")
+  return(plt)
 }
 
 run_pls <- function(data) {
@@ -129,7 +115,6 @@ run_pls <- function(data) {
     model = "pls-beta",
     verbose = FALSE
   )
-  # run_betareg(model_pls)
   plsdata <- data.frame(
     prop.scouts = model_pls$dataY,
     pc1 = model_pls$tt[, 1]
@@ -152,9 +137,12 @@ run_pls <- function(data) {
 }
 ```
 
-## Urban
+## Urban jackknife
 
-```{r, urban_pls, message = FALSE, warning = FALSE}
+
+Starting with the urban dataset, the data is first jackknifed and the metrics reported and discussed in turn.
+
+```{r, urban_pls, message = FALSE, error = FALSE, warning = FALSE, include = FALSE}
 
 # set up data for pls
 urban.pcadata <- urban_lu[, 3:length(names(urban_lu))]
@@ -174,10 +162,12 @@ for (i in c(0, seq_len(nrow(urban.pcadata)))) {
   data <- urban.pcadata
   removed <- 0
   usesites <- "None"
+  removed_site <- "None"
   if (i > 0) {
     data <- data[-i, ]
     removed <- urban.pcadata[i, ncol(urban.pcadata)][[1]]
     usesites <- sites[-i]
+    removed_site <- sites[i]
   }
   result <- run_pls(data)
   loadings <- result[["loadings"]]
@@ -187,6 +177,7 @@ for (i in c(0, seq_len(nrow(urban.pcadata)))) {
 
   resloadings <- tibble(landuse_type, loadings)
   resloadings$p_removed <- removed
+  resloadings$site_removed <- removed_site
   jkloadings[[paste(i)]] <- resloadings
 
   resplsdata <- plsdata
@@ -197,12 +188,249 @@ for (i in c(0, seq_len(nrow(urban.pcadata)))) {
   jkcoefs[[paste(i)]] <- coefres
 }
 
-# process loadings
+# process results of jackknife for further analysis
 urban_jk_loadings <- do.call(bind_rows, jkloadings)
+urban_jk_pls <- do.call(bind_rows, jkplsdata)
+urban_jk_coef <- do.call(bind_rows, jkcoefs)
+```
+
+
+
+### Identifying outlier sites from the slopes of the jackknifed beta regression
+
+After running the beta regression of the jackknifed data we can formally assess outliers by examining the distribution of slopes identified with each site removed.
+
+```{r, urban_jk_slope_dist, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+# show coef calculated with peticular prop scouts removed from analysis
+urban_jk_coef <- do.call(bind_rows, jkcoefs)
+hist(urban_jk_coef$coef, col = "pink")
+```
+
+With only 10 points to investigate the quantiles are not particuarly informative, however, from looking at the graph we can see that the data is left skewed and that there is an influencial point in the left hand bar, as including this point casues the slope to be above 0.6. The majority of points sit around 0.8 to 1.1, however the other bars standing alone (0.6 and 1.2) are in range of the body of weight. Excluding just the 0.4 value is enough to center the data, suggesting these points lie as extremes rather than outliers. With such a small dataset, it is therefore not beyond the realm of reason that the gaps between them would fill in. There is fundimentally a judgment call to be made here, and for the reasons I have outlined I think 0.4 should be determined as the only outlier.
+
+Now lets see what this slope references to.
+
+```{r, urban_jk_slope_dist_value, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+urban_jk_coef %>% filter(coef < 0.4)
+```
+
+The site missing from this dataset is CAD. This is what I would have expected, but it is good to establish this formally. The next task is to now look at how the loadings and betaregression fit looks with and without the inclusion of this site.
+
+
+```{r, urban_jk_outlier_removed, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+# full data fit
+model_pls <- plsRbeta(
+  p_transform ~ .,
+  data = urban.pcadata,
+  nt = ncol(urban.pcadata) - 1,
+  model = "pls-beta",
+  verbose = FALSE
+)
+plsdata <- data.frame(
+  prop.scouts = model_pls$dataY,
+  pc1 = model_pls$tt[, 1]
+)
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  plsdata
+)
+
+print("Full data beta regression")
+print(summary(plsbetamodel))
+
+# set up plot of pls fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(plsdata$pc1),
+    max(plsdata$pc1),
+    length.out = length(plsdata$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+plsdata$p <- (2 * n * plsdata$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of pls fit
+plt_full <- ggplot(data = plsdata, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+# plot loadings
+full_loadings <- as_tibble(model_pls$pp[, 1])
+full_loadings$landuse_type <- names(model_pls$pp[, 1])
+
+urban_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+full_loading_plt <- ggplot(data = full_loadings, aes(
+  x = landuse_type, y = value, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = value, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#BBBBBB", other = "#BBBBBB"
+    )
+  )
+
+# outlier removed fit
+removed_data <- urban.pcadata %>% filter(p_transform < 0.95)
+
+model_pls <- plsRbeta(
+  p_transform ~ .,
+  data = removed_data,
+  nt = ncol(removed_data) - 1,
+  model = "pls-beta",
+  verbose = FALSE
+)
+plsdata <- data.frame(
+  prop.scouts = model_pls$dataY,
+  pc1 = model_pls$tt[, 1]
+)
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  plsdata
+)
+
+print("Outlier removed beta regression")
+print(summary(plsbetamodel))
+
+# set up plot of pls fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(plsdata$pc1),
+    max(plsdata$pc1),
+    length.out = length(plsdata$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+plsdata$p <- (2 * n * plsdata$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of pls fit
+plt_outlier_removed <- ggplot(data = plsdata, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  scale_y_continuous(limits = c(0, 1))
+
+# plot loadings
+outlier_rmv_loadings <- as_tibble(model_pls$pp[, 1])
+outlier_rmv_loadings$landuse_type <- names(model_pls$pp[, 1])
+
+outlier_rmv_loading_plt <- ggplot(data = outlier_rmv_loadings, aes(
+  x = landuse_type, y = value, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = value, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+
+# show all plots
+plot_grid(
+  plt_full, plt_outlier_removed,
+  full_loading_plt, outlier_rmv_loading_plt,
+  ncol = 2, labels = "AUTO"
+)
+```
+
+plots A and C show the PLS beta regression of PC1 to the proportion of scouts and the loadings for PC1 respectively for the full data. Plots B and D show the same thing but to the data with site CAD removed. The first thing to note is the change in loadings when CAD is removed, with water showing a significant negative correlation, whilst sparse residential flips to become a singificant positive correlation. The fit beta regression fit with CAD removed remains singificant, but is less significant than with the outlier included: p < 0.05 vs p < 0.01 with CAD indluced. Whats more, the amount of variation explained, Psudo-$R^2$ is much lower at ~0.41. Overall, this suggests that landuse type explains some, but not a majority of variation in the proportion of scouts identified in our model, indicating other factors are likely contributing, or we simply dont have enough data.
+
+Overall, this result shows the urban dataset is vulnerable to the site CAD, which seems to be acting as an outlier.
+
+### Examining how the loadings and fit changes through the jackknifed analysis
+
+The jacknife computes a PLS beta regression for the sample with each site removed. It is thus possible to observe how the loadings change with each site removed and also to look at the regression fit of the average of the regressors outlined from the beta regressions run over the data.
+
+```{r, urban_jk_averaged_fits, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
 
 # plot loadings
 urban_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
-ggplot(data = urban_jk_loadings, aes(
+urban_average_loadings_plt <- ggplot(data = urban_jk_loadings, aes(
   x = landuse_type, y = loadings, fill = landuse_type
 )) +
   geom_boxplot() +
@@ -280,7 +508,7 @@ fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
 urban_median_pls_data$p <- (2 * n * urban_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
 
 # make plot of average pls fit
-plt <- ggplot(data = urban_median_pls_data, aes(x = pc1, y = p)) +
+urban_average_fit_plt <- ggplot(data = urban_median_pls_data, aes(x = pc1, y = p)) +
   geom_point() +
   geom_line(data = fitdata, aes(x = pc1, y = fit)) +
   geom_ribbon(
@@ -289,35 +517,168 @@ plt <- ggplot(data = urban_median_pls_data, aes(x = pc1, y = p)) +
     alpha = 0.2,
     fill = "deepskyblue"
   )
-print(plt)
 
-# Show distribution of all response from the JK PLS
-ggplot(data = urban_jk_pls, aes(
-  x = Comp_.1, y = as.factor(p)
-)) +
-  geom_violin(outlier.shape = NA) +
-  stat_summary(fun = median, geom = "point", colour = "red")
 
-# show coef calculated with peticular prop scouts removed from analysis
-urban_jk_coef <- do.call(bind_rows, jkcoefs)
-ggplot(urban_jk_coef[2:nrow(urban_jk_coef), ], aes(x = removed, y = coef)) +
-  geom_point() +
-  geom_hline(
-    yintercept = mean(urban_jk_coef$coef), color = "red"
-  ) +
-  geom_hline(
-    yintercept = urban_jk_coef[1, 1][[1]], color = "blue"
-  ) +
-  geom_hline(
-    yintercept = median(urban_jk_coef$coef), color = "green"
-  )
+# show all plots
+plot_grid(
+  urban_average_fit_plt, urban_average_loadings_plt,
+  ncol = 1, labels = "AUTO"
+)
 ```
 
+Plot A shows the fit of the beta regression to the median PC1 values (I.e. the median of the pc1 values identified at each itteration in the jackknife). Plot B shows the distribution of the loadings identified for each itteration in the jackknife. What is clear is that, on average, parks allotments and cemeteries remains sigificantly positive whilst sparse residential is singificantly negative and railways boarders on significant negative. The points (black dots) show the outliers for all of these and for sparse residential the outlier is in the position identified from conducting the PLS without CAD.
+
+The fit of the model is also better than for the full data, with the psudo $R^2$ value increasing to ~0.63 vs 0.59, suggesting averaging over jackknife itterations helps reduce variability in the beta regression.
+
+In many cases there are multiple outliers identifies in the distributions, such as woodland and water. However, drilling down further into these is unlikely to be that informative, as we are dealing with high dimensional spaces with only 9 data points.
+
+## Further analysis of sensitivity to site removal and landuse proportions: digging into the the distributions of PLS loadings
+
+Here I show the loadings for each jackknife itteration, that is each PLS ran with a specific site removed. The following plot shows abreak down of the boxplots shown previously.
+
+```{r, urban_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(data = urban_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  ) +
+  facet_wrap(~site_removed)
+```
+
+There is a fair amount of variation in these plots, more than is shown with the boxplots for sure. Many landuse types move around in an out of being significant depending on what site is removed, but parks allotments and cemeteries and sparse residential remain relatively consistent in their position, except for when CAD is removed.
+
+## How does this compare with the proportion of land-coverage for each site?
+
+I now recreate the main plot but using the percentage of total area that covers as the argument to the size parameter. for the plot.
+
+```{r, urban_jk_loadings_landuse_area, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+area_sites_used <- urban_lu %>% filter(site != "CAD")
+
+total_area <- area_sites_used[, 3:ncol(area_sites_used)] %>%
+  colSums()
+total_area <- tibble(landuse_type = names(total_area), area = total_area)
+total_area$area_pct <- (total_area$area / sum(total_area$area)) * 100
+
+urban_lu_loadings_with_area <- urban_jk_loadings %>%
+  left_join(total_area, by = "landuse_type") %>%
+  filter(site_removed == "CAD") # <---- remove outlier site
+
+ggplot(data = urban_lu_loadings_with_area, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type, size = area_pct)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+urban_lu_loadings_with_area %>%
+  arrange(-area_pct) %>%
+  print()
+```
+
+As we can see from the graph and the table, sparse residential coveres the most land, around 39%. Parks allotments and cemeteries describes around 8% of the land, whilst water explains around 3%. Railway, a singificant contributor, accounts just 1% of the total land area.
+
+It is also important to check if there is a correlation between the loadings and the area for each landuse type. This was done using a linear model between the loadings for PC1 and the area associated with that landuse type.
+
+```{r, urban_jk_loadings_landuse_area_correlation, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+fit1 <- lm(area ~ loadings, data = urban_lu_loadings_with_area)
+print(summary(fit1))
+
+print(
+  ggplotRegression(fit1)
+)
+```
+
+The results show no significant correlation, indicating the amount of land in each landuse type catagory is not influencing the model results.
+
+### Conclusions
+
+Site CAD seems to be having a large effect on the results of the PLS. The jackknife analysis shows this site skews the slopes more than the others. Plotting the averages of the PLS provides a means of seeing how the PLS results change in relation to removing sites. They seem fairly robust to site removals, but this could also mean site CAD is heavily influencing the relationship.
+
+I am not sure if plotting the averages adds anything and it could be making some questionable assumptions if we really dig into this. The fact that the PLS slope changes greatly with CAD removed, whereas the others dont as much, suggests that this site should be excluded from the PLS analysis and the result without it used.
 
 
 ## Agri-rural PLS
 
-```{r, rural_pls, message = FALSE, warning = FALSE}
+Although the agri-rural data doesnt show any ovbious outliers it is prudent to check it with a jackknife to be sure. The first thing to do is look at a histogram of the slopes to see if any one site greatly influences it.
+
+
+```{r, rural_pls, message = FALSE, error = FALSE, warning = FALSE, include = FALSE}
 
 # set up data for pls
 rural.pcadata <- rural_lu[, 3:length(names(rural_lu))]
@@ -337,10 +698,12 @@ for (i in c(0, seq_len(nrow(rural.pcadata)))) {
   data <- rural.pcadata
   removed <- 0
   usesites <- "None"
+  removed_site <- "None"
   if (i > 0) {
     data <- data[-i, ]
     removed <- rural.pcadata[i, ncol(rural.pcadata)][[1]]
     usesites <- sites[-i]
+    removed_site <- sites[i]
   }
   result <- run_pls(data)
   loadings <- result[["loadings"]]
@@ -350,6 +713,7 @@ for (i in c(0, seq_len(nrow(rural.pcadata)))) {
 
   resloadings <- tibble(landuse_type, loadings)
   resloadings$p_removed <- removed
+  resloadings$site_removed <- removed_site
   jkloadings[[paste(i)]] <- resloadings
 
   resplsdata <- plsdata
@@ -360,12 +724,31 @@ for (i in c(0, seq_len(nrow(rural.pcadata)))) {
   jkcoefs[[paste(i)]] <- coefres
 }
 
-# process loadings
+# process results of jackknife for further analysis
 rural_jk_loadings <- do.call(bind_rows, jkloadings)
+rural_jk_pls <- do.call(bind_rows, jkplsdata)
+rural_jk_coef <- do.call(bind_rows, jkcoefs)
+```
+
+
+```{r, rural_jk_slope_dist, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+# show coef calculated with peticular prop scouts removed from analysis
+rural_jk_coef <- do.call(bind_rows, jkcoefs)
+jkci <- quantile(rural_jk_coef$coef, probs = c(0.025, .975))
+hist(rural_jk_coef$coef, col = "pink")
+```
+
+The distribution is pretty well centered. There is a gap between 0.85 and 0.8, however this is likely due to having a small sample size rather than outliers. Given these results it does not seem nesesery to remove any sites from the agri-rural PLS annalysis.
+
+### Examining how the loadings and fit changes through the jackknifed analysis
+
+Although we did not see any outliers from the jackknife, it would still be usefull to evaluate the distribution of loadings and median model fit from the jackknifed analysis, as we did for the urban dataset. This will show us if the results change much accross the jackknifes.
+
+```{r, rural_jk_averaged_fits, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
 
 # plot loadings
 rural_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
-ggplot(data = rural_jk_loadings, aes(
+rural_average_loadings_plt <- ggplot(data = rural_jk_loadings, aes(
   x = landuse_type, y = loadings, fill = landuse_type
 )) +
   geom_boxplot() +
@@ -408,7 +791,8 @@ ggplot(data = rural_jk_loadings, aes(
 # process plsdata for model fit on the median or mean response from JK PLS
 rural_jk_pls <- do.call(bind_rows, jkplsdata)
 n <- 10
-rural_jk_pls$p <- (2 * n * rural_jk_pls$prop.scouts - 1) / (2 * (n - 1)) # convert to p
+# convert back to p
+rural_jk_pls$p <- (2 * n * rural_jk_pls$prop.scouts - 1) / (2 * (n - 1))
 
 forjoin <- rural_lu %>%
   select(site, p)
@@ -442,7 +826,7 @@ fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
 rural_median_pls_data$p <- (2 * n * rural_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
 
 # make plot of average pls fit
-plt <- ggplot(data = rural_median_pls_data, aes(x = pc1, y = p)) +
+rural_average_fit_plt <- ggplot(data = rural_median_pls_data, aes(x = pc1, y = p)) +
   geom_point() +
   geom_line(data = fitdata, aes(x = pc1, y = fit)) +
   geom_ribbon(
@@ -451,26 +835,147 @@ plt <- ggplot(data = rural_median_pls_data, aes(x = pc1, y = p)) +
     alpha = 0.2,
     fill = "deepskyblue"
   )
-print(plt)
 
-# Show distribution of all response from the JK PLS
-ggplot(data = rural_jk_pls, aes(
-  x = Comp_.1, y = as.factor(p)
-)) +
-  geom_violin(outlier.shape = NA) +
-  stat_summary(fun = median, geom = "point", colour = "red")
 
-# show coef calculated with peticular prop scouts removed from analysis
-rural_jk_coef <- do.call(bind_rows, jkcoefs)
-ggplot(rural_jk_coef[2:nrow(rural_jk_coef), ], aes(x = removed, y = coef)) +
-  geom_point() +
-  geom_hline(
-    yintercept = mean(rural_jk_coef$coef), color = "red"
-  ) +
-  geom_hline(
-    yintercept = rural_jk_coef[1, 1][[1]], color = "blue"
-  ) +
-  geom_hline(
-    yintercept = median(rural_jk_coef$coef), color = "green"
-  )
+# show all plots
+plot_grid(
+  rural_average_fit_plt, rural_average_loadings_plt,
+  ncol = 1, labels = "AUTO"
+)
 ```
+
+
+Compared to the same plots for the urban site, the distributions are much tighter, and although there are still individual outliers, it seems that the jackknife shows our results don't change much when sites are excluded.
+
+## Further analysis of sensitivity to site removal and landuse proportions: digging into the the distributions of PLS loadings
+
+Here I show the loadings for each jackknife itteration, that is each PLS ran with a specific site removed. The following plot shows abreak down of the boxplots shown previously.
+
+```{r, rural_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+ggplot(data = rural_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  ) +
+  facet_wrap(~site_removed)
+```
+
+There is a fair amount of variation in these plots, more than is shown with the boxplots for sure. Many landuse types move around in an out of being significant depending on what site is removed, but many, such as arable and built up areas, remain consistent in their position.
+
+## How does this compare with the proportion of land-coverage for each site?
+
+I now recreate the main plot but using the percentage of total area that covers as the argument to the size parameter. for the plot.
+
+```{r, rural_jk_loadings_landuse_area, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+total_area <- rural_lu[, 3:ncol(rural_lu)] %>%
+  colSums()
+total_area <- tibble(landuse_type = names(total_area), area = total_area)
+total_area$area_pct <- (total_area$area / sum(total_area$area)) * 100
+
+rural_lu_loadings_with_area <- rural_jk_loadings %>%
+  left_join(total_area, by = "landuse_type") %>%
+  filter(site_removed == "None")
+
+ggplot(data = rural_lu_loadings_with_area, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type, size = area_pct)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+rural_lu_loadings_with_area %>%
+  arrange(-area_pct) %>%
+  print()
+```
+
+As we can see from the graph and the table, arable cover the largest percentage of land included in thie study and has a singificant positive association with PC1. Built up area, which has a singificant negative association, makes up around 17% of the land, whilst Non-agricultural unmanaged green space accounts for ~3% of the land. Water accounts for less than 1% of the total land coverage and so is association is likely to be an artefact of the small sample size used in this analysis.
+
+
+It is also important to check if there is a correlation between the loadings and the area for each landuse type. This was done using a linear model between the loadings for PC1 and the area associated with that landuse type.
+
+```{r, rural_jk_loadings_landuse_area_correlation, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+fit1 <- lm(area ~ loadings, data = rural_lu_loadings_with_area)
+print(summary(fit1))
+
+print(
+  ggplotRegression(fit1)
+)
+```
+
+The results show no significant correlation, indicating the amount of land in each landuse type catagory is not influencing the model results.
