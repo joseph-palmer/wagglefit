@@ -82,6 +82,66 @@ A key consideration is that our response variable is a proportion and thus lies 
 
 In this document I will conduct a PLS and PCA + regression to investigate how land-use type influences the proportion of scouts in both urban and agri-rural environments.
 
+# Proportion of landuse in Urban and Agri-rural
+
+```{r land-use-coverage, message = FALSE, warning = FALSE, error = TRUE}
+rural_total_area <- rural_lu[, 3:ncol(rural_lu)] %>%
+  colSums()
+rural_total_area <- tibble(
+  landuse_type = names(rural_total_area), area = rural_total_area
+)
+rural_total_area$area_pct <- (
+  rural_total_area$area / sum(rural_total_area$area)
+) * 100
+
+rural_total_area <- rural_total_area %>%
+  select(landuse_type, area_pct) %>%
+  rename(
+    Landuse = landuse_type, "% coverage" = area_pct
+  ) %>%
+  mutate(
+    Landuse = tools::toTitleCase(
+      gsub("\\.", " ", rural_total_area$landuse_type)
+    ),
+    Landuse = ifelse(Landuse == "OSR", "Oilseed Rape", Landuse)
+  ) %>%
+  rename(
+    "Land-use" = Landuse
+  )
+
+
+rural_total_area
+
+urban_total_area <- urban_lu[, 3:ncol(urban_lu)] %>%
+  colSums()
+urban_total_area <- tibble(
+  landuse_type = names(urban_total_area), area = urban_total_area
+)
+urban_total_area$area_pct <- (
+  urban_total_area$area / sum(urban_total_area$area)
+) * 100
+
+urban_total_area <- urban_total_area %>%
+  select(landuse_type, area_pct) %>%
+  rename(
+    Landuse = landuse_type, "% coverage" = area_pct
+  ) %>%
+  mutate(
+    Landuse = tools::toTitleCase(
+      gsub("\\.", " ", urban_total_area$landuse_type)
+    )
+  ) %>%
+  rename(
+    "Land-use" = Landuse
+  )
+
+urban_total_area
+
+
+save(urban_total_area, rural_total_area, file = "results/area_coverage.RData")
+```
+
+
 # Urban
 
 Here I use both a partial least squares and principle component analysis to investigate how different land-use types in the urban environment most influence the proportion of scouts estimates from our model.
@@ -709,7 +769,7 @@ loading_path <- "results/pls-loadings.RData"
 if (file.exists(loading_path)) {
   load(loading_path)
 } else {
-   stop(
+  stop(
     paste(
       "File", loading_path, "not found.",
       "Please run the notebook `landuse_effect_jackknife.Rmd` to create it."
@@ -921,7 +981,7 @@ loading_plot <- ggplot(
     x = Landuse, y = Correlation
   )
 ) +
-  geom_boxplot(aes(fill = Landuse), lwd=0.1) +
+  geom_boxplot(aes(fill = Landuse), lwd = 0.1) +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
@@ -1139,7 +1199,7 @@ loading_plot <- ggplot(
   ),
   fill = Landuse
 ) +
-  geom_boxplot(aes(fill = Landuse), lwd=0.1) +
+  geom_boxplot(aes(fill = Landuse), lwd = 0.1) +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
@@ -1314,6 +1374,7 @@ urban.loadings %>%
   ) %>%
   kable_classic(full_width = F)
 ```
+
 
 # Combining the data (Grant stuff)
 
