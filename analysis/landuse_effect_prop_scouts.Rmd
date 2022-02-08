@@ -704,6 +704,20 @@ input figure stuff here.
 
 ```{r, manuscript-figures, message = FALSE, warning = FALSE}
 
+# load loadings data from the jk analysis
+loading_path <- "results/pls-loadings.RData"
+if (file.exists(loading_path)) {
+  load(loading_path)
+} else {
+   stop(
+    paste(
+      "File", loading_path, "not found.",
+      "Please run the notebook `landuse_effect_jackknife.Rmd` to create it."
+    )
+  )
+}
+
+
 plotdata <- rbind(urban_plotdata, agrirural_plotdata)
 urban_fitdata$`Land-use` <- "Urban"
 rural_fitdata$`Land-use` <- "Agri-rural"
@@ -873,7 +887,7 @@ argi.rural.loadings <- rural_jk_loadings %>%
   ) %>%
   mutate(
     Landuse = tools::toTitleCase(
-      gsub("\\.", " ", rural_jk_loadings$Landuse)
+      gsub("\\.", " ", rural_jk_loadings$landuse_type)
     ),
     significant = ifelse(
       Correlation > rural_jk_loadings$cutoff,
@@ -883,27 +897,31 @@ argi.rural.loadings <- rural_jk_loadings %>%
         Landuse,
         "Other"
       )
-    )
-  ) %>%
-  mutate(
+    ),
     Landuse = ifelse(
-      Landuse == "Non.agricultural.managed.green.space",
+      Landuse == "Non Agricultural Managed Green Space",
       "NAMGS",
       ifelse(
-        Landuse == "Non.agricultural.unmanaged.green.space",
+        Landuse == "Non Agricultural Unmanaged Green Space",
         "NAUMGS",
         Landuse
       )
     )
   )
 
+cutoff <- unique(argi.rural.loadings$cutoff)[[1]]
+
 rural_loading_text <- tibble(
-  landuse_type = unique(argi.rural.loadings$Loadings), result = 0
+  landuse_type = unique(argi.rural.loadings$Landuse), result = 0
 )
-loading_plot <- ggplot(data = argi.rural.loadings, aes(
-  x = Landuse, y = Correlation, fill = Landuse
-)) +
-  geom_boxplot() +
+
+loading_plot <- ggplot(
+  data = argi.rural.loadings,
+  aes(
+    x = Landuse, y = Correlation
+  )
+) +
+  geom_boxplot(aes(fill = Landuse), lwd=0.1) +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
@@ -916,8 +934,8 @@ loading_plot <- ggplot(data = argi.rural.loadings, aes(
   ) +
   annotate(
     "rect",
-    ymin = -rural_cuttoff,
-    ymax = rural_cuttoff,
+    ymin = -cutoff,
+    ymax = cutoff,
     xmin = 0, xmax = Inf,
     alpha = 0.2
   ) +
@@ -931,13 +949,15 @@ loading_plot <- ggplot(data = argi.rural.loadings, aes(
     legend.position = "None",
     text = element_text()
   ) +
-  scale_colour_manual(
+  scale_fill_manual(
     values = c(
-      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
-      "Non.agricultural.unmanaged.green.space" = "#228833",
-      "water" = "#4477AA", other = "#BBBBBB"
+      "Arable" = "#CCBB44", "Built Up Area" = "#EE6677",
+      "Non Agricultural Unmanaged Green Space" = "#228833",
+      "Water" = "#4477AA", Other = "#BBBBBB"
     )
   )
+
+loading_plot
 
 # combine plots into facet
 
@@ -1093,7 +1113,7 @@ urban.loadings <- urban_jk_loadings %>%
   ) %>%
   mutate(
     Landuse = tools::toTitleCase(
-      gsub("\\.", " ", urban_jk_loadings$Landuse)
+      gsub("\\.", " ", urban_jk_loadings$landuse_type)
     ),
     significant = ifelse(
       Correlation > urban_jk_loadings$cutoff,
@@ -1106,13 +1126,20 @@ urban.loadings <- urban_jk_loadings %>%
     )
   )
 
+cutoff <- unique(urban.loadings$cutoff)[[1]]
+
 urban_loading_text <- tibble(
   landuse_type = unique(urban.loadings$Landuse), result = 0
 )
-loading_plot <- ggplot(data = urban.loadings, aes(
-  x = landuse_type, y = loadings, fill = landuse_type
-)) +
-  geom_boxplot() +
+
+loading_plot <- ggplot(
+  data = urban.loadings,
+  aes(
+    x = Landuse, y = Correlation
+  ),
+  fill = Landuse
+) +
+  geom_boxplot(aes(fill = Landuse), lwd=0.1) +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
@@ -1125,8 +1152,8 @@ loading_plot <- ggplot(data = urban.loadings, aes(
   ) +
   annotate(
     "rect",
-    ymin = -urban_cuttoff,
-    ymax = urban_cuttoff,
+    ymin = -cutoff,
+    ymax = cutoff,
     xmin = 0, xmax = Inf,
     alpha = 0.2
   ) +
