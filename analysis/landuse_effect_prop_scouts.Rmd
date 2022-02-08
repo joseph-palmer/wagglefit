@@ -278,10 +278,6 @@ urban_loadings <- list(
 
 print(model$pp[, 1:3])
 sqrt(1 / (ncol(urban.pcadata) - 1))
-
-# when multiple PCs have the best fit, summing them gives the overall effect of
-# the PCs, just as we do in the model formula.
-rowSums(model$pp[, 1:3])
 ```
 
 A larger proportion of scouts is most described by a combination of continuous central with dense residential areas, a lack of amenity grassland and a large amount of water. This combination of factors explains ~61% of the variance in the proportion of scouts. Having sparse residential areas with plenty of parks, allotments and cemeteries, amenity grasslands, woodland and not much water increases some of the variation in the proportion of scouts (PC2). The third PC combines with a high degree of continuous central land, not dense but not sparse residential land (does that even make sense?), very little in the way of amenity grassland and parks, lots of railways and water to describe some more variation in the proportion of scouts.
@@ -583,7 +579,6 @@ agrirural_loadings <- list(
   loadings = model$pp[, 1],
   cutoff = sqrt(1 / (ncol(rural.pcadata) - 1))
 )
-save(agrirural_loadings, urban_loadings, file = "results/pls-loadings.RData")
 
 model$pp[, 1:3]
 sqrt(1 / (ncol(rural.pcadata) - 1))
@@ -703,14 +698,7 @@ In the agri-rural environment the PCA + regression identifies 4 main axis of var
 
 The PLS identifies three PCs which combined explain 77% of the variation in the proportion of scouts, however, 64% of this is driven by a single PC. The regression suggests this single PC explains the data well enough and that adding more complexity through additional PCs is not needed. This PC (which correlates positively with the proportion of scouts) correlates positively with arable land and negatively with Non agricultural unmanaged green space, built up areas and water.
 
-
-**Stats notes: things to add or improve in the stats**
-
-* One thing it would be nice to do, but which I have not figured out how to do, is to see how much od the data the PLS PCs explain. With the PCA we obtain the variance a PC explains in the data: i.e. the variance in land-use types within our data ($R^2_x$). A regression after then tells us how much of the variance in the proportion of scouts that particular PC explains ($R^2_y$). The PLS optimise a PC to describe as much of the variation in the proportion of scouts as possible ($R^2_y$) but it would be also nice to know how much of the variation in land-use type ($R^2_x$) that PC explains.
-
-* It would be nice to add confidence intervals to the model fit plots. Unsure how to do this with a beta regression and not all that sure it is that important?
-
-# Figures, results write up and main discussion points for manuscript
+# Figures, results write up and main discussion points
 
 input figure stuff here.
 
@@ -838,7 +826,7 @@ ar_fit <- ggplot(
     nudge_x = c(0, 0), nudge_y = c(-0.05, 0.05), size = rel(textsize)
   ) +
   theme_classic() +
-  theme(legend.position = "none", text = element_text(size=rel(textsize-2))) +
+  theme(legend.position = "none", text = element_text(size = rel(textsize - 2))) +
   xlab("PC 1") +
   ylab("Estimated proportion of scouts")
 
@@ -878,16 +866,20 @@ for (i in seq_len(3)) {
 }
 
 # make loadings plot
-argi.rural.loadings <- tibble(
-  "Landuse" = names(agrirural_loadings$loadings),
-  "Correlation" = agrirural_loadings$loadings
-) %>%
+argi.rural.loadings <- rural_jk_loadings %>%
+  rename(
+    Landuse = landuse_type,
+    Correlation = loadings
+  ) %>%
   mutate(
+    Landuse = tools::toTitleCase(
+      gsub("\\.", " ", rural_jk_loadings$Landuse)
+    ),
     significant = ifelse(
-      Correlation > agrirural_loadings$cutoff,
+      Correlation > rural_jk_loadings$cutoff,
       Landuse,
       ifelse(
-        Correlation < -agrirural_loadings$cutoff,
+        Correlation < -rural_jk_loadings$cutoff,
         Landuse,
         "Other"
       )
@@ -905,26 +897,29 @@ argi.rural.loadings <- tibble(
     )
   )
 
-loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
-  geom_point(aes(colour = significant), size = rel(textsize)) +
-  geom_segment(aes(
-    x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
-  )) +
-  geom_text(
-    aes(x = Landuse, y = Correlation, label = Landuse),
-    hjust = 0.25,
-    nudge_y = c(0, -0.05), nudge_x = c(0.5, 0.5), size = rel(textsize)
-  ) +
+rural_loading_text <- tibble(
+  landuse_type = unique(argi.rural.loadings$Loadings), result = 0
+)
+loading_plot <- ggplot(data = argi.rural.loadings, aes(
+  x = Landuse, y = Correlation, fill = Landuse
+)) +
+  geom_boxplot() +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
-  geom_rect(
-    aes(
-      ymin = -agrirural_loadings$cutoff,
-      ymax = agrirural_loadings$cutoff,
-      xmin = 0, xmax = Inf
-    ),
-    alpha = 0.01
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
   ) +
   coord_flip() +
   theme_classic() +
@@ -934,7 +929,7 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     legend.position = "None",
-    text = element_text(size=rel(textsize-2))
+    text = element_text()
   ) +
   scale_colour_manual(
     values = c(
@@ -942,8 +937,7 @@ loading_plot <- ggplot(argi.rural.loadings, aes(x = Landuse, y = Correlation)) +
       "Non.agricultural.unmanaged.green.space" = "#228833",
       "water" = "#4477AA", other = "#BBBBBB"
     )
-  ) +
-  ylim(-0.6, 0.6)
+  )
 
 # combine plots into facet
 
@@ -967,7 +961,7 @@ sitelumaps <- plot_grid(
   labels = c(
     names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
   ),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 mfitpls <- plot_grid(
@@ -979,7 +973,7 @@ mfitpls <- plot_grid(
   labels = c(
     "A", ""
   ),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 # all together
@@ -988,7 +982,7 @@ comb <- plot_grid(
   nrow = 1, align = "h",
   rel_widths = c(1, .4),
   labels = c("", "B", ""),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 comb
@@ -1010,7 +1004,6 @@ ggsave(
   units = "mm",
   dpi = 300
 )
-
 ```
 
 ### Urban
@@ -1053,7 +1046,7 @@ u_fit <- ggplot(
     fill = "deepskyblue"
   ) +
   theme_classic() +
-  theme(legend.position = "none", text = element_text(size=rel(textsize-2))) +
+  theme(legend.position = "none", text = element_text(size = rel(textsize - 2))) +
   xlab("PC 1") +
   ylab("Estimated proportion of scouts")
 
@@ -1093,44 +1086,49 @@ for (i in seq_len(3)) {
 
 
 # make loadings plot
-urban.loadings <- tibble(
-  "Landuse" = names(urban_loadings$loadings),
-  "Correlation" = urban_loadings$loadings
-) %>%
+urban.loadings <- urban_jk_loadings %>%
+  rename(
+    Landuse = landuse_type,
+    Correlation = loadings
+  ) %>%
   mutate(
+    Landuse = tools::toTitleCase(
+      gsub("\\.", " ", urban_jk_loadings$Landuse)
+    ),
     significant = ifelse(
-      Correlation > urban_loadings$cutoff,
+      Correlation > urban_jk_loadings$cutoff,
       Landuse,
       ifelse(
-        Correlation < -urban_loadings$cutoff,
+        Correlation < -urban_jk_loadings$cutoff,
         Landuse,
         "Other"
       )
     )
   )
 
-loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
-  geom_point(aes(colour = significant), size = rel(textsize)) +
-  geom_segment(aes(
-    x = Landuse, xend = Landuse, y = 0, yend = Correlation, colour = significant
-  )) +
-  geom_text(
-    aes(x = Landuse, y = Correlation, label = Landuse),
-    hjust = 0.5,
-    vjust = 0.5,
-    nudge_y = c(-0., -0.3), nudge_x = c(0.5, 0.5), size = rel(textsize)
-  ) +
-  theme(text = element_text(size = 10)) +
+urban_loading_text <- tibble(
+  landuse_type = unique(urban.loadings$Landuse), result = 0
+)
+loading_plot <- ggplot(data = urban.loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_boxplot() +
   geom_hline(
     yintercept = 0, color = "black"
   ) +
-  geom_rect(
-    aes(
-      ymin = -urban_loadings$cutoff,
-      ymax = urban_loadings$cutoff,
-      xmin = 0, xmax = Inf
-    ),
-    alpha = 0.01
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
   ) +
   coord_flip() +
   theme_classic() +
@@ -1140,17 +1138,16 @@ loading_plot <- ggplot(urban.loadings, aes(x = Landuse, y = Correlation)) +
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     legend.position = "None",
-    text = element_text(size=rel(textsize-2))
+    text = element_text()
   ) +
-  scale_colour_manual(
+  scale_fill_manual(
     values = c(
-      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
-      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
-      "parks.allotments.cemeteries" = "#228833",
-      "water" = "#BBBBBB", other = "#BBBBBB"
+      "Continuous Central" = "#BBBBBB", "Dense Residential" = "#BBBBBB",
+      "Sparse Residential" = "#EE6677", "Railway" = "#CCBB44",
+      "Parks Allotments Cemeteries" = "#228833",
+      "Water" = "#BBBBBB", Other = "#BBBBBB"
     )
-  ) +
-  scale_y_continuous(breaks = seq(-1, 1, by = 0.4), limits = c(-1, 1))
+  )
 
 # combine plots into facet
 
@@ -1174,7 +1171,7 @@ sitelumaps <- plot_grid(
   labels = c(
     names(site_plots)[1], names(site_plots)[2], names(site_plots)[3]
   ),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 mfitpls <- plot_grid(
@@ -1186,7 +1183,7 @@ mfitpls <- plot_grid(
   labels = c(
     "A", ""
   ),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 # all together
@@ -1195,7 +1192,7 @@ comb <- plot_grid(
   nrow = 1, align = "h",
   rel_widths = c(1, .45),
   labels = c("", "B", ""),
-  label_size = rel(textsize*5)
+  label_size = rel(textsize * 5)
 )
 
 comb
@@ -1217,7 +1214,6 @@ ggsave(
   units = "mm",
   dpi = 300
 )
-
 ```
 
 
@@ -1225,11 +1221,10 @@ ggsave(
 
 vals <- c()
 for (l in c(site_shape_data_ar, site_shape_data_u)) {
-   vals <- c(vals, unique(as.vector(l$descriptio)))
+  vals <- c(vals, unique(as.vector(l$descriptio)))
 }
 
 unique(vals)
-
 ```
 
 

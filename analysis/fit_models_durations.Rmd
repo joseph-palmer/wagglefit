@@ -8,8 +8,6 @@ output:
     toc_float: true
 ---
 
-REMEBER: Once we know how we are doing the conversion from duration to distance, or what we are doing with it, reset this branch to the remote one and check everthing is as was. Then make the edits in the dev branch, merge the relevent bits in properly and then redo the analysis, remaking the figures for the code. You MUST reset this to remote to prevent overwiting graphs and what not.
-
 This document contains code to fit the waggle dance model to each of our 20 different sites. The code here uses the wagglefit package, as well as some additional code stored in `fit_data.R` to help simplify things. Each site has its own section, with reused code. The final sections create map plots and summary statistic plots.
 
 ```{r, preamble, include = FALSE}
@@ -115,43 +113,13 @@ names(all_sites) <- get_data() %>%
 
 ## Optimising each site
 
-In this document I have fit the collective and individual model to each site. So al the sites have reasonable likelihood values, however in some cases the fits are simply wrong (i.e. they show the probability of sampling a value greater than on equal to $x$ as increasing in the tail). I need to trouble shoot these with Vincent. I also need to get some advice on how to plot the model fits to the histogram of data.
-
-Would be a good idea to knit this as a single document / run in R studio on the laptop.
-
-
 ```{r}
-
-calc_dist_actual <- function(duration) {
-  m = 1.38
-  b = 0. #0.17
-  distance = (duration-b) / m
-  # distance = (1/m)*duration-(b/m)
-  return(distance)
-}
-
+# set waggle dance duration in seconds as foraging distance for analysis
 data <- read.csv("data/FullHBForagingData.csv")
-
-head(data)
-
-data$newforaging_distance <- calc_dist_actual(data$duration.seconds)
-
-head(data)
-
-par(mfrow = c(2, 2))
-hist(data$duration.seconds)
-hist(data$ForagingDistance_km)
-hist(data$newforaging_distance)
-
-min(data$newforaging_distance)
-min(data$duration.seconds)
 
 alldata <- data %>%
   select(date, site, duration.seconds) %>%
   rename(foraging_distance = duration.seconds)
-
-head(alldata)
-
 ```
 
 ### BEL
@@ -1374,7 +1342,6 @@ ggsave(
   units = "mm",
   dpi = 100
 )
-
 ```
 
 

@@ -190,6 +190,9 @@ for (i in c(0, seq_len(nrow(urban.pcadata)))) {
 
 # process results of jackknife for further analysis
 urban_jk_loadings <- do.call(bind_rows, jkloadings)
+urban_jk_loadings$cutoff <- sqrt(
+  1 / (length(unique(urban_jk_loadings$landuse_type)) - 1)
+)
 urban_jk_pls <- do.call(bind_rows, jkplsdata)
 urban_jk_coef <- do.call(bind_rows, jkcoefs)
 ```
@@ -726,6 +729,10 @@ for (i in c(0, seq_len(nrow(rural.pcadata)))) {
 
 # process results of jackknife for further analysis
 rural_jk_loadings <- do.call(bind_rows, jkloadings)
+rural_jk_loadings$cutoff <- sqrt(
+  1 / (length(unique(rural_jk_loadings$landuse_type)) - 1)
+)
+save(urban_jk_loadings, rural_jk_loadings, file = "results/pls-loadings.RData")
 rural_jk_pls <- do.call(bind_rows, jkplsdata)
 rural_jk_coef <- do.call(bind_rows, jkcoefs)
 ```
