@@ -930,7 +930,7 @@ loading_plot <- ggplot(
     aes(x = landuse_type, y = result, label = landuse_type),
     hjust = 0.5,
     vjust = 0.5,
-    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
   annotate(
     "rect",
@@ -1148,7 +1148,7 @@ loading_plot <- ggplot(
     aes(x = landuse_type, y = result, label = landuse_type),
     hjust = 0.5,
     vjust = 0.5,
-    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5), size = rel(textsize)
   ) +
   annotate(
     "rect",
