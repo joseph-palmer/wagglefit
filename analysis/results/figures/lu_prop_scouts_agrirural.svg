@@ -1316,7 +1316,7 @@
 <line x1='448.66' y1='322.70' x2='448.66' y2='288.59' style='stroke-width: 0.43; stroke: #333333; stroke-linecap: butt;' />
 <line x1='401.96' y1='260.17' x2='412.54' y2='260.17' style='stroke-width: 0.21; stroke: #333333; stroke-linecap: butt;' />
 <line x1='394.85' y1='260.17' x2='384.86' y2='260.17' style='stroke-width: 0.21; stroke: #333333; stroke-linecap: butt;' />
-<polygon points='401.96,277.22 394.85,277.22 394.85,243.11 401.96,243.11 401.96,277.22 ' style='stroke-width: 0.21; stroke: #333333; fill: #7F7F7F;' />
+<polygon points='401.96,277.22 394.85,277.22 394.85,243.11 401.96,243.11 401.96,277.22 ' style='stroke-width: 0.21; stroke: #333333; fill: #228833;' />
 <line x1='397.20' y1='277.22' x2='397.20' y2='243.11' style='stroke-width: 0.43; stroke: #333333; stroke-linecap: butt;' />
 <circle cx='397.00' cy='214.69' r='1.95' style='stroke-width: 0.71; stroke: #333333; fill: #333333;' />
 <circle cx='471.70' cy='214.69' r='1.95' style='stroke-width: 0.71; stroke: #333333; fill: #333333;' />

@@ -1012,7 +1012,7 @@ loading_plot <- ggplot(
   scale_fill_manual(
     values = c(
       "Arable" = "#CCBB44", "Built Up Area" = "#EE6677",
-      "Non Agricultural Unmanaged Green Space" = "#228833",
+      "NAUMGS" = "#228833",
       "Water" = "#4477AA", Other = "#BBBBBB"
     )
   )
