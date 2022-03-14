@@ -27,7 +27,7 @@ class Flower:
         self.location_point = Point(*location)
         self.distance = Methods.getdist(*location)
         self.resource_level = 2000 #np.random.randint(10, 5000)
-        self.quality_array = quality_array[np.random.randint(0, len(quality_array))]
+        self.quality_array = quality_array #quality_array[np.random.randint(0, len(quality_array))]
         self.exists = 1
         return None
 
@@ -39,7 +39,7 @@ class Flower:
         return None
 
     def visit(self):
-        if self.resource_level > 1:
+        if self.resource_level > 0:
             self.resource_level -= 1
         else:
             self.remove_flower()
@@ -57,7 +57,7 @@ class Scout(Honeybee):
 
     def _drawpath(self, s1, s2, flowers, infa=[], i=0, limmit=10, plot=True):
         angle = np.random.uniform(0, 360)
-        distance = np.random.uniform(0., .25)
+        distance = np.random.uniform(0, 1)
         base_fa = [
             tuple(s1),
             (s1[0], distance+s1[1]),
