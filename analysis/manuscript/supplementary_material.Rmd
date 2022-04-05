@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 library(ggplot2)
+library(cowplot)
 theme_set(
   theme_classic() +
     theme(
@@ -30,6 +31,10 @@ library(dplyr)
 library(kableExtra)
 library(flextable)
 library(tibble)
+library(purrr)
+
+# load fitting results / stats
+load("results/site_fit_results.Rdata")
 ```
 
 
@@ -38,6 +43,22 @@ library(tibble)
 # Waggle dance model fit
 
 Fig 1. shows the models fit to all 20 sites.
+
+```{r, all-model-fits}
+
+plots <- map(all_sites, 2)
+plots <- plots %>%
+  map(
+    ~ {.x + theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank()
+    )}
+  )
+print(plots$BEL)
+
+plot_grid(plotlist = plots, nrow = 5)
+
+```
 
 Table 1. shows the results of the model fitting, including likelihood scores, parsimony measures -AIC, delta_AIC, rAIC (relative delta_AIC) and wAIC (Akaike weights)- and goodness of fit -Ks statistics (ks_statistic, ks_pvalue)- for all 20 sites.
 
