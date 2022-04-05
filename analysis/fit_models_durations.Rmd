@@ -1049,6 +1049,8 @@ all_sites[[target_site]]$fit
 ## Overall findings
 
 ```{r, make-plots, message = FALSE, warning = FALSE}
+# save the analysis results for all sites
+save(all_sites, file = "results/site_fit_results.Rdata")
 
 # group all site results together
 df <- map(all_sites, 1) %>%
