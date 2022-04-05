@@ -33,9 +33,10 @@ library(flextable)
 library(tibble)
 library(purrr)
 library(gridExtra)
+library(grid)
 
 # load fitting results / stats
-load("results/site_fit_results.Rdata")
+load("../results/site_fit_results.Rdata")
 ```
 
 
@@ -43,10 +44,7 @@ load("results/site_fit_results.Rdata")
 
 # Waggle dance model fit
 
-Fig 1. shows the models fit to all 20 sites.
-
-```{r, all-model-fits}
-
+```{r, all-model-fits, fig.width=10,fig.height=11, fig.cap="Supplementary Fig 1. log Compliment cumulative frequency distribution of waggle dance durations and fits of the collective (red line) and individual (blue line) models for all 20 sites."}
 plots <- map(all_sites, 2)
 plots <- plots %>%
   map(
@@ -65,12 +63,12 @@ allsites_plot <- plot_grid(
 )
 y.grob <- textGrob(
   "cumulative frequency",
-  gp = gpar(),
+  gp = gpar(fontsize = 18),
   rot = 90
 )
 x.grob <- textGrob(
   "waggle run duration (s)",
-  gp = gpar()
+  gp = gpar(fontsize = 18)
 )
 
 # add to plot
@@ -106,13 +104,22 @@ df2 <- df %>%
     p, bs, br, as, ar, k, ks_statistic, ks_pvalue
   )
 
+# set up proper names
 # format table
 df2 %>%
   arrange(site) %>%
   mutate(across(where(is.numeric), round, 3)) %>%
+  rename(
+    MLE = loglikelihood,
+    "ΔAIC" = delta_AIC,
+    D = ks_statistic,
+    p_value = ks_pvalue
+  ) %>%
+  select(-k) %>%
   flextable() %>%
   set_caption(
     "Fit results for the fitting of the waggle dance model to each site."
   ) %>%
-  set_table_properties(layout = "autofit")
+  set_table_properties(layout = "autofit") %>%
+  fit_to_width(7.5)
 ```
