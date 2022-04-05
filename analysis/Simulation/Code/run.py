@@ -144,15 +144,15 @@ def simulate(lwr, upr, res, nbees, nscouts, nsim, tn, tk, quality_array, plot=Fa
 def main():
     # paramaters for model
     nruns = 5
-    lwr = -2.5
-    upr = 2.5
-    res = 5000
+    lwr = -0.5
+    upr = 0.5
+    res = 1000
     nbees = 100
     nscouts = 20
     nsim = 100
     tn = 10
     tk = 20
-    quality_array = np.random.uniform(0, 10, 10)
+    quality_array = np.array(6) #np.random.uniform(0, 10, 10)
 
 
     # run simulation
@@ -181,12 +181,12 @@ def main():
             [total_sdist, np.random.choice(sdist, 60, replace = False)]
         )
 
-    # sdist_path = "../Results/scout_distribution_v2.csv"
-    # rdist_path = "../Results/recruit_distribution_v2.csv"
-    # dists = [total_sdist, total_rdist]
-    # paths = [sdist_path, rdist_path]
-    # for i in range(2):
-    #     np.savetxt(paths[i], dists[i], delimiter = ",")
+    sdist_path = "../Results/scout_distribution_v2.csv"
+    rdist_path = "../Results/recruit_distribution_v2.csv"
+    dists = [total_sdist, total_rdist]
+    paths = [sdist_path, rdist_path]
+    for i in range(2):
+        np.savetxt(paths[i], dists[i], delimiter = ",")
     return 0
 
 if __name__ == "__main__":

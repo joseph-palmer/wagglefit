@@ -1,0 +1,79 @@
+---
+title: "Waggle dance distributions quantify collective foraging in honey bee colonies: Supplementary material"
+author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent Jansen"
+output:
+  word_document
+always_allow_html: true
+bibliography: paper-refs.bib
+# csl: nature.csl
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(size = 18)
+    )
+)
+
+library(dplyr)
+library(kableExtra)
+library(flextable)
+library(tibble)
+```
+
+
+# Waggle dance model
+
+# Waggle dance model fit
+
+Fig 1. shows the models fit to all 20 sites.
+
+Table 1. shows the results of the model fitting, including likelihood scores, parsimony measures -AIC, delta_AIC, rAIC (relative delta_AIC) and wAIC (Akaike weights)- and goodness of fit -Ks statistics (ks_statistic, ks_pvalue)- for all 20 sites.
+
+```{r, model-fit-results}
+set_flextable_defaults(
+  big.mark = " ",
+  font.size = 10, theme_fun = theme_vanilla,
+  padding.bottom = 6,
+  padding.top = 6,
+  padding.left = 6,
+  padding.right = 6
+)
+
+# load fit data
+df <- readRDS(file = "../results/site_fit_results.Rda")
+
+# calculate other AIC stats
+df2 <- df %>%
+  group_by(site) %>%
+  mutate(
+    delta_AIC = AIC - min(AIC),
+    rAIC = exp(-0.5 * delta_AIC),
+    wAIC = rAIC / sum(rAIC)
+  ) %>%
+  select(
+    site, model, loglikelihood, AIC, delta_AIC, rAIC, wAIC,
+    p, bs, br, as, ar, k, ks_statistic, ks_pvalue
+  )
+
+# format table
+df2 %>%
+  arrange(site) %>%
+  mutate(across(where(is.numeric), round, 3)) %>%
+  flextable() %>%
+  set_caption(
+    "Fit results for the fitting of the waggle dance model to each site."
+  ) %>%
+  set_table_properties(layout = "autofit")
+```
