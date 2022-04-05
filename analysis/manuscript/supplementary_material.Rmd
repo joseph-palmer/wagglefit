@@ -32,6 +32,7 @@ library(kableExtra)
 library(flextable)
 library(tibble)
 library(purrr)
+library(gridExtra)
 
 # load fitting results / stats
 load("results/site_fit_results.Rdata")
@@ -49,15 +50,31 @@ Fig 1. shows the models fit to all 20 sites.
 plots <- map(all_sites, 2)
 plots <- plots %>%
   map(
-    ~ {.x + theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank()
-    )}
+    ~ {
+      .x + theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()
+      )
+    }
   )
-print(plots$BEL)
 
-plot_grid(plotlist = plots, nrow = 5)
+allsites_plot <- plot_grid(
+  plotlist = plots, nrow = 5,
+  hjust = -0.1, label_x = 0.7,
+  labels = names(plots)
+)
+y.grob <- textGrob(
+  "cumulative frequency",
+  gp = gpar(),
+  rot = 90
+)
+x.grob <- textGrob(
+  "waggle run duration (s)",
+  gp = gpar()
+)
 
+# add to plot
+grid.arrange(arrangeGrob(allsites_plot, left = y.grob, bottom = x.grob))
 ```
 
 Table 1. shows the results of the model fitting, including likelihood scores, parsimony measures -AIC, delta_AIC, rAIC (relative delta_AIC) and wAIC (Akaike weights)- and goodness of fit -Ks statistics (ks_statistic, ks_pvalue)- for all 20 sites.
@@ -71,9 +88,6 @@ set_flextable_defaults(
   padding.left = 6,
   padding.right = 6
 )
-
-# load fit data
-load("results/site_fit_results.Rdata")
 
 # group all site results together
 df <- map(all_sites, 1) %>%
