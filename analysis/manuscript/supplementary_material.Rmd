@@ -52,7 +52,11 @@ set_flextable_defaults(
 )
 
 # load fit data
-df <- readRDS(file = "../results/site_fit_results.Rda")
+load("results/site_fit_results.Rdata")
+
+# group all site results together
+df <- map(all_sites, 1) %>%
+  bind_rows()
 
 # calculate other AIC stats
 df2 <- df %>%
