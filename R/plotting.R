@@ -69,12 +69,12 @@ make_base_plot <- function(x, logit = TRUE) {
   if (logit) {
     plt <- inverse_ccdf(x) %>%
       ggplot(aes(x = .data$sd, y = log(.data$prob))) +
-      geom_point() +
+      geom_point(shape = 1) +
       labs(x = "Waggle run duration (seconds)", y = "Ln cumulative probability")
   } else {
     plt <- inverse_ccdf(x) %>%
       ggplot(aes(x = .data$sd, y = .data$prob)) +
-      geom_point() +
+      geom_point(shape = 1) +
       labs(x = "Waggle run duration (seconds)", y = "Ln cumulative probability")
   }
   return(plt)
@@ -92,7 +92,7 @@ make_base_plot <- function(x, logit = TRUE) {
 #' along with the model fits to this data.
 #' @importFrom ggplot2 ggplot aes geom_histogram geom_line theme_set theme
 #' theme_classic element_text element_blank element_rect annotation_custom
-#' ggplotGrob
+#' ggplotGrob scale_colour_manual
 #' @importFrom tibble tibble
 #' @importFrom purrr map map_df
 #' @importFrom rlang .data
@@ -124,6 +124,9 @@ make_full_plot <- function(x, model_result_list,
         y = log(.data$cumul_ccdf),
         colour = .data$Model
       )
+    ) +
+    scale_colour_manual(
+      values = c("individual" = "#00AFBB", "collective" = "#FC4E07")
     ) +
     theme(
       legend.position = "none"
