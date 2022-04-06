@@ -574,7 +574,9 @@ plt <- ggplot(data = urban_jk_loadings, aes(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     legend.position = "None",
-    text = element_text()
+    text = element_text(size = 12),
+    strip.text.x = element_text(size = 18),
+    axis.title.x = element_text(size = 18)
   ) +
   scale_fill_manual(
     values = c(
@@ -583,8 +585,15 @@ plt <- ggplot(data = urban_jk_loadings, aes(
       "water" = "#4477AA", other = "#BBBBBB"
     )
   ) +
-  facet_wrap(~site_removed)
-ggsave("results/figures/SI_figures/urban_jk_individual_loadings.png")
+  facet_wrap(~site_removed, ncol = 2)
+ggsave(
+  plot = plt,
+  filename = "results/figures/SI_figures/urban_jk_individual_loadings.png",
+  width = 120,
+  height = 200,
+  units = "mm",
+  dpi = 300
+)
 plt
 ```
 
@@ -895,7 +904,9 @@ plt <- ggplot(data = rural_jk_loadings, aes(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     legend.position = "None",
-    text = element_text()
+    text = element_text(size = 15),
+    strip.text.x = element_text(size = 18),
+    axis.title.x = element_text(size = 18)
   ) +
   scale_fill_manual(
     values = c(
@@ -904,8 +915,15 @@ plt <- ggplot(data = rural_jk_loadings, aes(
       "water" = "#4477AA", other = "#BBBBBB"
     )
   ) +
-  facet_wrap(~site_removed)
-ggsave("results/figures/SI_figures/agrirural_jk_individual_loadings.png")
+  facet_wrap(~site_removed, ncol = 2)
+ggsave(
+  plot = plt,
+  filename = "results/figures/SI_figures/agrirural_jk_individual_loadings.png",
+  width = 120,
+  height = 220,
+  units = "mm",
+  dpi = 300
+)
 plt
 ```
 

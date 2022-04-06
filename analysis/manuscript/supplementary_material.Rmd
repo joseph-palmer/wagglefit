@@ -126,8 +126,10 @@ df2 %>%
 
 # Jackknifed partial least squares analysis
 
+```{r, rural-pls-loadings, fig.width=10,fig.height=11, fig.cap="Loadings of PLS calculated for each site removed for the agri-rural sites. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4b."}
+knitr::include_graphics("../results/figures/SI_figures/agrirural_jk_individual_loadings.png")
+```
+
 ```{r, urban-pls-loadings, fig.width=10,fig.height=11, fig.cap="Loadings of PLS calculated for each site removed for the urban sites. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4d."}
-
-
-
+knitr::include_graphics("../results/figures/SI_figures/urban_jk_individual_loadings.png")
 ```
