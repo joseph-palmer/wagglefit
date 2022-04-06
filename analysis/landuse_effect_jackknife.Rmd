@@ -541,7 +541,7 @@ Here I show the loadings for each jackknife itteration, that is each PLS ran wit
 
 ```{r, urban_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
 
-ggplot(data = urban_jk_loadings, aes(
+plt <- ggplot(data = urban_jk_loadings, aes(
   x = landuse_type, y = loadings, fill = landuse_type
 )) +
   geom_point(aes(colour = landuse_type)) +
@@ -584,6 +584,8 @@ ggplot(data = urban_jk_loadings, aes(
     )
   ) +
   facet_wrap(~site_removed)
+ggsave("results/figures/SI_figures/urban_jk_individual_loadings.png")
+plt
 ```
 
 There is a fair amount of variation in these plots, more than is shown with the boxplots for sure. Many landuse types move around in an out of being significant depending on what site is removed, but parks allotments and cemeteries and sparse residential remain relatively consistent in their position, except for when CAD is removed.
@@ -860,7 +862,7 @@ Here I show the loadings for each jackknife itteration, that is each PLS ran wit
 
 ```{r, rural_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
 
-ggplot(data = rural_jk_loadings, aes(
+plt <- ggplot(data = rural_jk_loadings, aes(
   x = landuse_type, y = loadings, fill = landuse_type
 )) +
   geom_point(aes(colour = landuse_type)) +
@@ -903,6 +905,8 @@ ggplot(data = rural_jk_loadings, aes(
     )
   ) +
   facet_wrap(~site_removed)
+ggsave("results/figures/SI_figures/agrirural_jk_individual_loadings.png")
+plt
 ```
 
 There is a fair amount of variation in these plots, more than is shown with the boxplots for sure. Many landuse types move around in an out of being significant depending on what site is removed, but many, such as arable and built up areas, remain consistent in their position.

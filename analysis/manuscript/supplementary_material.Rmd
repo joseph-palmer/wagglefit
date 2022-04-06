@@ -123,3 +123,11 @@ df2 %>%
   set_table_properties(layout = "autofit") %>%
   fit_to_width(7.5)
 ```
+
+# Jackknifed partial least squares analysis
+
+```{r, urban-pls-loadings, fig.width=10,fig.height=11, fig.cap="Loadings of PLS calculated for each site removed for the urban sites. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4d."}
+
+
+
+```
