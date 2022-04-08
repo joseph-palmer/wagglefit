@@ -31,7 +31,7 @@ test_make_ccdf_plot_data <- function(x, param_est, model, npoints) {
 
 test_make_base_plot <- function(x) {
   plt <- make_base_plot(x)
-  expected_xlab <- "Foraging distance (Km)"
+  expected_xlab <- "Waggle run duration (seconds)"
   expected_ylab <- "Ln cumulative probability"
   test_that("make_base_plot returns a ggplot object with the correct labels", {
     expect_true(ggplot2::is.ggplot(plt))
@@ -43,7 +43,7 @@ test_make_base_plot <- function(x) {
 test_make_full_plot <- function(x, model_result_list) {
   plt <- make_full_plot(x, model_result_list)
   dev.off()
-  expected_xlab <- "Foraging distance (Km)"
+  expected_xlab <- "Waggle run duration (seconds)"
   expected_ylab <- "Ln cumulative probability"
   test_that("make_full_plot returns a ggplot object with the correct labels", {
     expect_true(ggplot2::is.ggplot(plt))
