@@ -59,7 +59,9 @@ urban_lu_long <- urban_lu %>%
 
 rural_lu <- sitedata %>%
   select(site, p) %>%
-  inner_join(rural_lu)
+  inner_join(rural_lu)  %>%
+  filter(site != "ROT") # remove ROT as fit is bad
+
 rural_lu_long <- rural_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 ```
@@ -492,7 +494,7 @@ varpercent <- var / sum(var) * 100
 
 # make a scree plot
 ggplot(
-  data.frame(PC = seq(1, 10), varpercent = varpercent),
+  data.frame(PC = seq(1, 9), varpercent = varpercent),
   aes(x = PC, y = varpercent)
 ) +
   geom_bar(stat = "identity") +
@@ -872,13 +874,14 @@ agrirural_luconversions <- luconversions %>%
 # make fit map with agrirural landuses
 agrirural_plotdata$site <- rural_lu$site
 agrirural_plotdata$prop_scouts <- rural_lu$p
-ar_sortedpropscouts <- arrange(agrirural_plotdata, prop_scouts)
+ar_sortedpropscouts <- arrange(agrirural_plotdata, prop_scouts) %>%
+  filter(site != "ROT")
 
 print(ar_sortedpropscouts)
 
 # select sites to draw attention to, those sitting on the trend
 ar_marked <- ar_sortedpropscouts %>%
-  filter(site %in% c("MEL", "ROT", "BEL"))
+  filter(site %in% c("MEL", "SRA", "HER"))
 
 # make model fit graph of pc1 against prop scouts and mark the sites
 ar_fit <- ggplot(
@@ -930,9 +933,9 @@ for (i in seq_len(3)) {
     theme_void() +
     scale_fill_manual(
       values = c(
-        "arable" = "#CCBB44", "built-up area" = "#EE6677",
-        "Non-agricultural unmanaged green space" = "#228833",
-        "water" = "#4477AA", "pasture" = "#BBBBBB", "woodland" = "#BBBBBB",
+        "arable" = "#018B27", "built-up area" = "#ED6778",
+        "Non-agricultural unmanaged green space" = "#BEC330",
+        "water" = "#536CAB", "pasture" = "#BBBBBB", "woodland" = "#BBBBBB",
         "Non-agricultural managed green space" = "#BBBBBB", "fruit" = "#BBBBBB",
         "OSR" = "#BBBBBB", "other agricultural" = "#BBBBBB"
       )
@@ -1011,9 +1014,9 @@ loading_plot <- ggplot(
   ) +
   scale_fill_manual(
     values = c(
-      "Arable" = "#CCBB44", "Built Up Area" = "#EE6677",
-      "NAUMGS" = "#228833",
-      "Water" = "#4477AA", Other = "#BBBBBB"
+      "Arable" = "#018B27", "Built Up Area" = "#ED6778",
+      "NAUMGS" = "#BEC330",
+      "Water" = "#536CAB", Other = "#BBBBBB"
     )
   )
 
@@ -1157,9 +1160,9 @@ for (i in seq_len(3)) {
     scale_fill_manual(
       values = c(
         "continuous central" = "#BBBBBB", "dense residential" = "#BBBBBB",
-        "sparse residential" = "#EE6677", "amenity grassland" = "#BBBBBB",
-        "water" = "#BBBBBB", "parks allotments cemeteries" = "#228833",
-        "Railway" = "#CCBB44", "woodland" = "#BBBBBB"
+        "sparse residential" = "#ED6778", "amenity grassland" = "#BBBBBB",
+        "water" = "#BBBBBB", "parks allotments cemeteries" = "#018B27",
+        "Railway" = "#BEC330", "woodland" = "#BBBBBB"
       )
     )
 }
@@ -1230,8 +1233,8 @@ loading_plot <- ggplot(
   scale_fill_manual(
     values = c(
       "Continuous Central" = "#BBBBBB", "Dense Residential" = "#BBBBBB",
-      "Sparse Residential" = "#EE6677", "Railway" = "#CCBB44",
-      "Parks Allotments Cemeteries" = "#228833",
+      "Sparse Residential" = "#ED6778", "Railway" = "#BEC330",
+      "Parks Allotments Cemeteries" = "#018B27",
       "Water" = "#BBBBBB", Other = "#BBBBBB"
     )
   )
@@ -1380,67 +1383,67 @@ urban.loadings %>%
 
 ```{r, combined-pls, message = FALSE, warning = FALSE}
 
-joined <- bind_rows(rural_lu, urban_lu)
-joined[is.na(joined)] <- 0
+# joined <- bind_rows(rural_lu, urban_lu)
+# joined[is.na(joined)] <- 0
 
-joined.pcdata <- joined[, 3:length(joined)]
+# joined.pcdata <- joined[, 3:length(joined)]
 
-n <- length(joined$p)
-y <- (joined$p * (n - 1) + 0.5) / n
-joined.pcdata$p_transform <- y
+# n <- length(joined$p)
+# y <- (joined$p * (n - 1) + 0.5) / n
+# joined.pcdata$p_transform <- y
 
-model <- plsRbeta(
-  p_transform ~ .,
-  data = joined.pcdata,
-  nt = ncol(joined.pcdata) - 1,
-  model = "pls-beta",
-  verbose = FALSE
-)
+# model <- plsRbeta(
+#   p_transform ~ .,
+#   data = joined.pcdata,
+#   nt = ncol(joined.pcdata) - 1,
+#   model = "pls-beta",
+#   verbose = FALSE
+# )
 
-print(model)
+# print(model)
 
-plsdata <- data.frame(
-  prop.scouts = model$dataY,
-  model$tt
-)
+# plsdata <- data.frame(
+#   prop.scouts = model$dataY,
+#   model$tt
+# )
 
-plsbetamodel <- betareg(
-  prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
-  plsdata
-)
+# plsbetamodel <- betareg(
+#   prop.scouts ~ Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4,
+#   plsdata
+# )
 
-summary(plsbetamodel)
+# summary(plsbetamodel)
 
-newdat <- data_frame(
-  Comp_.1 = seq(-50, 140, 0.1),
-  Comp_.2 = seq(-50, 140, 0.1),
-  Comp_.3 = seq(-50, 140, 0.1),
-  Comp_.4 = seq(-50, 140, 0.1)
-)
+# newdat <- data_frame(
+#   Comp_.1 = seq(-50, 140, 0.1),
+#   Comp_.2 = seq(-50, 140, 0.1),
+#   Comp_.3 = seq(-50, 140, 0.1),
+#   Comp_.4 = seq(-50, 140, 0.1)
+# )
 
-newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+# newdat$fit <- predict(plsbetamodel, newdat, type = "response")
 
-plotdata <- plsdata
-plotdata$p <- joined$p
+# plotdata <- plsdata
+# plotdata$p <- joined$p
 
-plotdata$LU <- ""
-plotdata$LU[1:10] <- "Rural"
-plotdata$LU[11:20] <- "Urban"
+# plotdata$LU <- ""
+# plotdata$LU[1:10] <- "Rural"
+# plotdata$LU[11:20] <- "Urban"
 
-ggplot(
-  data = plotdata,
-  aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)
-) +
-  geom_point(aes(colour = LU)) +
-  geom_rug(aes(colour = LU)) +
-  scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
-  geom_line(data = newdat, aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = fit)) +
-  xlim(min(-5.5), max(5.5))
+# ggplot(
+#   data = plotdata,
+#   aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = p)
+# ) +
+#   geom_point(aes(colour = LU)) +
+#   geom_rug(aes(colour = LU)) +
+#   scale_color_manual(values = c("Rural" = "black", "Urban" = "red")) +
+#   geom_line(data = newdat, aes(x = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4, y = fit)) +
+#   xlim(min(-5.5), max(5.5))
 
 
-ggplot(
-  data = plotdata,
-  aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)
-) +
-  geom_boxplot(aes(group = LU))
+# ggplot(
+#   data = plotdata,
+#   aes(x = LU, y = Comp_.1 + Comp_.2 + Comp_.3 + Comp_.4)
+# ) +
+#   geom_boxplot(aes(group = LU))
 ```

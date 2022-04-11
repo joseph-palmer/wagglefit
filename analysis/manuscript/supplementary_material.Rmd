@@ -44,7 +44,7 @@ load("../results/site_fit_results.Rdata")
 
 # Waggle dance model fit
 
-```{r, all-model-fits, fig.width=10,fig.height=11, fig.cap="Supplementary Fig 1. log Compliment cumulative frequency distribution of waggle dance durations and fits of the collective (red line) and individual (blue line) models for all 20 sites."}
+```{r, all-model-fits, fig.width=10,fig.height=11, fig.cap="Supplementary Fig 1. **Cumulative frequency distribution** of waggle dance durations and fits of the collective (red line) and individual (blue line) models for all 20 sites."}
 plots <- map(all_sites, 2)
 plots <- plots %>%
   map(
@@ -104,6 +104,8 @@ df2 <- df %>%
     p, bs, br, as, ar, k, ks_statistic, ks_pvalue
   )
 
+write.csv(df2, "../results/modelfits_allsites.csv")
+
 # set up proper names
 # format table
 df2 %>%
@@ -126,10 +128,10 @@ df2 %>%
 
 # Jackknifed partial least squares analysis
 
-```{r, rural-pls-loadings, fig.width=10,fig.height=11, fig.cap="Loadings of PLS calculated for each site removed for the agri-rural sites. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4b."}
+```{r, rural-pls-loadings, fig.width=10,fig.height=11, fig.cap="Supplementary Fig 2. **Loadings of PLS calculated for each site removed for the agri-rural sites**. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4b."}
 knitr::include_graphics("../results/figures/SI_figures/agrirural_jk_individual_loadings.png")
 ```
 
-```{r, urban-pls-loadings, fig.width=10,fig.height=11, fig.cap="Loadings of PLS calculated for each site removed for the urban sites. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4d."}
+```{r, urban-pls-loadings, fig.width=10,fig.height=11, fig.cap="Supplementary Fig 3. **Loadings of PLS calculated for each site removed for the urban sites**. Each plot shows the loadings of the first principle component with that site removed from the analysis, showing the individual points making up the overall box plot loadings in Fig 4d."}
 knitr::include_graphics("../results/figures/SI_figures/urban_jk_individual_loadings.png")
 ```

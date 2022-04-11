@@ -54,14 +54,19 @@ rural_lu <- read.csv(file = "data/agri-rural-landuse.csv")
 urban_lu <- sitedata %>%
   select(site, p) %>%
   inner_join(urban_lu)
+
 urban_lu_long <- urban_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 
 rural_lu <- sitedata %>%
   select(site, p) %>%
-  inner_join(rural_lu)
+  inner_join(rural_lu) %>%
+  filter(site != "ROT") # remove ROT as fit is bad
+
 rural_lu_long <- rural_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+
 ```
 
 # TLDR:
@@ -574,7 +579,7 @@ plt <- ggplot(data = urban_jk_loadings, aes(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
     legend.position = "None",
-    text = element_text(size = 12),
+    text = element_text(size = 15),
     strip.text.x = element_text(size = 18),
     axis.title.x = element_text(size = 18)
   ) +

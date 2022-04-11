@@ -118,6 +118,7 @@ names(all_sites) <- get_data() %>%
 data <- read.csv("data/FullHBForagingData.csv")
 
 alldata <- data %>%
+  filter(Year == 2017) %>% # remove pilot data conducted in 2016
   select(date, site, duration.seconds) %>%
   rename(foraging_distance = duration.seconds)
 ```
@@ -327,8 +328,8 @@ data <- alldata %>%
 p_bnds <- c(0, 1.0)
 bs_bnds <- c(1.0e-6, 10)
 br_bnds <- c(1.0e-6, 10)
-as_bnds <- c(1.0e-12, 10)
-ar_bnds <- c(1.0e-12, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
 collective_bounds <- rbind(
   p_bnds, bs_bnds,
   br_bnds, as_bnds,
@@ -1057,7 +1058,7 @@ df <- map(all_sites, 1) %>%
   bind_rows()
 
 # save results
-saveRDS(df, file = "results/site_fit_results.Rda")
+# saveRDS(df, file = "results/site_fit_results.Rda")
 
 # AIC plot
 aic_plot <- df %>%
