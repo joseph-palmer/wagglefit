@@ -1,10 +1,11 @@
 ---
 title: "Forage site distributions quantify collective foraging in honey bee colonies: Methods"
-author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent Jansen"
+# author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent Jansen"
 output:
   word_document
 always_allow_html: true
 bibliography: paper-refs.bib
+csl: nature.csl
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)

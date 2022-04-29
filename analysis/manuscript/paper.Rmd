@@ -1,11 +1,11 @@
 ---
 title: "Waggle dance distributions quantify collective foraging in honey bee colonies"
-author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent A. A. Jansen"
+# author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent A. A. Jansen"
 output:
   word_document
 always_allow_html: true
 bibliography: paper-refs.bib
-# csl: nature.csl
+csl: nature.csl
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
@@ -46,7 +46,7 @@ Identifying the circumstances in which bees use the dance is likely to be a key 
 
 Attempts to identify the circumstances in which dance communication is important have been challenging because they require constant monitoring of real-world colony weight [@Kirchner1998; @Sherman2002; @Dornhaus2006; @Gruter2013; @Nurnberger2017; @Price2019] -a noisy proxy of foraging success that is influenced by many other abiotic and biotic factors, including colony health- over ecologically credible time periods [@Schurch2014]. To do this at a scale that allows inter-colony variation in foraging environments at sufficient replication is a major logistical hurdle (but see [@Nurnberger2017]), particularly given that multiple landscape variables may interact to determine the utility of dance communication.
 
-```{r, fig.cap="Figure 1. **The honeybee waggle dance carries information about the location of a resource** *as a vector of distance (duration of the waggle run) and direction (angle of the dance relative to the sun) [@Frisch1993].Through the observation and decoding of the waggle dance, a colony's dance floor provides a unique opportunity to eavesdrop on the communication and decision making leading to collective foraging decisions. Overall resource “quality” -the net energetic gain of a foraging trip- is provided through the number of waggle runs performed [@Frisch1993; @Boch1956; @Esch1961; @Seeley1994; @Seeley2000]. Although bees that follow dances do not specifically interpret this information on an individual level [@Seeley1991], the resulting over-representation of high-quality sites on the dance-floor means that they are more likely to encounter dances that advertise better forage [@Seeley1995], and provides the colony with a mechanism to select the most profitable resources in their environment [@Seeley1994A]."}
+```{r, fig.cap="Figure 1. **The honeybee waggle dance carries information about the location of a resource.** The duration of the waggle run indicates the distance to the resource and the angle of the dance relative to the vertical indicates the direction of the resource (circle in right panel), relative to the direction of the sun [@Frisch1993]. Through the observation and decoding of the waggle dance, a colony's dance floor provides a unique opportunity to eavesdrop on the communication and decision making leading to collective foraging decisions. Overall resource “quality” -the net energetic gain of a foraging trip- is provided through the number of waggle runs performed [@Frisch1993; @Boch1956; @Esch1961; @Seeley1994; @Seeley2000]. Although bees that follow dances do not specifically interpret this information on an individual level [@Seeley1991], the resulting over-representation of high-quality sites on the dance-floor means that they are more likely to encounter dances that advertise better forage [@Seeley1995], and provides the colony with a mechanism to select the most profitable resources in their environment [@Seeley1994A]."}
 knitr::include_graphics("../results/figures/manuscript_figures/fig1.png")
 ```
 
