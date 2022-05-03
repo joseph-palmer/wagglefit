@@ -35,7 +35,7 @@ library(kableExtra)
 library(showtext)
 showtext_auto()
 
-run_wagglefit_analysis <- function(target_site, data, collective_bounds, individual_bounds, subplot_coords) {
+run_wagglefit_analysis <- function(target_site, data, collective_bounds, individual_bounds, subplot_coords, xlims = NULL) {
 
   # run collective model
   colletive_result <- fit_collective_model_to_data(data, collective_bounds)
@@ -50,7 +50,8 @@ run_wagglefit_analysis <- function(target_site, data, collective_bounds, individ
       "collective" = colletive_result$solution,
       "individual" = individual_result$solution
     ),
-    subplot_coords = subplot_coords
+    subplot_coords = subplot_coords,
+    xlims = xlims
   )
 
   # calculate ks statistics
@@ -296,10 +297,11 @@ individual_bounds <- rbind(
 )
 
 # set coordinates for histogram subplot
-subplot_coords <- c(0.1, 4, -6.5, -2.2)
+subplot_coords <- c(0.1, 4, -6.8, -2.5)
 
 all_sites[[target_site]] <- run_wagglefit_analysis(
-  target_site, data, collective_bounds, individual_bounds, subplot_coords
+  target_site, data, collective_bounds, individual_bounds, subplot_coords,
+  xlims = c(0, 6)
 )
 
 all_sites[[target_site]]$fit_result %>%
@@ -1060,6 +1062,10 @@ df <- map(all_sites, 1) %>%
 # save results
 # saveRDS(df, file = "results/site_fit_results.Rda")
 
+# all_sites$BFI$fit <- all_sites$BFI$fit +
+#   ylim(0, 6) +
+#   scale_x_continuous(breaks = seq(0, 6, by = 2))
+
 # AIC plot
 aic_plot <- df %>%
   group_by(site) %>%
@@ -1117,8 +1123,8 @@ ggsave(
 )
 
 ggsave(
-  plot = all_sites$ZSL$fit,
-  filename = "results/figures/ZSL.png",
+  plot = all_sites$BFI$fit,
+  filename = "results/figures/BUR.png",
   width = 90,
   height = 110,
   units = "mm",
@@ -1159,7 +1165,7 @@ map_data <- df %>%
   slice(which.min(AIC)) %>%
   select(site, model) %>%
   left_join(map_data, on = "site") %>%
-  mutate(col = ifelse(site %in% c("STU", "ZSL"), "1", "0"))
+  mutate(col = ifelse(site %in% c("STU", "BUR"), "1", "0"))
 
 locations <- st_as_sf(
   map_data,
@@ -1167,9 +1173,9 @@ locations <- st_as_sf(
 )
 
 # Extract selected sites for figure
-selected_sites <- filter(map_data, site %in% c("STU", "ZSL")) %>%
+selected_sites <- filter(map_data, site %in% c("STU", "BUR")) %>%
   mutate(
-    label = ifelse(site == "STU", "C (STU)", "D (ZSL)")
+    label = ifelse(site == "STU", "c", "d")
   )
 
 points_area <- st_bbox(locations)
@@ -1208,6 +1214,9 @@ inset <- ggplot() +
   geom_text(
     data = selected_sites, aes(x = lon, y = lat, label = label),
     nudge_x = c(0, -0.07), nudge_y = c(0.05, 0.05), size = 8
+  ) +
+  geom_point(
+    data = selected_sites, aes(x = lon, y = lat), size = 1.5, shape = 4
   ) +
   annotation_north_arrow(
     location = "tr", which_north = "true",
@@ -1287,16 +1296,16 @@ ggsave(
 merge_plot_2 <- inset +
   annotation_custom(
     ggplotGrob(base),
-    xmin = -3.35,
-    xmax = 2,
-    ymin = 51.05,
-    ymax = 51.35
+    xmin = -3.45,
+    xmax = 2.2,
+    ymin = 51.01,
+    ymax = 51.45
   )
 
 merge_plot_2
 
 sites_model_plot <- plot_grid(
-  merge_plot_2, ks_plot_dist, all_sites$STU$fit, all_sites$ZSL$fit,
+  merge_plot_2, ks_plot_dist, all_sites$STU$fit, all_sites$BUR$fit,
   labels = c("A", "B", "C", "D"), label_size = 24
 )
 
@@ -1342,7 +1351,7 @@ ggsave(
 )
 
 stu_zsl_fit <- plot_grid(
-  all_sites$STU$fit, all_sites$ZSL$fit,
+  all_sites$STU$fit, all_sites$BUR$fit,
   labels = c("A", "B"), label_size = 24
 )
 
@@ -1452,7 +1461,7 @@ ggsave(
 
 
 sites_model_plot <- plot_grid(
-  all_sites$STU$fit, all_sites$ZSL$fit, aic_plot, ks_plot_dist,
+  all_sites$STU$fit, all_sites$BUR$fit, aic_plot, ks_plot_dist,
   labels = c("A", "B", "C", "D"), label_size = 42
 )
 

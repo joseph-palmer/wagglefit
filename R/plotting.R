@@ -88,6 +88,7 @@ make_base_plot <- function(x, logit = TRUE) {
 #' estimates ($est) and the data name ($data_name).
 #' @param logit Bool To log the data or not. Defaults to TRUE
 #' @param subplot_coords doubleArray Coordinates for location of inner histogram
+#' @param xlims array limits for x axis
 #' @return ggplot plot of cumulative probability of foraging distances in Km
 #' along with the model fits to this data.
 #' @importFrom ggplot2 ggplot aes geom_histogram geom_line theme_set theme
@@ -100,7 +101,8 @@ make_base_plot <- function(x, logit = TRUE) {
 #'
 make_full_plot <- function(x, model_result_list,
                            logit = TRUE,
-                           subplot_coords = c(0.5, 2.5, -7.8, -2.5)) {
+                           subplot_coords = c(0.5, 2.5, -7.8, -2.5),
+                           xlims = NULL) {
   cdf_data <- map(
     model_result_list,
     ~ {
@@ -145,6 +147,17 @@ make_full_plot <- function(x, model_result_list,
       panel.background = element_rect(fill = "transparent"),
       plot.background = element_rect(fill = "transparent", colour = NA)
     )
+
+  if(!is.null(xlims)) {
+    plt <- plt + scale_x_continuous(
+      breaks = seq(xlims[1], xlims[2], 2),
+      limits = xlims
+    )
+    histoplot <- histoplot + scale_x_continuous(
+      breaks = seq(xlims[1], xlims[2], 2),
+      limits = xlims
+    )
+  }
 
   full_plot <- plt + annotation_custom(
     ggplotGrob(histoplot),

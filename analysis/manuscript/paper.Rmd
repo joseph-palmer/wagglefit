@@ -103,7 +103,7 @@ landuse_area <- rbind(urban_total_area, rural_total_area) %>%
 
 landuse_area %>%
   arrange(Environment, desc(`% coverage`)) %>%
-  mutate(`% coverage` = signif(`% coverage`, 3)) %>%
+  mutate(`% coverage` = round(`% coverage`, digits = 1)) %>%
   flextable() %>%
   set_caption(
     "Percentage area covered for each land-use type in the agri-rural and urban environments in the sites studied."
