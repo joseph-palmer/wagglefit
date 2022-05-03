@@ -1,6 +1,6 @@
 ---
 title: "Waggle dance distributions quantify collective foraging in honey bee colonies: Supplementary material"
-author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent Jansen"
+# author: "Joseph Palmer, Ash Samuelson, Elli Leadbeater and Vincent Jansen"
 output:
   word_document
 always_allow_html: true
@@ -73,6 +73,11 @@ x.grob <- textGrob(
 
 # add to plot
 grid.arrange(arrangeGrob(allsites_plot, left = y.grob, bottom = x.grob))
+
+ggsave(
+  "../results/figures/SI_figures/allsites_plot.png"
+)
+
 ```
 
 Table 1. shows the results of the model fitting, including likelihood scores, parsimony measures -AIC, delta_AIC, rAIC (relative delta_AIC) and wAIC (Akaike weights)- and goodness of fit -Ks statistics (ks_statistic, ks_pvalue)- for all 20 sites.
@@ -124,6 +129,30 @@ df2 %>%
   ) %>%
   set_table_properties(layout = "autofit") %>%
   fit_to_width(7.5)
+
+
+
+textable <- kbl(
+  df2,
+  caption = "Fit results for the fitting of the waggle dance model to each site.",
+  booktabs = TRUE
+  ) %>%
+  kable_styling(latex_options = "striped")
+
+print(textable)
+
+print(
+  xtable(
+    df2, type = "latex",
+    caption = "Fit results for the fitting of the waggle dance model to each site."
+  ),
+  scalebox='0.65',
+  floating = FALSE,
+  caption.placement = "top",
+  file = "../results/figures/SI_figures/fittable.tex"
+)
+
+
 ```
 
 # Jackknifed partial least squares analysis
