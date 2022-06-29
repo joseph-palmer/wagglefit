@@ -66,6 +66,31 @@ rural_lu_long <- rural_lu %>%
   pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
 ```
 
+```{r, convert_p}
+
+ms_mr <- read.csv(file = "data/site_ms_mr.csv")
+
+urban_lu <- urban_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, 3:10)
+
+rural_lu <- rural_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, woodland, 3:12)
+
+
+
+```
+
+
 # Objective
 
 The objective of this study to see if / how land-use influences the proportion of scouts estimated by our model. To do this I carried out both a Principle Component Analysis (PCA) with regression and a Partial Least Squares (PLS) of the land-use data across our sites. I ran both the PLS and PCA on the urban and rural sites separately due to differing land-use categories. This document contains the rational, methods and code for this analysis. At the end of the document I have attempted to write a discussion of these points. This requires more thought to put this into a theoretical framework and is the area I feel most unsure of.
@@ -905,7 +930,7 @@ ar_fit <- ggplot(
   theme_classic() +
   theme(legend.position = "none", text = element_text(size = rel(textsize - 2))) +
   xlab("PC 1") +
-  ylab("Estimated proportion of scouts")
+  ylab("Estimated waggle dance use")
 
 # make the maps for each of the sites selected in the previous step
 site_shape_data_ar <- list()
@@ -1131,7 +1156,7 @@ u_fit <- ggplot(
   theme_classic() +
   theme(legend.position = "none", text = element_text(size = rel(textsize - 2))) +
   xlab("PC 1") +
-  ylab("Estimated proportion of scouts")
+  ylab("Estimated waggel dance use")
 
 # make the maps for each of the sites selected in the previous step
 site_shape_data_u <- list()

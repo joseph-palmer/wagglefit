@@ -69,6 +69,28 @@ rural_lu_long <- rural_lu %>%
 
 ```
 
+```{r, convert_p}
+
+ms_mr <- read.csv(file = "data/site_ms_mr.csv")
+
+urban_lu <- urban_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, 3:10)
+
+rural_lu <- rural_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, woodland, 3:12)
+
+```
+
 # TLDR:
 
 A jackknife was carried out on the PLS beta regression whereby each site was excluded from the analysis and the fits to the others established. This was done to assess if a single site biased the model and should be treated as an outlier.
