@@ -1158,6 +1158,7 @@ u_fit <- ggplot(
   xlab("PC 1") +
   ylab("Estimated waggel dance use")
 
+
 # make the maps for each of the sites selected in the previous step
 site_shape_data_u <- list()
 site_plots <- list()
