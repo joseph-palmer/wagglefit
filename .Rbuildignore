@@ -3,3 +3,6 @@
 ^LICENSE\.md$
 ^\.pre-commit-config\.yaml$
 ^\.github$
+^\.lintr$
+^README\.Rmd$
+^\.vscode$

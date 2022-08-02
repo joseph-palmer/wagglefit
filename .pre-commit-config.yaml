@@ -3,9 +3,9 @@
 repos:
 -   repo: https://github.com/lorenzwalthert/precommit
     rev: v0.1.3
-    hooks: 
+    hooks:
     -   id: style-files
-        args: [--style_pkg=styler, --style_fun=tidyverse_style]    
+        args: [--style_pkg=styler, --style_fun=tidyverse_style]
     -   id: roxygenize
     # codemeta must be above use-tidy-description when both are used
     # -   id: codemeta-description-updated
@@ -13,7 +13,9 @@ repos:
     -   id: spell-check
         exclude: >
           (?x)^(
-          data/.*| 
+          data/.*|
+          analysis/.*|
+          Simulation/.*|
           (.*/|)\.Rprofile|
           (.*/|)\.Renviron|
           (.*/|)\.gitignore|
@@ -29,6 +31,7 @@ repos:
           .*\.feather|
           .*\.rds|
           .*\.Rds|
+          .*\.png|
           .*\.sh|
           .*\.RData
           )$
@@ -39,9 +42,9 @@ repos:
     -   id: deps-in-desc
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.4.0
-    hooks: 
+    hooks:
     -   id: check-added-large-files
-        args: ['--maxkb=200']
+        args: ['--maxkb=10000']
     -   id: end-of-file-fixer
         exclude: '\.Rd'
 -   repo: local
@@ -50,5 +53,5 @@ repos:
         name: Don't commit common R artifacts
         entry: Cannot commit .Rhistory, .RData, .Rds or .rds.
         language: fail
-        files: '\.Rhistory|\.RData|\.Rds|\.rds$'
+        files: '\.Rhistory|\.RData'
         # `exclude: <regex>` to allow committing specific files.
