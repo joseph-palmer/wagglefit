@@ -93,7 +93,7 @@ make_base_plot <- function(x, logit = TRUE) {
 #' along with the model fits to this data.
 #' @importFrom ggplot2 ggplot aes geom_histogram geom_line theme_set theme
 #' theme_classic element_text element_blank element_rect annotation_custom
-#' ggplotGrob scale_colour_manual
+#' ggplotGrob scale_colour_manual scale_x_continuous
 #' @importFrom tibble tibble
 #' @importFrom purrr map map_df
 #' @importFrom rlang .data

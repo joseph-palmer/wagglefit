@@ -33,7 +33,7 @@ when citing wagglefit please use (insert citation for publication).
 
 ## Honey bees vary collective decision making in different landscapes
 
-All code used in the publication (insert citation link) is stored in `inst/publication/`.
+All code used in the publication (insert citation link) is stored in `inst/publication.tar.gz/`. To extract it use `tar -xzvf publication.tar.gz`.
 
 
 ## Reporting issues
