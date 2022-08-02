@@ -8,7 +8,8 @@ make_full_plot(
   x,
   model_result_list,
   logit = TRUE,
-  subplot_coords = c(0.5, 2.5, -7.8, -2.5)
+  subplot_coords = c(0.5, 2.5, -7.8, -2.5),
+  xlims = NULL
 )
 }
 \arguments{
@@ -20,6 +21,8 @@ estimates ($est) and the data name ($data_name).}
 \item{logit}{Bool To log the data or not. Defaults to TRUE}
 
 \item{subplot_coords}{doubleArray Coordinates for location of inner histogram}
+
+\item{xlims}{array limits for x axis}
 }
 \value{
 ggplot plot of cumulative probability of foraging distances in Km
