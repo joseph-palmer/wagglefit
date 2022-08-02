@@ -1,0 +1,196 @@
+---
+title: Honeybee foraging simulation
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+
+The code for the honeybee foraging simulation is written in python and is contained in the `Simulation` directory (specifically `Simulation/Code`). The results of the simulation (as output csv files) are stored in `Results/`. Generating the results can be done by running the script `run.py` in `Simulation/Code`. Once you have ran the simulation you can run through this Rmd doc to generate the figures. To run the python code you will need python 3 installed along with the required packages.
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "URWHelvetica", size = 8)
+    )
+)
+library(dplyr)
+library(tibble)
+library(Matching)
+devtools::load_all()
+```
+
+### Extracting the results
+
+```{r, run_sim}
+
+# model functions
+exp_loglike <- function(x) {
+  rate <- 1 / mean(x)
+  exp_model <- rate * exp(-rate * x)
+  return(sum(log(exp_model)))
+}
+
+expmin_loglike <- function(x) {
+  rate <- 1 / (pi * (mean(x^2) - min(x)^2))
+  expmin_model <- 2 * pi * rate * x * exp(-pi * rate * x^2)
+  return(sum(log(expmin_model)))
+}
+
+# ccdf functions
+get_exp_prediction <- function(x, n = 100) {
+  rate <- 1 / mean(x)
+  print(rate)
+  pred_x <- seq(min(x), max(x), length.out = n)
+  exp_prediction <- 1 - exp(-rate * pred_x)
+  pred <- tibble(x = pred_x, y = 1 - exp_prediction)
+  return(pred)
+}
+
+get_expmin_prediction <- function(x, n = 100) {
+  rate <- 1 / (pi * (mean(x^2) - min(x)^2))
+  print(rate)
+  pred_x <- seq(min(x), max(x), length.out = n)
+  expmin_prediction <- 1 - exp(-pi * rate * pred_x^2)
+  pred <- tibble(x = pred_x, y = 1 - expmin_prediction)
+  return(pred)
+}
+
+# load data
+recruit <- read.csv(
+  "Simulation/Results/recruit_distribution.csv",
+  header = FALSE
+)
+scout <- read.csv(
+  "Simulation/Results/scout_distribution.csv",
+  header = FALSE
+)
+
+recruit$model <- "Recruit"
+scout$model <- "Scout"
+
+print(paste("Recruit:", length(recruit$V1), "Scout:", length(scout$V1)))
+```
+
+### Comparing model fits to scout and recruit data
+
+We will fit an exponential and minimum of an exponential to each model. If our theory holds water the exponential will fit to the scouts best and the minimum of an exponential will fit to the recruits best. To be fit with the exponential function we first need to 'normalise' the data by subtracting the minimum foraging distance for all foraging distances. This is to ensure the exponential starts at 0 rather than stepping out to the minimum value and skewing the model fit. In plotting we take the values for the exponential ad add on the minimum value to each point to get the model fit data back in line with the actual data so they can be compared graphically. The data does not need to be transformed for the minimum of the exponential in the 2d plane as this minimum value is incorporated into the model.
+
+```{r}
+scout_cdf <- inverse_ccdf(scout$V1)
+pred_exp <- get_exp_prediction(scout$V1 - min(scout$V1))
+pred_expmin <- get_expmin_prediction(scout$V1)
+
+# log plot
+scout_fit <- ggplot(scout_cdf, aes(x = sd, y = log(prob))) +
+  geom_point(size = 0.2) +
+  geom_line(
+    aes(x = x + min(scout$V1), y = log(y)), pred_exp,
+    colour = "#00bfc4"
+  ) +
+  geom_line(aes(x = x, y = log(y)), pred_expmin, colour = "#f8766d") +
+  labs(
+    x = "Simulated foraging distance (km)",
+    y = "ln Inverse cummulative frequency"
+  )
+
+ggsave(
+  plot = scout_fit,
+  filename = "Simulation/Results/scout_fit.png",
+  width = 70.1,
+  height = 81.79,
+  units = "mm",
+  dpi = 400
+)
+
+ll_exp <- exp_loglike(scout$V1 - min(scout$V1))
+ll_expmin <- expmin_loglike(scout$V1)
+s_aic <- calc_aic(1, ll_exp)
+r_aic <- calc_aic(1, ll_expmin)
+if (s_aic < r_aic) {
+  print("Scout model is the best")
+} else {
+  print("Recruit model is the best")
+}
+print(paste("Scout loglike:", ll_exp, "Recruit loglike:", ll_expmin))
+print(paste("Scout AIC:", s_aic, "Recruit AIC:", r_aic))
+```
+
+```{r}
+recruit_cdf <- inverse_ccdf(recruit$V1)
+pred_exp <- get_exp_prediction(recruit$V1 - min(recruit$V1))
+pred_expmin <- get_expmin_prediction(recruit$V1)
+
+# log plot
+recruit_fit <- ggplot(recruit_cdf, aes(x = sd, y = log(prob))) +
+  geom_point(size = 0.2) +
+  geom_line(
+    aes(x = x + min(recruit$V1), y = log(y)),
+    pred_exp,
+    colour = "#00bfc4"
+  ) +
+  geom_line(aes(x = x, y = log(y)), pred_expmin, colour = "#f8766d") +
+  labs(
+    x = "Simulated foraging distance (km)",
+    y = "ln Inverse cummulative frequency"
+  )
+
+ggsave(
+  plot = recruit_fit,
+  filename = "Simulation/Results/recruit_fit.png",
+  width = 70.1,
+  height = 81.79,
+  units = "mm",
+  dpi = 400
+)
+
+ll_exp <- exp_loglike(recruit$V1 - min(recruit$V1))
+ll_expmin <- expmin_loglike(recruit$V1)
+s_aic <- calc_aic(1, ll_exp)
+r_aic <- calc_aic(1, ll_expmin)
+if (s_aic < r_aic) {
+  print("Scout model is the best")
+} else {
+  print("Recruit model is the best")
+}
+print(paste("Scout loglike:", ll_exp, "Recruit loglike:", ll_expmin))
+print(paste("Scout AIC:", s_aic, "Recruit AIC:", r_aic))
+```
+
+
+```{r}
+# combined ccdfs
+combplot <- ggplot() +
+  geom_point(
+    data = scout_cdf, aes(x = sd, y = log(prob), color = "blue"), size = 0.2
+  ) +
+  geom_point(
+    data = recruit_cdf, aes(x = sd, y = log(prob), color = "red"), size = 0.2
+  ) +
+  labs(
+    x = "Simulated foraging distance (km)",
+    y = "ln Inverse cummulative frequency"
+  ) +
+  scale_color_manual(labels = c("Scout", "Recruit"), values = c("blue", "red")) +
+  theme(legend.position="bottom")
+
+ggsave(
+  plot = combplot,
+  filename = "Simulation/Results/combined_fit.png",
+  width = 70.1,
+  height = 81.79,
+  units = "mm",
+  dpi = 400
+)
+```
+From this analysis we observe that the distribution of foraging distances reported by scouts is better described by an exponential than the minimum of an exponential, whereas the converse is true for foraging distances reported by recruits. These results support our hypothesis for how scout and recruit reported foraging distances occur through different processes and produce different patterns.
