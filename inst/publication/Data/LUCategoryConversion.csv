@@ -1,0 +1,52 @@
+﻿LU,category,code
+urban,continuous central,CC
+urban,continuous central,IR
+urban,continuous central,CS
+urban,continuous central,RO
+urban,dense residential,DR
+urban,dense residential,HR
+urban,dense residential,UC
+urban,sparse residential,RE
+urban,sparse residential,SR
+urban,sparse residential,PB
+urban,parks allotments cemeteries,AL
+urban,parks allotments cemeteries,UP
+urban,parks allotments cemeteries,PA
+urban,parks allotments cemeteries,CE
+urban,amenity grassland,UG
+urban,amenity grassland,SG
+urban,amenity grassland,LG
+urban,amenity grassland,GC
+urban,Railway,RA
+urban,woodland,WC
+urban,woodland,WL
+urban,water,WA
+agri-rural,woodland,WL
+agri-rural,Non-agricultural unmanaged green space,WC
+agri-rural,Non-agricultural unmanaged green space,SA
+agri-rural,Non-agricultural unmanaged green space,QU
+agri-rural,Non-agricultural managed green space,AL
+agri-rural,Non-agricultural managed green space,UP
+agri-rural,Non-agricultural managed green space,CE
+agri-rural,Non-agricultural managed green space,LG
+agri-rural,Non-agricultural managed green space,GC
+agri-rural,Non-agricultural managed green space,UG
+agri-rural,Non-agricultural managed green space,SG
+agri-rural,arable,AF
+agri-rural,pasture,PF
+agri-rural,other agricultural,PA
+agri-rural,other agricultural,OF
+agri-rural,fruit,OP
+agri-rural,fruit,GH
+agri-rural,fruit,PT
+agri-rural,OSR,OSR
+agri-rural,built-up area,CH
+agri-rural,built-up area,FB
+agri-rural,built-up area,RE
+agri-rural,built-up area,RO
+agri-rural,built-up area,IS
+agri-rural,built-up area,SR
+agri-rural,built-up area,CS
+agri-rural,built-up area,IR
+agri-rural,built-up area,RA
+agri-rural,water,WA

@@ -1,0 +1,957 @@
+---
+title: Analysing the effect of land-use type on the proportion of scouts - a *jackknife approach*
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+
+---
+
+```{r preamble, include=FALSE}
+devtools::load_all()
+library(showtext)
+showtext_auto()
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic()
+)
+
+library(cowplot)
+library(tidyr)
+library(dplyr)
+library(ggfortify)
+library(betareg)
+library(plsRbeta)
+library(lmtest)
+library(kableExtra)
+library(effects)
+```
+
+```{r get-data, include=FALSE, message = FALSE, error = FALSE, warning = FALSE}
+# load results of model fit (code to generate found in fit_models.Rmd)
+sitedata <- readRDS("../Results/site_fit_results.Rda")
+
+# filter for best model
+sitedata <- sitedata %>%
+  group_by(site) %>%
+  slice(which.min(AIC))
+
+# Load land use data taken (taken from Samuelson et al. 2021)
+urban_lu <- read.csv(file = "../Data/urban-landuse.csv")
+rural_lu <- read.csv(file = "../Data/agri-rural-landuse.csv")
+
+# put proportion of scouts into landuse data
+urban_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(urban_lu)
+
+urban_lu_long <- urban_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+rural_lu <- sitedata %>%
+  select(site, p) %>%
+  inner_join(rural_lu) %>%
+  filter(site != "ROT") # remove ROT as fit is bad
+
+rural_lu_long <- rural_lu %>%
+  pivot_longer(!c(site, p), names_to = "landuse", values_to = "values")
+
+
+```
+
+```{r, convert_p}
+
+ms_mr <- read.csv(file = "../Data/site_ms_mr.csv")
+
+urban_lu <- urban_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, 3:10)
+
+rural_lu <- rural_lu %>%
+  # inner_join(ms_mr, by = "site") %>%
+  # select(-ms, -mr, -p.y) %>%
+  # rename(p = p_trips) %>%
+  # mutate(p = ifelse(p.x == 1, 1, p)) %>%
+  mutate(p = 1-p)
+  # select(site, p, woodland, 3:12)
+
+```
+
+
+# Jackknife analysis to investigate PLS sensitivity to outliers
+
+```{r, jackknife_functions, message=FALSE, warning=FALSE, echo = FALSE}
+
+ggplotRegression <- function(fit) {
+  plt <- ggplot(fit$model, aes_string(x = names(fit$model)[2], y = names(fit$model)[1])) +
+    geom_point() +
+    stat_smooth(method = "lm", col = "red") +
+    labs(
+      title = paste(
+        "Adj R2 = ", signif(summary(fit)$adj.r.squared, 5),
+        "Intercept =", signif(fit$coef[[1]], 5),
+        " Slope =", signif(fit$coef[[2]], 5),
+        " P =", signif(summary(fit)$coef[2, 4], 5)
+      )
+    )
+  return(plt)
+}
+
+run_pls <- function(data) {
+  model_pls <- plsRbeta(
+    p_transform ~ .,
+    data = data,
+    nt = ncol(data) - 1,
+    model = "pls-beta",
+    verbose = FALSE
+  )
+  plsdata <- data.frame(
+    prop.scouts = model_pls$dataY,
+    pc1 = model_pls$tt[, 1]
+  )
+  plsbetamodel <- betareg(
+    prop.scouts ~ pc1,
+    plsdata
+  )
+  pls_loadings <- model_pls$pp[, 1]
+  # get beta regression data
+  plsdata <- data.frame(
+    prop.scouts = model_pls$dataY,
+    model_pls$tt
+  )
+  returnlist <- list(
+    "loadings" = pls_loadings, "plsdata" = plsdata[, 1:2],
+    "coef" = coef(plsbetamodel)[[2]]
+  )
+  return(returnlist)
+}
+```
+
+## Urban jackknife
+
+```{r, urban_pls, message = FALSE, error = FALSE, warning = FALSE, include = FALSE}
+
+# set up data for pls
+urban.pcadata <- urban_lu[, 3:length(names(urban_lu))]
+sites <- urban_lu$site
+urban_cuttoff <- sqrt(1 / (ncol(urban.pcadata) - 1))
+n <- length(urban_lu$p)
+y <- (urban_lu$p * (n - 1) + 0.5) / n
+urban.pcadata$p_transform <- y
+
+# create empty lists to store jackknifed results in
+jkloadings <- list()
+jkplsdata <- list()
+jkcoefs <- list()
+
+# jackknife the pls analysis
+for (i in c(0, seq_len(nrow(urban.pcadata)))) {
+  data <- urban.pcadata
+  removed <- 0
+  usesites <- "None"
+  removed_site <- "None"
+  if (i > 0) {
+    data <- data[-i, ]
+    removed <- urban.pcadata[i, ncol(urban.pcadata)][[1]]
+    usesites <- sites[-i]
+    removed_site <- sites[i]
+  }
+  result <- run_pls(data)
+  loadings <- result[["loadings"]]
+  plsdata <- result[["plsdata"]]
+  coef <- result[["coef"]]
+  landuse_type <- names(loadings)
+
+  resloadings <- tibble(landuse_type, loadings)
+  resloadings$p_removed <- removed
+  resloadings$site_removed <- removed_site
+  jkloadings[[paste(i)]] <- resloadings
+
+  resplsdata <- plsdata
+  resplsdata$p_removed <- removed
+  resplsdata$site <- usesites
+  jkplsdata[[paste(i)]] <- resplsdata
+  coefres <- tibble(coef, removed, usesites)
+  jkcoefs[[paste(i)]] <- coefres
+}
+
+# process results of jackknife for further analysis
+urban_jk_loadings <- do.call(bind_rows, jkloadings)
+urban_jk_loadings$cutoff <- sqrt(
+  1 / (length(unique(urban_jk_loadings$landuse_type)) - 1)
+)
+urban_jk_pls <- do.call(bind_rows, jkplsdata)
+urban_jk_coef <- do.call(bind_rows, jkcoefs)
+```
+
+
+
+### Identifying outlier sites from the slopes of the jackknifed beta regression
+
+```{r, urban_jk_slope_dist, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+# show coef calculated with peticular prop scouts removed from analysis
+urban_jk_coef <- do.call(bind_rows, jkcoefs)
+hist(urban_jk_coef$coef, col = "pink")
+```
+
+```{r, urban_jk_slope_dist_value, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+urban_jk_coef %>% filter(coef < 0.4)
+```
+
+
+```{r, urban_jk_outlier_removed, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+# full data fit
+model_pls <- plsRbeta(
+  p_transform ~ .,
+  data = urban.pcadata,
+  nt = ncol(urban.pcadata) - 1,
+  model = "pls-beta",
+  verbose = FALSE
+)
+plsdata <- data.frame(
+  prop.scouts = model_pls$dataY,
+  pc1 = model_pls$tt[, 1]
+)
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  plsdata
+)
+
+print("Full data beta regression")
+print(summary(plsbetamodel))
+
+# set up plot of pls fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(plsdata$pc1),
+    max(plsdata$pc1),
+    length.out = length(plsdata$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+plsdata$p <- (2 * n * plsdata$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of pls fit
+plt_full <- ggplot(data = plsdata, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+# plot loadings
+full_loadings <- as_tibble(model_pls$pp[, 1])
+full_loadings$landuse_type <- names(model_pls$pp[, 1])
+
+urban_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+full_loading_plt <- ggplot(data = full_loadings, aes(
+  x = landuse_type, y = value, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = value, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#BBBBBB", other = "#BBBBBB"
+    )
+  )
+
+# outlier removed fit
+removed_data <- urban.pcadata %>% filter(p_transform < 0.95)
+
+model_pls <- plsRbeta(
+  p_transform ~ .,
+  data = removed_data,
+  nt = ncol(removed_data) - 1,
+  model = "pls-beta",
+  verbose = FALSE
+)
+plsdata <- data.frame(
+  prop.scouts = model_pls$dataY,
+  pc1 = model_pls$tt[, 1]
+)
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  plsdata
+)
+
+print("Outlier removed beta regression")
+print(summary(plsbetamodel))
+
+# set up plot of pls fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(plsdata$pc1),
+    max(plsdata$pc1),
+    length.out = length(plsdata$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+plsdata$p <- (2 * n * plsdata$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of pls fit
+plt_outlier_removed <- ggplot(data = plsdata, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  ) +
+  scale_y_continuous(limits = c(0, 1))
+
+# plot loadings
+outlier_rmv_loadings <- as_tibble(model_pls$pp[, 1])
+outlier_rmv_loadings$landuse_type <- names(model_pls$pp[, 1])
+
+outlier_rmv_loading_plt <- ggplot(data = outlier_rmv_loadings, aes(
+  x = landuse_type, y = value, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = value, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+
+# show all plots
+plot_grid(
+  plt_full, plt_outlier_removed,
+  full_loading_plt, outlier_rmv_loading_plt,
+  ncol = 2, labels = "AUTO"
+)
+```
+
+### Examining how the loadings and fit changes through the jackknifed analysis
+
+```{r, urban_jk_averaged_fits, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+# plot loadings
+urban_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+urban_average_loadings_plt <- ggplot(data = urban_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_boxplot() +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "continuous.central" = "#BBBBBB", "dense.residential" = "#BBBBBB",
+      "sparse.residential" = "#EE6677", "railway" = "#CCBB44",
+      "parks.allotments.cemeteries" = "#228833",
+      "water" = "#BBBBBB", other = "#BBBBBB"
+    )
+  )
+
+
+# process plsdata for model fit on the median or mean response from JK PLS
+urban_jk_pls <- do.call(bind_rows, jkplsdata)
+n <- 10
+urban_jk_pls$p <- (2 * n * urban_jk_pls$prop.scouts - 1) / (2 * (n - 1)) # convert to p
+
+forjoin <- urban_lu %>%
+  select(site, p)
+
+urban_median_pls_data <- urban_jk_pls %>%
+  group_by(site) %>%
+  summarise(pc1 = median(Comp_.1, na.rm = TRUE)) %>%
+  right_join(forjoin, by = "site") %>%
+  mutate(prop.scouts = (p * (n - 1) + 0.5) / n)
+
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  urban_median_pls_data
+)
+
+# show pls summary
+print(summary(plsbetamodel))
+
+# set up plot of pls average fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(urban_median_pls_data$pc1),
+    max(urban_median_pls_data$pc1),
+    length.out = length(urban_median_pls_data$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+urban_median_pls_data$p <- (2 * n * urban_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of average pls fit
+urban_average_fit_plt <- ggplot(data = urban_median_pls_data, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+
+# show all plots
+plot_grid(
+  urban_average_fit_plt, urban_average_loadings_plt,
+  ncol = 1, labels = "AUTO"
+)
+```
+
+## Further analysis of sensitivity to site removal and landuse proportions: digging into the the distributions of PLS loadings
+
+```{r, urban_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+plt <- ggplot(data = urban_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text(size = 15),
+    strip.text.x = element_text(size = 18),
+    axis.title.x = element_text(size = 18)
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  ) +
+  facet_wrap(~site_removed, ncol = 2)
+ggsave(
+  plot = plt,
+  filename = "../Results/figures/SI_figures/urban_jk_individual_loadings.png",
+  width = 120,
+  height = 200,
+  units = "mm",
+  dpi = 300
+)
+plt
+```
+
+## How does this compare with the proportion of land-coverage for each site?
+
+```{r, urban_jk_loadings_landuse_area, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+area_sites_used <- urban_lu %>% filter(site != "CAD")
+
+total_area <- area_sites_used[, 3:ncol(area_sites_used)] %>%
+  colSums()
+total_area <- tibble(landuse_type = names(total_area), area = total_area)
+total_area$area_pct <- (total_area$area / sum(total_area$area)) * 100
+
+urban_lu_loadings_with_area <- urban_jk_loadings %>%
+  left_join(total_area, by = "landuse_type") %>%
+  filter(site_removed == "CAD") # <---- remove outlier site
+
+ggplot(data = urban_lu_loadings_with_area, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type, size = area_pct)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = urban_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -urban_cuttoff,
+    ymax = urban_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+urban_lu_loadings_with_area %>%
+  arrange(-area_pct) %>%
+  print()
+```
+
+```{r, urban_jk_loadings_landuse_area_correlation, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+fit1 <- lm(area ~ loadings, data = urban_lu_loadings_with_area)
+print(summary(fit1))
+
+print(
+  ggplotRegression(fit1)
+)
+```
+
+### Conclusions
+
+Site CAD seems to be having a large effect on the results of the PLS. The jackknife analysis shows this site skews the slopes more than the others. Plotting the averages of the PLS provides a means of seeing how the PLS results change in relation to removing sites. They seem fairly robust to site removals, but this could also mean site CAD is heavily influencing the relationship.
+
+
+## Agri-rural PLS
+
+
+```{r, rural_pls, message = FALSE, error = FALSE, warning = FALSE, include = FALSE}
+
+# set up data for pls
+rural.pcadata <- rural_lu[, 3:length(names(rural_lu))]
+sites <- rural_lu$site
+rural_cuttoff <- sqrt(1 / (ncol(rural.pcadata) - 1))
+n <- length(rural_lu$p)
+y <- (rural_lu$p * (n - 1) + 0.5) / n
+rural.pcadata$p_transform <- y
+
+# create empty lists to store jackknifed results in
+jkloadings <- list()
+jkplsdata <- list()
+jkcoefs <- list()
+
+# jackknife the pls analysis
+for (i in c(0, seq_len(nrow(rural.pcadata)))) {
+  data <- rural.pcadata
+  removed <- 0
+  usesites <- "None"
+  removed_site <- "None"
+  if (i > 0) {
+    data <- data[-i, ]
+    removed <- rural.pcadata[i, ncol(rural.pcadata)][[1]]
+    usesites <- sites[-i]
+    removed_site <- sites[i]
+  }
+  result <- run_pls(data)
+  loadings <- result[["loadings"]]
+  plsdata <- result[["plsdata"]]
+  coef <- result[["coef"]]
+  landuse_type <- names(loadings)
+
+  resloadings <- tibble(landuse_type, loadings)
+  resloadings$p_removed <- removed
+  resloadings$site_removed <- removed_site
+  jkloadings[[paste(i)]] <- resloadings
+
+  resplsdata <- plsdata
+  resplsdata$p_removed <- removed
+  resplsdata$site <- usesites
+  jkplsdata[[paste(i)]] <- resplsdata
+  coefres <- tibble(coef, removed, usesites)
+  jkcoefs[[paste(i)]] <- coefres
+}
+
+# process results of jackknife for further analysis
+rural_jk_loadings <- do.call(bind_rows, jkloadings)
+rural_jk_loadings$cutoff <- sqrt(
+  1 / (length(unique(rural_jk_loadings$landuse_type)) - 1)
+)
+save(urban_jk_loadings, rural_jk_loadings, file = "../Results/pls-loadings.RData")
+rural_jk_pls <- do.call(bind_rows, jkplsdata)
+rural_jk_coef <- do.call(bind_rows, jkcoefs)
+```
+
+
+```{r, rural_jk_slope_dist, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+# show coef calculated with peticular prop scouts removed from analysis
+rural_jk_coef <- do.call(bind_rows, jkcoefs)
+jkci <- quantile(rural_jk_coef$coef, probs = c(0.025, .975))
+hist(rural_jk_coef$coef, col = "pink")
+```
+
+### Examining how the loadings and fit changes through the jackknifed analysis
+
+```{r, rural_jk_averaged_fits, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+# plot loadings
+rural_loading_text <- tibble(landuse_type = unique(landuse_type), result = 0)
+rural_average_loadings_plt <- ggplot(data = rural_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_boxplot() +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+
+# process plsdata for model fit on the median or mean response from JK PLS
+rural_jk_pls <- do.call(bind_rows, jkplsdata)
+n <- 10
+# convert back to p
+rural_jk_pls$p <- (2 * n * rural_jk_pls$prop.scouts - 1) / (2 * (n - 1))
+
+forjoin <- rural_lu %>%
+  select(site, p)
+
+rural_median_pls_data <- rural_jk_pls %>%
+  group_by(site) %>%
+  summarise(pc1 = median(Comp_.1, na.rm = TRUE)) %>%
+  right_join(forjoin, by = "site") %>%
+  mutate(prop.scouts = (p * (n - 1) + 0.5) / n)
+
+plsbetamodel <- betareg(
+  prop.scouts ~ pc1,
+  rural_median_pls_data
+)
+
+# show pls summary
+print(summary(plsbetamodel))
+
+# set up plot of pls average fit
+newdat <- data_frame(
+  pc1 = seq(
+    min(rural_median_pls_data$pc1),
+    max(rural_median_pls_data$pc1),
+    length.out = length(rural_median_pls_data$pc1)
+  )
+)
+newdat$fit <- predict(plsbetamodel, newdat, type = "response")
+
+# get effects
+fitdata <- as.data.frame(predictorEffects(plsbetamodel))$pc1
+rural_median_pls_data$p <- (2 * n * rural_median_pls_data$prop.scouts - 1) / (2 * (n - 1))
+
+# make plot of average pls fit
+rural_average_fit_plt <- ggplot(data = rural_median_pls_data, aes(x = pc1, y = p)) +
+  geom_point() +
+  geom_line(data = fitdata, aes(x = pc1, y = fit)) +
+  geom_ribbon(
+    data = fitdata,
+    aes(x = pc1, y = fit, ymin = lower, ymax = upper),
+    alpha = 0.2,
+    fill = "deepskyblue"
+  )
+
+
+# show all plots
+plot_grid(
+  rural_average_fit_plt, rural_average_loadings_plt,
+  ncol = 1, labels = "AUTO"
+)
+```
+
+
+## Further analysis of sensitivity to site removal and landuse proportions: digging into the the distributions of PLS loadings
+
+```{r, rural_jk_loadings_all, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+plt <- ggplot(data = rural_jk_loadings, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text(size = 15),
+    strip.text.x = element_text(size = 18),
+    axis.title.x = element_text(size = 18)
+  ) +
+  scale_fill_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  ) +
+  facet_wrap(~site_removed, ncol = 2)
+ggsave(
+  plot = plt,
+  filename = "../Results/figures/SI_figures/agrirural_jk_individual_loadings.png",
+  width = 120,
+  height = 220,
+  units = "mm",
+  dpi = 300
+)
+plt
+```
+
+## How does this compare with the proportion of land-coverage for each site?
+
+```{r, rural_jk_loadings_landuse_area, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+total_area <- rural_lu[, 3:ncol(rural_lu)] %>%
+  colSums()
+total_area <- tibble(landuse_type = names(total_area), area = total_area)
+total_area$area_pct <- (total_area$area / sum(total_area$area)) * 100
+
+rural_lu_loadings_with_area <- rural_jk_loadings %>%
+  left_join(total_area, by = "landuse_type") %>%
+  filter(site_removed == "None")
+
+ggplot(data = rural_lu_loadings_with_area, aes(
+  x = landuse_type, y = loadings, fill = landuse_type
+)) +
+  geom_point(aes(colour = landuse_type, size = area_pct)) +
+  geom_segment(aes(
+    x = landuse_type, xend = landuse_type,
+    y = 0, yend = loadings, colour = landuse_type
+  )) +
+  geom_hline(
+    yintercept = 0, color = "black"
+  ) +
+  geom_text(
+    data = rural_loading_text,
+    aes(x = landuse_type, y = result, label = landuse_type),
+    hjust = 0.5,
+    vjust = 0.5,
+    nudge_y = c(-0., -0.), nudge_x = c(0.5, 0.5)
+  ) +
+  annotate(
+    "rect",
+    ymin = -rural_cuttoff,
+    ymax = rural_cuttoff,
+    xmin = 0, xmax = Inf,
+    alpha = 0.2
+  ) +
+  coord_flip() +
+  theme_classic() +
+  theme(
+    axis.line.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    legend.position = "None",
+    text = element_text()
+  ) +
+  scale_colour_manual(
+    values = c(
+      "arable" = "#CCBB44", "built.up.area" = "#EE6677",
+      "Non.agricultural.unmanaged.green.space" = "#228833",
+      "water" = "#4477AA", other = "#BBBBBB"
+    )
+  )
+
+rural_lu_loadings_with_area %>%
+  arrange(-area_pct) %>%
+  print()
+```
+
+
+```{r, rural_jk_loadings_landuse_area_correlation, message = FALSE, error = FALSE, warning = FALSE, echo = FALSE}
+
+fit1 <- lm(area ~ loadings, data = rural_lu_loadings_with_area)
+print(summary(fit1))
+
+print(
+  ggplotRegression(fit1)
+)
+```
