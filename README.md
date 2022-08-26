@@ -5,6 +5,7 @@
 [![lint](https://github.com/joseph-palmer/wagglefit/actions/workflows/lint.yaml/badge.svg)](https://github.com/joseph-palmer/wagglefit/actions/workflows/lint.yaml)
 [![pkgdown](https://github.com/joseph-palmer/wagglefit/actions/workflows/pkgdown.yaml/badge.svg)](https://github.com/joseph-palmer/wagglefit/actions/workflows/pkgdown.yaml)
 [![test-coverage](https://github.com/joseph-palmer/wagglefit/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/joseph-palmer/wagglefit/actions/workflows/test-coverage.yaml)
+[![DOI](https://zenodo.org/badge/353413244.svg)](https://zenodo.org/badge/latestdoi/353413244)
 
 wagglefit is an R package to analyse waggle run distributions and
 estimate the resulting proportions of scout and recruit dances,
