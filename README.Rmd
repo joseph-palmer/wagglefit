@@ -29,11 +29,9 @@ install.packages("devtools")
 devtools::install_github("joseph-palmer/wagglefit")
 ```
 
-when citing wagglefit please use (insert citation for publication).
+## Honeybees vary collective decision making in different landscapes
 
-## Honey bees vary collective decision making in different landscapes
-
-All code used in the publication (insert citation link) is stored in `inst/publication.tar.gz/`. To extract it use `tar -xzvf publication.tar.gz`.
+All code used in the publication *Honeybees vary collective decision making in different landscapes* is stored in `inst/publication.tar.gz/`. To extract it use `tar -xzvf publication.tar.gz`.
 
 
 ## Reporting issues
