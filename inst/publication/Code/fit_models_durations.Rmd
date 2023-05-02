@@ -1,0 +1,1498 @@
+---
+title: Fitting waggle dance models to waggle dance data
+author: Joseph Palmer
+output:
+  html_notebook:
+    theme: yeti
+    toc: true
+    toc_float: true
+---
+
+This document contains code to fit the waggle dance model to each of our 20 different sites. The code here uses the wagglefit package, as well as some additional code stored in `fit_data.R` to help simplify things. Each site has its own section, with reused code. The final sections create map plots and summary statistic plots.
+
+```{r, preamble, include = FALSE}
+devtools::load_all()
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+library(ggplot2)
+theme_set(
+  theme_classic() +
+    theme(
+      text = element_text(family = "DejaVuSerif", size = 48)
+    )
+)
+library(cowplot)
+library(dplyr)
+library(tibble)
+source("Code/fit_data.R")
+library(kableExtra)
+print(getwd())
+library(showtext)
+showtext_auto()
+
+run_wagglefit_analysis <- function(target_site, data, collective_bounds, individual_bounds, subplot_coords, xlims = NULL) {
+
+  # run collective model
+  colletive_result <- fit_collective_model_to_data(data, collective_bounds)
+
+  # run individual model
+  individual_result <- fit_individual_model_to_data(data, individual_bounds)
+
+  # make plot of model fits
+  full_plot <- make_full_plot(
+    data$foraging_distance,
+    list(
+      "collective" = colletive_result$solution,
+      "individual" = individual_result$solution
+    ),
+    subplot_coords = subplot_coords,
+    xlims = xlims
+  )
+
+  # calculate ks statistics
+  ks_test_result_collective <- calc_ks_boot(
+    data$foraging_distance, colletive_result$solution$est, "collective"
+  )
+  ks_test_result_individual <- calc_ks_boot(
+    data$foraging_distance, individual_result$solution$est, "individual"
+  )
+
+  # bring results together
+  model_fits <- tibble(
+    site = c(target_site, target_site),
+    model = c("collective", "individual"),
+    loglikelihood = c(
+      colletive_result$solution$fmax, individual_result$solution$fmax
+    ),
+    p = c(colletive_result$solution$est[1], 1),
+    bs = c(colletive_result$solution$est[2], individual_result$solution$est[1]),
+    br = c(colletive_result$solution$est[3], NA),
+    as = c(colletive_result$solution$est[4], individual_result$solution$est[2]),
+    ar = c(colletive_result$solution$est[5], NA),
+    k = c(
+      length(colletive_result$solution$est),
+      length(individual_result$solution$est)
+    ),
+    AIC = c(
+      calc_aic(
+        length(colletive_result$solution$est), colletive_result$solution$fmax
+      ),
+      calc_aic(
+        length(individual_result$solution$est), individual_result$solution$fmax
+      )
+    ),
+    ks_statistic = c(
+      ks_test_result_collective$ks$statistic[[1]],
+      ks_test_result_individual$ks$statistic[[1]]
+    ),
+    ks_pvalue = c(
+      ks_test_result_collective$ks.boot.pvalue,
+      ks_test_result_individual$ks.boot.pvalue
+    )
+  )
+
+  return(
+    list(
+      fit_result = model_fits, fit = full_plot,
+      individual_llspace = individual_result$llspace,
+      collective_llspace = colletive_result$llspace
+    )
+  )
+}
+
+all_sites <- as.list(rep(0, 20))
+names(all_sites) <- get_data() %>%
+  select(site) %>%
+  unique() %>%
+  pull()
+
+```
+
+## Optimising each site
+
+```{r}
+# set waggle dance duration in seconds as foraging distance for analysis
+data <- read.csv("Data/FullHBForagingData.csv")
+
+alldata <- data %>%
+  filter(Year == 2017) %>% # remove pilot data conducted in 2016
+  select(date, site, duration.seconds) %>%
+  rename(foraging_distance = duration.seconds)
+```
+
+### BEL
+
+```{r, BEL, message = FALSE, warning = FALSE}
+
+target_site <- "BEL"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 8, -5.5, -1.8)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+
+### BFI
+
+```{r, BFI, message = FALSE, warning = FALSE}
+
+target_site <- "BFI"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.6)
+bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.2, 3.5, -6.5, -2.)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### BLO
+
+```{r, BLO, message = FALSE, warning = FALSE}
+
+target_site <- "BLO"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-10, 5)
+br_bnds <- c(1.0e-10, 5)
+as_bnds <- c(1.0e-5, 5)
+ar_bnds <- c(1.0e-10, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 5505)
+as_bnds <- c(1.0e-12, 0.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.2, 9.5, -8., -2.2)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### BUR
+
+```{r, BUR, message = FALSE, warning = FALSE}
+
+target_site <- "BUR"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 500)
+br_bnds <- c(1.0e-6, 500)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4, -6.8, -2.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords,
+  xlims = c(0, 6)
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### CAD
+
+```{r, CAD, message = FALSE, warning = FALSE}
+
+target_site <- "CAD"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 2)
+as_bnds <- c(1.0e-12, 0.8)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 1.8, -6, -1.2)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### GIL
+
+```{r, GIL, message = FALSE, warning = FALSE}
+
+target_site <- "GIL"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 0.8)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 2.1, -8., -2)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### HER
+
+```{r, HER, message = FALSE, warning = FALSE}
+
+target_site <- "HER"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 100)
+br_bnds <- c(1.0e-6, 100)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 2)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4, -6.5, -1.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### HHS
+
+```{r, HHS, message = FALSE, warning = FALSE}
+
+target_site <- "HHS"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 50)
+br_bnds <- c(1.0e-6, 50)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4, -6.5, -2.2)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### HOR
+
+```{r, HOR, message = FALSE, warning = FALSE}
+
+target_site <- "HOR"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 1.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 3, -9, -2.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### MAK
+
+```{r, MAK, message = FALSE, warning = FALSE}
+
+target_site <- "MAK"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 20)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# run individual model
+individual_result <- fit_individual_model_to_data(data, bounds)
+
+# view individual model likelihood space to check bounds look ok
+individual_result$llspace
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4.2, -6.5, -2.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### MEL
+
+```{r, MEL, message = FALSE, warning = FALSE}
+
+target_site <- "MEL"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 3., -7, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### MPA
+
+```{r, MPA, message = FALSE, warning = FALSE}
+
+target_site <- "MPA"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4., -7.2, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### ROT
+
+```{r, ROT, message = FALSE, warning = FALSE}
+
+target_site <- "ROT"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 2., -5.5, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+
+### SAU
+
+```{r, SAU, message = FALSE, warning = FALSE}
+
+target_site <- "SAU"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 2.5, -6.5, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### SOM
+
+```{r, SOM, message = FALSE, warning = FALSE}
+
+target_site <- "SOM"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site) %>%
+  filter(foraging_distance < 6) # remove outlier distance
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 2., -5.5, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### SRA
+
+```{r, SRA, message = FALSE, warning = FALSE}
+
+target_site <- "SRA"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 3., -7.5, -2.1)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### STU
+
+```{r, STU, message = FALSE, warning = FALSE}
+
+target_site <- "STU"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4, -6.5, -1.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### SWP
+
+```{r, SWP, message = FALSE, warning = FALSE}
+
+target_site <- "SWP"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 15)
+br_bnds <- c(1.0e-6, 15)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 2., -6, -1.5)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### YAL
+
+```{r, YAL, message = FALSE, warning = FALSE}
+
+target_site <- "YAL"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.1)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 4., -8, -2.)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### ZSL
+
+```{r, ZSL, message = FALSE, warning = FALSE}
+
+target_site <- "ZSL"
+
+# subset data for target site
+data <- alldata %>%
+  filter(site == target_site)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 50)
+as_bnds <- c(1.0e-12, 1.3)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 1.8, -8, -2)
+
+all_sites[[target_site]] <- run_wagglefit_analysis(
+  target_site, data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[[target_site]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+all_sites[[target_site]]$fit
+```
+
+### Fits to all urban and all agri-rural sites
+
+```{r, ZSL, message = FALSE, warning = FALSE}
+urban_sites <- c("BLO", "BUR", "CAD", "GIL", "HHS", "HOR", "MAK", "MPA", "SWP", "ZSL")
+rural_sites <- c("BEL", "BFI", "HER", "MEL", "SAU", "SOM", "SRA", "STU", "YAL") # exclude ROT due to bad fit
+
+urban_data <- alldata %>%
+  filter(site %in% urban_sites)
+
+rural_data <- alldata %>%
+  filter(site %in% rural_sites)
+
+# set up bounds for the collective model
+p_bnds <- c(0, 1.0)
+bs_bnds <- c(1.0e-6, 10)
+br_bnds <- c(1.0e-6, 10)
+as_bnds <- c(1.0e-12, 1.5)
+ar_bnds <- c(1.0e-12, 0.5)
+collective_bounds <- rbind(
+  p_bnds, bs_bnds,
+  br_bnds, as_bnds,
+  ar_bnds
+)
+
+# set up bounds for the individual model
+bs_bnds <- c(1.0e-6, 50)
+as_bnds <- c(1.0e-12, 1.3)
+individual_bounds <- rbind(
+  bs_bnds, as_bnds
+)
+
+# set coordinates for histogram subplot
+subplot_coords <- c(0.1, 1.8, -8, -2)
+
+# urban
+all_sites[["urban"]] <- run_wagglefit_analysis(
+  "urban", urban_data, collective_bounds, individual_bounds, subplot_coords
+)
+
+
+all_sites[["urban"]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+
+# rural
+all_sites[["rural"]] <- run_wagglefit_analysis(
+  "rural", rural_data, collective_bounds, individual_bounds, subplot_coords
+)
+
+all_sites[["rural"]]$fit_result %>%
+  kbl() %>%
+  kable_classic(full_width = F)
+
+```
+
+
+## Overall findings
+
+```{r, make-aic-comp, message = FALSE, warning = FALSE}
+# group all site results together
+df <- map(all_sites, 1) %>%
+  bind_rows()
+
+all_sites
+
+# filter for best model
+sitedata <- df %>%
+  group_by(site) %>%
+  slice(which.min(AIC))
+
+sitedata$LU <- NA
+sitedata2 <- sitedata %>%
+  mutate(LU= ifelse(
+    site %in% urban_sites, 'Urban',
+    ifelse(
+      site %in% rural_sites,
+      'Rural',
+      paste0('Total_', site)
+    ))) %>%
+  filter(site != 'ROT')
+
+print(sitedata2, n=22)
+
+sitedata2 %>%
+  group_by(LU) %>%
+  summarise(AIC=sum(AIC))
+
+
+```
+
+
+```{r, make-plots, message = FALSE, warning = FALSE}
+# group all site results together
+df <- map(all_sites, 1) %>%
+  bind_rows()
+
+# save results
+saveRDS(df, file = "../Results/site_fit_results.Rda")
+
+# AIC plot
+aic_plot <- df %>%
+  group_by(site) %>%
+  slice(which.min(AIC)) %>%
+  select(model) %>%
+  group_by(model) %>%
+  summarise(lowest_AIC = n()) %>%
+  ggplot(aes(x = model, y = lowest_AIC)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Model", y = "Count") +
+  scale_y_continuous(breaks = seq(0, 20, by = 2)) +
+  theme(
+    text = element_text(size = 42)
+  )
+
+ggsave(
+  plot = aic_plot,
+  filename = "../Results/figures/AIC_plot.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 300
+)
+
+# ks plot
+ks_plot_dist <- df %>%
+  ggplot(aes(x = ks_pvalue)) +
+  geom_histogram(bins = 10, binwidth = 0.1, col = "white") +
+  geom_vline(xintercept = 0.05, color = "red", linetype = "dashed") +
+  scale_y_continuous(breaks = seq(0, 12, by = 2)) +
+  labs(x = "KS P value") +
+  facet_wrap(~model, nrow = 3) +
+  theme(
+    text = element_text(size = 42),
+    strip.background = element_blank()
+  )
+
+
+ggsave(
+  plot = ks_plot_dist,
+  filename = "../Results/figures/sites_ks.png",
+  width = 86,
+  height = 180,
+  units = "mm",
+  dpi = 300
+)
+
+ggsave(
+  plot = all_sites$STU$fit,
+  filename = "../Results/figures/STU.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 300
+)
+
+ggsave(
+  plot = all_sites$BFI$fit,
+  filename = "../Results/figures/BUR.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 300
+)
+```
+
+
+### Map plots
+
+Code to make the individual mal plots. These figures are created standalone but are combined in to facets manually in an image processor.
+
+```{r, map-plots, message = FALSE, warning = FALSE}
+
+library(ggplot2)
+library(ggrepel)
+library(gridExtra)
+library(ggsn)
+library(sf)
+library(rworldmap)
+library(ggspatial)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+
+full_data_path <- "../Data/FullHBForagingData.csv"
+data_raw <- tibble(read.csv(full_data_path))
+
+map_data <- data_raw %>%
+  select(
+    site, lat, lon
+  ) %>%
+  distinct()
+
+map_data <- df %>%
+  group_by(site) %>%
+  slice(which.min(AIC)) %>%
+  select(site, model) %>%
+  left_join(map_data, on = "site") %>%
+  mutate(col = ifelse(site %in% c("STU", "BUR"), "1", "0"))
+
+locations <- st_as_sf(
+  map_data,
+  coords = c("lon", "lat"), crs = 4326
+)
+
+# Extract selected sites for figure
+selected_sites <- filter(map_data, site %in% c("STU", "BUR")) %>%
+  mutate(
+    label = ifelse(site == "STU", "c", "d")
+  )
+
+points_area <- st_bbox(locations)
+
+worldmap <- ne_countries(scale = "large", returnclass = "sf")
+
+# london area
+london <- st_read(
+  "../Data/shapefiles/London_Ward.shp"
+)
+
+london <- st_transform(
+  london,
+  CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+)
+
+inset <- ggplot() +
+  geom_sf(
+    data = worldmap,
+    fill = "grey90",
+    color = "#4b4949d0"
+  ) +
+  geom_sf(
+    data = london,
+    fill = "#ced0cffc",
+    lwd = 0
+  ) +
+  coord_sf(
+    xlim = c(points_area[[1]] - 0.1, points_area[[3]] + 0.1),
+    ylim = c(points_area[[2]] - 0.1, points_area[[4]] + 0.1)
+  ) +
+  geom_point(
+    data = map_data,
+    aes(x = lon, y = lat, shape = model, colour = model), size = 1.5
+  ) +
+  geom_text(
+    data = selected_sites, aes(x = lon, y = lat, label = label),
+    nudge_x = c(0, -0.07), nudge_y = c(0.05, 0.05), size = 8
+  ) +
+  geom_point(
+    data = selected_sites, aes(x = lon, y = lat), size = 1.5, shape = 4
+  ) +
+  annotation_north_arrow(
+    location = "tr", which_north = "true",
+    style = north_arrow_fancy_orienteering,
+    height = unit(15, "mm"),
+    width = unit(15, "mm"),
+    text_cex = 1.5
+  ) +
+  annotation_scale(
+    location = "br",
+    text_cex = 1.5
+  ) +
+  scale_shape_manual(values = c(1, 2)) +
+  scale_colour_manual(values = c("black", "red")) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
+  )
+
+inset
+
+# make full plot
+base <- ggplot(data = worldmap) +
+  geom_sf(
+    fill = "#c4cfc8",
+    color = "#4b4949d0",
+    lwd = 0.2
+  ) +
+  coord_sf(
+    xlim = c(-11, 3),
+    ylim = c(49.5, 60)
+  ) +
+  # geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
+  geom_rect(
+    aes(
+      xmin = points_area$xmin[[1]] - 0.1, xmax = points_area$xmax[[1]] + 0.1,
+      ymin = points_area$ymin[[1]] - 0.1, ymax = points_area$ymax[[1]] + 0.1
+    ),
+    fill = NA,
+    colour = "black",
+    size = .02
+  ) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
+  )
+
+base
+
+merge_plot <- base +
+  annotation_custom(
+    ggplotGrob(inset),
+    xmin = 1,
+    xmax = 13,
+    ymin = 52.5,
+    ymax = 60
+  )
+
+merge_plot
+
+ggsave(
+  plot = merge_plot,
+  filename = "../Results/figures/site_map.png",
+  width = 90,
+  height = 110,
+  units = "mm",
+  dpi = 300
+)
+
+
+merge_plot_2 <- inset +
+  annotation_custom(
+    ggplotGrob(base),
+    xmin = -3.45,
+    xmax = 2.2,
+    ymin = 51.01,
+    ymax = 51.45
+  )
+
+merge_plot_2
+
+sites_model_plot <- plot_grid(
+  merge_plot_2, ks_plot_dist, all_sites$STU$fit, all_sites$BUR$fit,
+  labels = c("A", "B", "C", "D"), label_size = 24
+)
+
+ggsave(
+  plot = sites_model_plot,
+  filename = "../Results/figures/sites_model_plot.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+model_sites_fits <- plot_grid(
+  merge_plot_2, ks_plot_dist,
+  labels = c("A", "B"), label_size = 24
+)
+
+ggsave(
+  plot = model_sites_fits,
+  filename = "../Results/figures/model_sites_fits.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+stu_zsl_fit <- plot_grid(
+  all_sites$STU$fit, all_sites$BUR$fit,
+  labels = c("A", "B"), label_size = 24
+)
+
+ggsave(
+  plot = stu_zsl_fit,
+  filename = "../Results/figures/stu_zsl_fit.svg",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 100
+)
+```
+
+
+```{r, eval = FALSE, other-map-plots, message = FALSE, warning = FALSE}
+# other map plots
+inset <- ggplot() +
+  geom_sf(
+    data = worldmap,
+    fill = "grey90",
+    color = "#4b4949d0"
+  ) +
+  geom_sf(
+    data = london,
+    fill = "#ced0cffc",
+    lwd = 0
+  ) +
+  coord_sf(
+    xlim = c(points_area[[1]] - 0.1, points_area[[3]] + 0.1),
+    ylim = c(points_area[[2]] - 0.1, points_area[[4]] + 0.1)
+  ) +
+  geom_point(
+    data = map_data,
+    aes(x = lon, y = lat, shape = model, colour = model), size = 1.5
+  ) +
+  annotation_north_arrow(
+    location = "tr", which_north = "true",
+    style = north_arrow_fancy_orienteering,
+    height = unit(10, "mm"),
+    width = unit(10, "mm")
+  ) +
+  annotation_scale(
+    location = "br",
+    text_cex = 3
+  ) +
+  scale_shape_manual(values = c(1, 2)) +
+  scale_colour_manual(values = c("black", "red")) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5),
+    text = element_text(size = 42)
+  )
+
+inset
+
+# make full plot
+base <- ggplot(data = worldmap) +
+  geom_sf(
+    fill = "#c4cfc8",
+    color = "#4b4949d0",
+    lwd = 0.2
+  ) +
+  coord_sf(
+    xlim = c(-11, 15),
+    ylim = c(49.5, 60)
+  ) +
+  geom_point(data = map_data, aes(x = lon, y = lat), size = 0.2) +
+  geom_rect(
+    aes(
+      xmin = points_area$xmin[[1]] - 0.1, xmax = points_area$xmax[[1]] + 0.1,
+      ymin = points_area$ymin[[1]] - 0.1, ymax = points_area$ymax[[1]] + 0.1
+    ),
+    fill = NA,
+    colour = "black",
+    size = .02
+  ) +
+  theme_nothing() +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.border = element_rect(color = "black", fill = NA, size = .5)
+  )
+
+merge_plot <- base +
+  annotation_custom(
+    ggplotGrob(inset),
+    xmin = 1,
+    xmax = 13,
+    ymin = 52.5,
+    ymax = 60
+  )
+
+merge_plot
+
+ggsave(
+  plot = merge_plot,
+  filename = "../Results/figures/site_map.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+
+
+sites_model_plot <- plot_grid(
+  all_sites$STU$fit, all_sites$BUR$fit, aic_plot, ks_plot_dist,
+  labels = c("A", "B", "C", "D"), label_size = 42
+)
+
+sites_model_plot
+
+ggsave(
+  plot = sites_model_plot,
+  filename = "../Results/figures/results_model_plot.png",
+  width = 183,
+  height = 190,
+  units = "mm",
+  dpi = 300
+)
+```
